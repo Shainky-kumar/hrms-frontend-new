@@ -1122,6 +1122,7 @@ export default function LeavePoliciesPage() {
                     </label>
                     <input
                       type="number"
+                      step="any"
                       min="0"
                       value={formData.total_leaves}
                       onChange={(e) => handleChange("total_leaves", e.target.value)}
@@ -1150,6 +1151,7 @@ export default function LeavePoliciesPage() {
                     </label>
                     <input
                       type="number"
+                      step="any"
                       min="0"
                       value={formData.per_month_limit}
                       onChange={(e) => handleChange("per_month_limit", e.target.value)}
@@ -1163,6 +1165,7 @@ export default function LeavePoliciesPage() {
                     </label>
                     <input
                       type="number"
+                      step="any"
                       min="0"
                       value={formData.max_applications_per_year}
                       onChange={(e) =>
@@ -1178,6 +1181,7 @@ export default function LeavePoliciesPage() {
                     </label>
                     <input
                       type="number"
+                      step="any"
                       min="0"
                       value={formData.min_leave_count_for_request}
                       onChange={(e) =>
@@ -1193,6 +1197,7 @@ export default function LeavePoliciesPage() {
                     </label>
                     <input
                       type="number"
+                      step="any"
                       min="0"
                       value={formData.grant_min_days}
                       onChange={(e) => handleChange("grant_min_days", e.target.value)}
@@ -1206,6 +1211,7 @@ export default function LeavePoliciesPage() {
                     </label>
                     <input
                       type="number"
+                      step="any"
                       min="0"
                       value={formData.grant_max_days}
                       onChange={(e) => handleChange("grant_max_days", e.target.value)}
@@ -1219,6 +1225,7 @@ export default function LeavePoliciesPage() {
                     </label>
                     <input
                       type="number"
+                      step="any"
                       min="0"
                       value={formData.grant_reusable_after_days}
                       onChange={(e) =>
@@ -1234,6 +1241,7 @@ export default function LeavePoliciesPage() {
                     </label>
                     <input
                       type="number"
+                      step="any"
                       min="0"
                       value={formData.min_notice_days}
                       onChange={(e) => handleChange("min_notice_days", e.target.value)}
@@ -1247,6 +1255,7 @@ export default function LeavePoliciesPage() {
                     </label>
                     <input
                       type="number"
+                      step="any"
                       min="0"
                       value={formData.document_required_after_days}
                       onChange={(e) =>
@@ -1262,6 +1271,7 @@ export default function LeavePoliciesPage() {
                     </label>
                     <input
                       type="number"
+                      step="any"
                       min="0"
                       value={formData.min_service_days}
                       onChange={(e) => handleChange("min_service_days", e.target.value)}
@@ -1275,6 +1285,7 @@ export default function LeavePoliciesPage() {
                     </label>
                     <input
                       type="number"
+                      step="any"
                       min="0"
                       value={formData.carry_forward_max}
                       onChange={(e) => handleChange("carry_forward_max", e.target.value)}
@@ -1288,6 +1299,7 @@ export default function LeavePoliciesPage() {
                     </label>
                     <input
                       type="number"
+                      step="any"
                       min="0"
                       value={formData.carry_forward_expiry_months}
                       onChange={(e) =>
@@ -1303,6 +1315,7 @@ export default function LeavePoliciesPage() {
                     </label>
                     <input
                       type="number"
+                      step="any"
                       min="0"
                       value={formData.encashment_max_days}
                       onChange={(e) =>
@@ -1318,6 +1331,7 @@ export default function LeavePoliciesPage() {
                     </label>
                     <input
                       type="number"
+                      step="any"
                       min="0"
                       value={formData.max_negative_balance}
                       onChange={(e) =>
@@ -1333,6 +1347,7 @@ export default function LeavePoliciesPage() {
                     </label>
                     <input
                       type="number"
+                      step="any"
                       min="0"
                       value={formData.sandwich_limit_days}
                       onChange={(e) =>
@@ -1489,6 +1504,7 @@ export default function LeavePoliciesPage() {
                             </label>
                             <input
                               type="number"
+                              step="any"
                               min="0"
                               required
                               value={tier.min_service_days}
@@ -1504,6 +1520,7 @@ export default function LeavePoliciesPage() {
                             </label>
                             <input
                               type="number"
+                              step="any"
                               min="0"
                               required
                               value={tier.annual_quota}
@@ -1519,6 +1536,7 @@ export default function LeavePoliciesPage() {
                             </label>
                             <input
                               type="number"
+                              step="any"
                               min="0"
                               value={tier.sort_order}
                               onChange={(e) =>

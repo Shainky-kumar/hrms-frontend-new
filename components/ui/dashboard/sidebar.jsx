@@ -11,6 +11,7 @@ import {
   Settings,
   Clock,
   Wallet,
+  Building2,
 } from "lucide-react";
 
 const navItems = [
@@ -21,9 +22,11 @@ const navItems = [
   { label: "Leave Tracker", href: "/dashboard/leave/leave-policies", icon: CalendarDays },
   { label: "Attendance", href: "/dashboard/attendance/today", icon: Clock },
   { label: "Payroll", href: "/dashboard/payroll/run", icon: Wallet },
-  { label: "Settings", href: "/dashboard/settings/working-hours", icon: Settings },
   { label: "Shift Management", href: "/dashboard/shift-management/add-shift", icon: Clock },
   {label: "HR Letter", href: "/dashboard/hr_letter", icon: Clock },
+  { label: "Settings", href: "/dashboard/settings/working-hours", icon: Settings },
+  { label: "Company Profile", href: "/dashboard/company_profile", icon: Building2 },
+  { label: "Approval Config", href: "/dashboard/approval_config", icon: Settings },
 ];
 
 export default function Sidebar() {

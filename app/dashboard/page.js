@@ -59,6 +59,24 @@ function formatDate(value) {
   }
 }
 
+function calendarParts(value) {
+  if (!value) return { day: "--", month: "", weekday: "" };
+  try {
+    const date = new Date(
+      typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)
+        ? `${value}T00:00:00`
+        : value
+    );
+    return {
+      day: date.toLocaleDateString("en-IN", { day: "2-digit" }),
+      month: date.toLocaleDateString("en-IN", { month: "short" }),
+      weekday: date.toLocaleDateString("en-IN", { weekday: "short" }),
+    };
+  } catch {
+    return { day: "--", month: "", weekday: "" };
+  }
+}
+
 function greeting() {
   const h = new Date().getHours();
   if (h < 12) return "Good morning";
@@ -166,7 +184,11 @@ export default function HrmsDashboardPage() {
   }, []);
 
   useEffect(() => {
-    loadDashboard();
+    const timeoutId = setTimeout(() => {
+      loadDashboard();
+    }, 0);
+
+    return () => clearTimeout(timeoutId);
   }, [loadDashboard]);
 
   const headcount = summary?.headcount || {};
@@ -512,49 +534,82 @@ export default function HrmsDashboardPage() {
 
             {/* Holidays + Birthdays */}
             <div className="grid gap-4 lg:grid-cols-2">
-              <Panel title="Upcoming holidays" subtitle="Next 30 days">
+              <Panel
+                title="Upcoming holidays"
+                subtitle="Next 30 days"
+                right={
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-600 ring-1 ring-amber-100">
+                    <CalendarDays className="h-4.5 w-4.5" />
+                  </div>
+                }
+                className="overflow-hidden"
+              >
                 {holidays.length === 0 ? (
-                  <Empty text="No holidays upcoming" />
+                  <div className="flex items-center gap-3 rounded-xl border border-dashed border-slate-200 bg-slate-50/70 px-4 py-5">
+                    <Sun className="h-5 w-5 text-amber-500" />
+                    <p className="text-sm text-slate-500">No holidays upcoming</p>
+                  </div>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="space-y-2.5">
                     {holidays.map((h, i) => (
                       <div
                         key={h.holiday_id || i}
-                        className="flex items-center justify-between gap-3 rounded-xl bg-slate-50/80 px-3.5 py-3"
+                        className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/70 px-3 py-2.5 transition hover:border-amber-200 hover:bg-amber-50/40"
                       >
-                        <p className="text-sm font-medium text-slate-900">
-                          {h.name || h.holiday_name}
-                        </p>
-                        <span className="text-xs font-medium text-slate-600">
-                          {formatDate(h.date)}
-                        </span>
+                        {(() => {
+                          const date = calendarParts(h.date);
+                          return (
+                            <div className="flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-lg bg-white text-amber-700 shadow-sm ring-1 ring-amber-100">
+                              <span className="text-[10px] font-bold uppercase">{date.month}</span>
+                              <span className="text-lg font-bold leading-4">{date.day}</span>
+                            </div>
+                          );
+                        })()}
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-semibold text-slate-900">
+                            {h.name || h.holiday_name}
+                          </p>
+                          <p className="mt-0.5 text-xs text-slate-500">{formatDate(h.date)}</p>
+                        </div>
+                        <Sun className="h-4 w-4 shrink-0 text-amber-400" />
                       </div>
                     ))}
                   </div>
                 )}
               </Panel>
 
-              <Panel title="Birthdays this week" subtitle="Next 7 days">
+              <Panel
+                title="Birthdays this week"
+                subtitle="Next 7 days"
+                right={
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-50 text-rose-600 ring-1 ring-rose-100">
+                    <Cake className="h-4.5 w-4.5" />
+                  </div>
+                }
+                className="overflow-hidden"
+              >
                 {birthdays.length === 0 ? (
-                  <Empty text="No birthdays this week" />
+                  <div className="flex items-center gap-3 rounded-xl border border-dashed border-slate-200 bg-slate-50/70 px-4 py-5">
+                    <Cake className="h-5 w-5 text-rose-400" />
+                    <p className="text-sm text-slate-500">No birthdays this week</p>
+                  </div>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="space-y-2.5">
                     {birthdays.map((b, i) => (
                       <div
                         key={b.employee_id || i}
-                        className="flex items-center justify-between gap-3 rounded-xl bg-[#fef2f2]/70 px-3.5 py-3"
+                        className="flex items-center gap-3 rounded-xl border border-rose-100/80 bg-rose-50/50 px-3 py-2.5 transition hover:border-rose-200 hover:bg-rose-50"
                       >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#E42527] text-xs font-bold text-white">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#E42527] text-xs font-bold text-white shadow-sm shadow-red-200">
                             {(b.name || "E")[0]?.toUpperCase()}
-                          </div>
-                          <p className="truncate text-sm font-medium text-slate-900">
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-semibold text-slate-900">
                             {b.name || b.employee_id}
                           </p>
+                          <p className="mt-0.5 text-xs text-slate-500">{formatDate(b.birthday_on || b.dob)}</p>
                         </div>
-                        <span className="text-xs font-semibold text-[#E42527]">
-                          {formatDate(b.birthday_on || b.dob)}
-                        </span>
+                        <Cake className="h-4 w-4 shrink-0 text-[#E42527]" />
                       </div>
                     ))}
                   </div>

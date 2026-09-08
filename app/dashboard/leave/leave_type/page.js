@@ -92,7 +92,11 @@ export default function LeaveTypesPage() {
   }, [page, search]);
 
   useEffect(() => {
-    // fetchLeaveTypes();
+    const timeoutId = setTimeout(() => {
+      fetchLeaveTypes();
+    }, 0);
+
+    return () => clearTimeout(timeoutId);
   }, [fetchLeaveTypes]);
 
   function handleSearchSubmit(e) {
