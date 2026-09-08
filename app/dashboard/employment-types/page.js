@@ -337,47 +337,35 @@ export default function EmploymentTypePage() {
     return () => clearTimeout(timer);
   }, [search]);
 
-  useEffect(() => {
-    let mounted = true;
+  const fetchData = useCallback(async () => {
+    setError("");
+    setLoading(true);
 
-    (async () => {
-      if (mounted) {
-        setError("");
-        setLoading(true);
-      }
+    try {
+      const res = await api.get("/api/v1/get/employment/type", {
+        params: {
+          page,
+          page_size: pageSize,
+          search: debouncedSearch || undefined,
+          is_active: true,
+        },
+      });
 
-      try {
-        const res = await api.get("/api/v1/get/employment/type", {
-          params: {
-            page,
-            page_size: pageSize,
-            search: debouncedSearch || undefined,
-            is_active: true,
-          },
-        });
-
-        if (mounted) {
-          const data = res.data;
-          setList(data?.data ?? []);
-          setTotal(data?.total ?? 0);
-          setTotalPages(data?.total_pages ?? 0);
-        }
-      } catch (err) {
-        if (mounted) {
-          setError(formatApiError(err));
-          setList([]);
-        }
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
-      }
-    })();
-
-    return () => {
-      mounted = false;
-    };
+      const data = res.data;
+      setList(data?.data ?? []);
+      setTotal(data?.total ?? 0);
+      setTotalPages(data?.total_pages ?? 0);
+    } catch (err) {
+      setError(formatApiError(err));
+      setList([]);
+    } finally {
+      setLoading(false);
+    }
   }, [page, pageSize, debouncedSearch]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));

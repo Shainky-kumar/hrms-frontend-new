@@ -19,7 +19,7 @@ const leaveTabs = [
   // { label: "Experience Tiers", href: "/dashboard/leave/leave-tiers" },
   { label: "Applicability Rules", href: "/dashboard/leave/leave-applicability" },
   { label: "Clubbing Restrictions", href: "/dashboard/leave/leave-clubbing" },
-  { label: "Workflows", href: "/dashboard/leave/leave-workflows" },
+  // { label: "Workflows", href: "/dashboard/leave/leave-workflows" },
   { label: "Leave Balances", href: "/dashboard/leave/leave-balances" },
   { label: "Apply Leave", href: "/dashboard/leave/leave-requests" },
 ];
