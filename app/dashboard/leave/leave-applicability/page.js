@@ -1,8 +1,11 @@
-
 // "use client";
 
-// import { useCallback, useEffect, useState } from "react";
-// import { api } from "@/lib/api";
+// import { useCallback, useEffect, useRef, useState } from "react";
+// import { api } from "@/app/lib/api";
+
+// // ═══════════════════════════════════════════════════════════
+// // CONSTANTS
+// // ═══════════════════════════════════════════════════════════
 
 // const initialForm = {
 //   leave_policy_id: "",
@@ -20,254 +23,407 @@
 //   { value: "employee_id", label: "Employee ID" },
 // ];
 
-// const formatApiError = (err) => {
+// // Which master data source maps to each criteria type
+// const criteriaValueConfig = {
+//   department: { label: "Department", masterKey: "departments" },
+//   location: { label: "Location", masterKey: "locations" },
+//   employment_type: { label: "Employment Type", masterKey: "employment_types" },
+//   role: { label: "Designation", masterKey: "designations" },
+//   employee_id: { label: "Employee", masterKey: "employees" },
+// };
+
+// const BULK_WARN_THRESHOLD = 50;
+// const SUCCESS_TIMEOUT = 3000;
+// const PAGE_SIZE = 12;
+
+// // ═══════════════════════════════════════════════════════════
+// // HELPERS
+// // ═══════════════════════════════════════════════════════════
+
+// function formatApiError(err) {
 //   const detail = err?.response?.data?.detail;
 //   if (Array.isArray(detail)) {
 //     return detail
-//       .map((e) =>
-//         Array.isArray(e.loc) ? `${e.loc.slice(1).join(".")}: ${e.msg}` : e.msg
-//       )
+//       .map((e) => {
+//         const field = Array.isArray(e.loc) ? e.loc.slice(1).join(".") : "";
+//         return field ? `${field}: ${e.msg}` : e.msg;
+//       })
 //       .join(" • ");
 //   }
 //   if (typeof detail === "string") return detail;
-//   return err?.message || "Something went wrong";
-// };
+//   if (err?.message === "Network Error") return "Cannot reach server.";
+//   return err?.response?.data?.message || err?.message || "Something went wrong";
+// }
 
-// const getItems = (response) => {
-//   const data = response?.data?.data ?? response?.data ?? [];
-//   if (Array.isArray(data)) return data;
-//   return (
-//     data?.items ??
-//     data?.results ??
-//     data?.policies ??
-//     data?.leave_policies ??
-//     data?.applicability_rules ??
-//     data?.rules ??
-//     data?.data ??
-//     response?.data?.policies ??
-//     response?.data?.leave_policies ??
-//     []
-//   );
-// };
-
-// const getPolicyId = (policy) =>
-//   policy.leave_policy_id || policy.policy_id || policy.id || policy._id;
-
-// const getPolicyName = (policy) =>
-//   policy.policy_name ||
-//   policy.leave_policy_name ||
-//   policy.name ||
-//   getPolicyId(policy);
+// const getPolicyId = (p) => p?.leave_policy_id || null;
+// const getPolicyName = (p) => p?.policy_name || getPolicyId(p) || "Unknown policy";
 
 // const getCriteriaLabel = (type) =>
 //   criteriaTypeOptions.find((o) => o.value === type)?.label ||
 //   (type || "").replace(/_/g, " ");
 
-// const getMasterItems = (response, keys = []) => {
-//   const data = response?.data?.data ?? response?.data ?? [];
-//   if (Array.isArray(data)) return data;
-//   return keys.reduce((items, key) => items || data?.[key], null) ||
-//     data?.items ||
-//     data?.results ||
-//     data?.data ||
-//     [];
-// };
+// // Master item ID extractor — based on which type
+// function getMasterItemId(type, item) {
+//   if (!item) return null;
+//   switch (type) {
+//     case "department":      return item.department_id || null;
+//     case "location":        return item.location_id || null;
+//     case "employment_type": return item.employment_type_id || null;
+//     case "role":            return item.designation_id || null;
+//     case "employee_id":     return item.employee_id || null;
+//     default:                return null;
+//   }
+// }
 
-// const getOptionId = (item) =>
-//   item?.id ||
-//   item?.department_id ||
-//   item?.employee_id ||
-//   item?.location_id ||
-//   item?.employment_type_id ||
-//   item?.designation_id ||
-//   item?.employment_type_code ||
-//   item?.code ||
-//   item?._id;
+// function getMasterItemLabel(type, item) {
+//   if (!item) return "—";
+//   switch (type) {
+//     case "department":      return item.department_name || getMasterItemId(type, item);
+//     case "location":        return item.location_name || getMasterItemId(type, item);
+//     case "employment_type": return item.name || item.employment_type_name || getMasterItemId(type, item);
+//     case "role":            return item.job_title || item.designation_name || getMasterItemId(type, item);
+//     case "employee_id":     return item.name || [item.first_name, item.last_name].filter(Boolean).join(" ") || item.personal_email || getMasterItemId(type, item);
+//     default:                return getMasterItemId(type, item);
+//   }
+// }
 
-// const getEmployeeName = (employee) =>
-//   employee?.name ||
-//   [employee?.first_name, employee?.last_name].filter(Boolean).join(" ") ||
-//   employee?.company_email ||
-//   getOptionId(employee);
-
-// const criteriaValueConfig = {
-//   department: { label: "Department", itemsKey: "departments" },
-//   location: { label: "Location", itemsKey: "locations" },
-//   employment_type: { label: "Employment Type", itemsKey: "employment_types" },
-//   role: { label: "Role", itemsKey: "designations" },
-//   employee_id: { label: "Employee", itemsKey: "employees" },
-// };
-
-// const getCriteriaOptionLabel = (type, item) => {
-//   if (type === "employee_id") return getEmployeeName(item);
-//   return (
-//     item?.department_name ||
-//     item?.location_name ||
-//     item?.employment_type_name ||
-//     item?.employment_type ||
-//     item?.designation_name ||
-//     item?.job_title ||
-//     item?.name ||
-//     item?.title ||
-//     getOptionId(item)
-//   );
-// };
+// // ═══════════════════════════════════════════════════════════
+// // PAGE
+// // ═══════════════════════════════════════════════════════════
 
 // export default function LeaveApplicabilityRulesPage() {
+//   // List state
 //   const [list, setList] = useState([]);
-//   const [formData, setFormData] = useState(initialForm);
+//   const [total, setTotal] = useState(0);
+//   const [page, setPage] = useState(1);
+//   const [search, setSearch] = useState("");
+//   const [filterPolicyId, setFilterPolicyId] = useState("");
 //   const [loading, setLoading] = useState(true);
-//   const [saving, setSaving] = useState(false);
+
+//   // Feedback
 //   const [error, setError] = useState("");
+//   const [success, setSuccess] = useState("");
+//   const successTimerRef = useRef(null);
+
+//   // Form
 //   const [showForm, setShowForm] = useState(false);
 //   const [editId, setEditId] = useState(null);
-//   const [search, setSearch] = useState("");
-//   const [page, setPage] = useState(1);
-//   const [pageSize] = useState(12);
-//   const [total, setTotal] = useState(0);
-//   const [leavePolicyId, setLeavePolicyId] = useState(""); // "" = All
+//   const [formData, setFormData] = useState(initialForm);
+//   const [saving, setSaving] = useState(false);
+
+//   // Bulk form
+//   const [isBulkMode, setIsBulkMode] = useState(false);
+//   const [bulkPolicyId, setBulkPolicyId] = useState("");
+//   const [bulkCriteriaType, setBulkCriteriaType] = useState("employee_id");
+//   const [bulkSelectedValues, setBulkSelectedValues] = useState([]);
+//   const [bulkIsException, setBulkIsException] = useState(false);
+
+//   // Masters + policies
 //   const [leavePolicies, setLeavePolicies] = useState([]);
-//   const [selectedRule, setSelectedRule] = useState(null);
-//   const [criteriaMasters, setCriteriaMasters] = useState({
+//   const [masters, setMasters] = useState({
 //     departments: [],
 //     locations: [],
 //     employment_types: [],
 //     designations: [],
 //     employees: [],
 //   });
+//   const [mastersLoading, setMastersLoading] = useState(true);
 
-//   // Load policies
+//   // Details modal
+//   const [selectedRule, setSelectedRule] = useState(null);
+
+//   // ═════════════════════════════════════════════════════════
+//   // SUCCESS AUTO-CLEAR
+//   // ═════════════════════════════════════════════════════════
+
+//   const showSuccess = useCallback((msg) => {
+//     setSuccess(msg);
+//     if (successTimerRef.current) clearTimeout(successTimerRef.current);
+//     successTimerRef.current = setTimeout(() => setSuccess(""), SUCCESS_TIMEOUT);
+//   }, []);
+
+//   useEffect(() => () => {
+//     if (successTimerRef.current) clearTimeout(successTimerRef.current);
+//   }, []);
+
+//   // ═════════════════════════════════════════════════════════
+//   // LOAD POLICIES
+//   // ═════════════════════════════════════════════════════════
+
 //   useEffect(() => {
-//     const fetchPolicies = async () => {
+//     (async () => {
 //       try {
-//         const response = await api.get("/api/v1/leave/policies", {
+//         const res = await api.get("/api/v1/leave/policies", {
 //           params: { page: 1, page_size: 200 },
 //         });
-//         const policies = getItems(response);
-//         setLeavePolicies(Array.isArray(policies) ? policies : []);
+//         const items = res.data?.policies || [];
+//         setLeavePolicies(Array.isArray(items) ? items : []);
 //       } catch (err) {
-//         console.error("Policies error:", err);
+//         console.error("Failed to load policies:", err);
 //         setLeavePolicies([]);
 //       }
-//     };
-//     fetchPolicies();
+//     })();
 //   }, []);
+
+//   // ═════════════════════════════════════════════════════════
+//   // LOAD MASTERS
+//   // ═════════════════════════════════════════════════════════
 
 //   useEffect(() => {
-//     const fetchCriteriaMasters = async () => {
-//       const requests = {
-//         departments: api.get("/api/v1/get/departments", { params: { page: 1, page_size: 500 } }),
-//         locations: api.get("/api/v1/get/location/master", { params: { page: 1, page_size: 500 } }),
-//         employment_types: api.get("/api/v1/get/employment/type"),
-//         designations: api.get("/api/v1/get/designations", { params: { page: 1, page_size: 500 } }),
-//         employees: api.get("/api/v1/get/employees", { params: { page: 1, page_size: 500 } }),
+//     (async () => {
+//       setMastersLoading(true);
+//       const fetchOne = async (url, params) => {
+//         try {
+//           const res = await api.get(url, { params });
+//           return res.data;
+//         } catch {
+//           return null;
+//         }
 //       };
-//       const entries = await Promise.all(
-//         Object.entries(requests).map(async ([key, request]) => {
-//           try {
-//             const response = await request;
-//             const keys = [key, key.replace(/s$/, "")];
-//             return [key, getMasterItems(response, keys)];
-//           } catch {
-//             return [key, []];
-//           }
-//         })
-//       );
-//       setCriteriaMasters(Object.fromEntries(entries));
-//     };
 
-//     fetchCriteriaMasters();
+//       const [departmentsRes, locationsRes, employmentRes, designationsRes, employeesRes] =
+//         await Promise.all([
+//           fetchOne("/api/v1/get/departments", { page: 1, page_size: 500 }),
+//           fetchOne("/api/v1/get/location/master", { page: 1, page_size: 500 }),
+//           fetchOne("/api/v1/get/employment/type"),
+//           fetchOne("/api/v1/get/designations", { page: 1, page_size: 500 }),
+//           fetchOne("/api/v1/get/employees"),
+//         ]);
+
+//       setMasters({
+//         departments: departmentsRes?.departments || [],
+//         locations: locationsRes?.locations || [],
+//         employment_types:
+//           employmentRes?.data || employmentRes?.employment_types || [],
+//         designations: designationsRes?.designations || [],
+//         employees: employeesRes?.employees || [],
+//       });
+//       setMastersLoading(false);
+//     })();
 //   }, []);
 
-//   // Load rules (default = ALL)
+//   // ═════════════════════════════════════════════════════════
+//   // FETCH RULES
+//   // ═════════════════════════════════════════════════════════
+
 //   const fetchData = useCallback(async () => {
 //     setLoading(true);
 //     setError("");
 //     try {
 //       const params = {
 //         page,
-//         page_size: pageSize,
+//         page_size: PAGE_SIZE,
 //         search: search || undefined,
 //       };
-//       if (leavePolicyId) {
-//         params.leave_policy_id = leavePolicyId;
-//       }
+//       if (filterPolicyId) params.leave_policy_id = filterPolicyId;
 
 //       const res = await api.get("/api/v1/leave/applicability/rules", { params });
-
-//       const items = getItems(res);
+//       const items = res.data?.applicability_rules || [];
 //       setList(Array.isArray(items) ? items : []);
-//       setTotal(
-//         res.data?.total ??
-//           res.data?.count ??
-//           res.data?.data?.total ??
-//           items.length
-//       );
+//       setTotal(Number(res.data?.total) || items.length);
 //     } catch (err) {
 //       setError(formatApiError(err));
 //       setList([]);
+//       setTotal(0);
 //     } finally {
 //       setLoading(false);
 //     }
-//   }, [leavePolicyId, page, pageSize, search]);
+//   }, [filterPolicyId, page, search]);
 
 //   useEffect(() => {
-//     const t = setTimeout(() => fetchData(), 0);
-//     return () => clearTimeout(t);
+//     const timeoutId = setTimeout(() => {
+//       fetchData();
+//     }, 0);
+
+//     return () => clearTimeout(timeoutId);
 //   }, [fetchData]);
 
-//   const handleChange = (field, value) => {
-//     setFormData((prev) => ({ ...prev, [field]: value }));
+//   // ═════════════════════════════════════════════════════════
+//   // FORM OPEN / CLOSE
+//   // ═════════════════════════════════════════════════════════
+
+//   const resetForm = () => {
+//     setFormData(initialForm);
+//     setEditId(null);
+//     setIsBulkMode(false);
+//     setBulkSelectedValues([]);
+//     setBulkPolicyId("");
+//     setBulkCriteriaType("employee_id");
+//     setBulkIsException(false);
+//     setError("");
 //   };
 
 //   const openAdd = () => {
-//     setEditId(null);
+//     resetForm();
 //     setFormData({
 //       ...initialForm,
-//       leave_policy_id: leavePolicyId || (leavePolicies[0] ? String(getPolicyId(leavePolicies[0])) : ""),
+//       leave_policy_id:
+//         filterPolicyId || (leavePolicies[0] ? String(getPolicyId(leavePolicies[0])) : ""),
 //     });
-//     setError("");
+//     setShowForm(true);
+//   };
+
+//   const openBulkAdd = () => {
+//     resetForm();
+//     setIsBulkMode(true);
+//     setBulkPolicyId(
+//       filterPolicyId || (leavePolicies[0] ? String(getPolicyId(leavePolicies[0])) : "")
+//     );
 //     setShowForm(true);
 //   };
 
 //   const openEdit = (item) => {
-//     setEditId(item.applicability_id || item.id);
+//     setEditId(item.applicability_id);
 //     setFormData({
-//       ...initialForm,
 //       leave_policy_id: item.leave_policy_id || "",
 //       criteria_type: item.criteria_type || "department",
 //       criteria_value: item.criteria_value || "",
 //       is_exception: !!item.is_exception,
 //     });
+//     setIsBulkMode(false);
 //     setError("");
 //     setShowForm(true);
 //   };
 
+//   const closeForm = () => {
+//     if (saving) return;
+//     setShowForm(false);
+//     resetForm();
+//   };
+
+//   // ═════════════════════════════════════════════════════════
+//   // DUPLICATE CHECK (fresh fetch — no stale cache)
+//   // ═════════════════════════════════════════════════════════
+
+//   const filterNewValues = async (policyId, criteriaType, values) => {
+//     try {
+//       const res = await api.get("/api/v1/leave/applicability/rules", {
+//         params: { page: 1, page_size: 1000, leave_policy_id: policyId },
+//       });
+//       const existing = res.data?.applicability_rules || [];
+//       const existingSet = new Set(
+//         existing
+//           .filter((r) => r.criteria_type === criteriaType)
+//           .map((r) => String(r.criteria_value))
+//       );
+//       return values.filter((v) => !existingSet.has(String(v)));
+//     } catch {
+//       return values; // network fail — don't block, backend will error if dup
+//     }
+//   };
+
+//   // ═════════════════════════════════════════════════════════
+//   // SUBMIT
+//   // ═════════════════════════════════════════════════════════
+
 //   const handleSubmit = async (e) => {
 //     e.preventDefault();
-//     setSaving(true);
 //     setError("");
-//     try {
-//       if (editId) {
+
+//     // ─── BULK ───
+//     if (isBulkMode) {
+//       if (!bulkPolicyId) return setError("Please select a Leave Policy");
+//       if (bulkSelectedValues.length === 0)
+//         return setError("Please select at least one value");
+
+//       if (
+//         bulkSelectedValues.length > BULK_WARN_THRESHOLD &&
+//         !confirm(
+//           `You are about to create ${bulkSelectedValues.length} rules. Continue?`
+//         )
+//       )
+//         return;
+
+//       setSaving(true);
+//       try {
+//         const newValues = await filterNewValues(
+//           bulkPolicyId,
+//           bulkCriteriaType,
+//           bulkSelectedValues
+//         );
+
+//         if (newValues.length === 0) {
+//           setError("All selected values already have a rule for this policy.");
+//           setSaving(false);
+//           return;
+//         }
+
+//         const payload = newValues.map((value) => ({
+//           leave_policy_id: bulkPolicyId,
+//           criteria_type: bulkCriteriaType,
+//           criteria_value: String(value),
+//           is_exception: !!bulkIsException,
+//         }));
+
+//         await api.post("/api/v1/leave/applicability/rules/bulk", payload);
+
+//         const skipped = bulkSelectedValues.length - newValues.length;
+//         showSuccess(
+//           `Created ${newValues.length} rule(s)${skipped ? `, skipped ${skipped} duplicate(s)` : ""}`
+//         );
+
+//         closeForm();
+//         await fetchData();
+//       } catch (err) {
+//         setError(formatApiError(err));
+//       } finally {
+//         setSaving(false);
+//       }
+//       return;
+//     }
+
+//     // ─── EDIT ───
+//     if (editId) {
+//       if (!formData.criteria_type || !formData.criteria_value)
+//         return setError("Criteria type and value are required");
+
+//       setSaving(true);
+//       try {
+//         // NOTE: leave_policy_id is NOT sent in update (backend schema ignores it)
 //         await api.put(`/api/v1/leave/applicability/rules/${editId}`, {
 //           criteria_type: formData.criteria_type,
-//           criteria_value: formData.criteria_value,
+//           criteria_value: String(formData.criteria_value),
 //           is_exception: !!formData.is_exception,
 //         });
-//       } else {
-//         await api.post("/api/v1/leave/applicability/rules/bulk", [
-//           {
-//             leave_policy_id: formData.leave_policy_id,
-//             criteria_type: formData.criteria_type,
-//             criteria_value: formData.criteria_value,
-//             is_exception: !!formData.is_exception,
-//           },
-//         ]);
+//         showSuccess("Rule updated successfully");
+//         closeForm();
+//         await fetchData();
+//       } catch (err) {
+//         setError(formatApiError(err));
+//       } finally {
+//         setSaving(false);
+//       }
+//       return;
+//     }
+
+//     // ─── CREATE ───
+//     if (!formData.leave_policy_id)
+//       return setError("Please select a Leave Policy");
+//     if (!formData.criteria_value)
+//       return setError("Criteria value is required");
+
+//     setSaving(true);
+//     try {
+//       const newValues = await filterNewValues(
+//         formData.leave_policy_id,
+//         formData.criteria_type,
+//         [String(formData.criteria_value)]
+//       );
+
+//       if (newValues.length === 0) {
+//         setError("This value already has a rule for this policy.");
+//         setSaving(false);
+//         return;
 //       }
 
-//       setShowForm(false);
-//       setFormData(initialForm);
-//       setEditId(null);
+//       await api.post("/api/v1/leave/applicability/rules", {
+//         leave_policy_id: formData.leave_policy_id,
+//         criteria_type: formData.criteria_type,
+//         criteria_value: String(formData.criteria_value),
+//         is_exception: !!formData.is_exception,
+//       });
+//       showSuccess("Rule created successfully");
+//       closeForm();
 //       await fetchData();
 //     } catch (err) {
 //       setError(formatApiError(err));
@@ -276,31 +432,86 @@
 //     }
 //   };
 
+//   // ═════════════════════════════════════════════════════════
+//   // DELETE
+//   // ═════════════════════════════════════════════════════════
+
 //   const handleDelete = async (item) => {
-//     if (!confirm("Are you sure you want to delete this rule?")) return;
+//     if (!confirm("Delete this rule? This cannot be undone.")) return;
 //     try {
-//       await api.delete(
-//         `/api/v1/leave/applicability/rules/${item.applicability_id || item.id}`
-//       );
+//       await api.delete(`/api/v1/leave/applicability/rules/${item.applicability_id}`);
 //       setSelectedRule(null);
+//       showSuccess("Rule deleted");
 //       await fetchData();
 //     } catch (err) {
 //       setError(formatApiError(err));
 //     }
 //   };
 
-//   const totalPages = Math.ceil(total / pageSize) || 1;
+//   // ═════════════════════════════════════════════════════════
+//   // HELPERS
+//   // ═════════════════════════════════════════════════════════
+
+//   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+//   const canPrev = page > 1;
+//   const canNext = page < totalPages;
 
 //   const getPolicyNameById = (id) => {
-//     const policy = leavePolicies.find(
-//       (p) => String(getPolicyId(p)) === String(id)
-//     );
-//     return policy ? getPolicyName(policy) : id || "—";
+//     const p = leavePolicies.find((x) => String(getPolicyId(x)) === String(id));
+//     return p ? getPolicyName(p) : id || "—";
 //   };
+
+//   const getCriteriaValueLabel = (type, value) => {
+//     if (!value) return "—";
+//     if (type === "gender")
+//       return value.charAt(0).toUpperCase() + value.slice(1);
+
+//     const config = criteriaValueConfig[type];
+//     if (!config) return value;
+
+//     const items = masters[config.masterKey] || [];
+//     const found = items.find(
+//       (item) => String(getMasterItemId(type, item)) === String(value)
+//     );
+//     return found ? getMasterItemLabel(type, found) : value;
+//   };
+
+//   const getBulkMasterItems = () => {
+//     if (bulkCriteriaType === "gender")
+//       return ["male", "female", "other"].map((g) => ({
+//         id: g,
+//         label: g.charAt(0).toUpperCase() + g.slice(1),
+//       }));
+
+//     const config = criteriaValueConfig[bulkCriteriaType];
+//     if (!config) return [];
+
+//     return (masters[config.masterKey] || [])
+//       .map((item) => ({
+//         id: String(getMasterItemId(bulkCriteriaType, item) || ""),
+//         label: getMasterItemLabel(bulkCriteriaType, item),
+//       }))
+//       .filter((x) => x.id);
+//   };
+
+//   const toggleBulkValue = (id) => {
+//     setBulkSelectedValues((prev) =>
+//       prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id]
+//     );
+//   };
+
+//   const selectAllBulk = () =>
+//     setBulkSelectedValues(getBulkMasterItems().map((x) => x.id));
+
+//   const clearAllBulk = () => setBulkSelectedValues([]);
+
+//   // ═════════════════════════════════════════════════════════
+//   // RENDER
+//   // ═════════════════════════════════════════════════════════
 
 //   return (
 //     <div>
-//       {/* Header */}
+//       {/* ══════════ HEADER ══════════ */}
 //       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 //         <div>
 //           <h1 className="text-xl font-semibold text-slate-800">
@@ -310,33 +521,68 @@
 //             Configure which employees can access leave policies
 //           </p>
 //         </div>
-//         <button
-//           type="button"
-//           onClick={openAdd}
-//           className="inline-flex items-center gap-2 rounded-lg bg-[#E42527] px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-[#c91f21]"
-//         >
-//           + Add Rule
-//         </button>
+//         <div className="flex gap-2">
+//           <button
+//             type="button"
+//             onClick={openBulkAdd}
+//             className="inline-flex items-center gap-2 rounded-lg border border-[#E42527] px-4 py-2.5 text-sm font-medium text-[#E42527] hover:bg-red-50"
+//           >
+//             Bulk Add
+//           </button>
+//           <button
+//             type="button"
+//             onClick={openAdd}
+//             className="inline-flex items-center gap-2 rounded-lg bg-[#E42527] px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-[#c91f21]"
+//           >
+//             + Add Rule
+//           </button>
+//         </div>
 //       </div>
 
+//       {/* ══════════ FEEDBACK BANNERS ══════════ */}
+//       {error && !showForm && (
+//         <div className="mb-4 flex items-start gap-3 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+//           <span className="flex-1">{error}</span>
+//           <button
+//             onClick={() => setError("")}
+//             className="opacity-60 hover:opacity-100"
+//             aria-label="Dismiss"
+//           >
+//             ✕
+//           </button>
+//         </div>
+//       )}
+//       {success && (
+//         <div className="mb-4 flex items-start gap-3 rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+//           <span className="flex-1">✓ {success}</span>
+//           <button
+//             onClick={() => setSuccess("")}
+//             className="opacity-60 hover:opacity-100"
+//             aria-label="Dismiss"
+//           >
+//             ✕
+//           </button>
+//         </div>
+//       )}
+
+//       {/* ══════════ LIST CARD ══════════ */}
 //       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-//         {/* Toolbar */}
 //         <div className="flex flex-col gap-3 border-b border-slate-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
 //           <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
 //             <select
-//               value={leavePolicyId}
+//               value={filterPolicyId}
 //               onChange={(e) => {
-//                 setLeavePolicyId(e.target.value);
+//                 setFilterPolicyId(e.target.value);
 //                 setPage(1);
 //               }}
-//               className="w-full max-w-xs rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-[#E42527] focus:bg-white"
+//               className="w-full max-w-xs rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-[#E42527]"
 //             >
 //               <option value="">All Policies</option>
-//               {leavePolicies.map((policy) => {
-//                 const id = getPolicyId(policy);
+//               {leavePolicies.map((p) => {
+//                 const id = getPolicyId(p);
 //                 return id ? (
 //                   <option key={id} value={String(id)}>
-//                     {getPolicyName(policy)}
+//                     {getPolicyName(p)}
 //                   </option>
 //                 ) : null;
 //               })}
@@ -349,25 +595,36 @@
 //                 setPage(1);
 //               }}
 //               placeholder="Search rules..."
-//               className="w-full max-w-xs rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-[#E42527] focus:bg-white"
+//               className="w-full max-w-xs rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-[#E42527]"
 //             />
 //           </div>
 //           <span className="text-sm text-slate-500">{total} rules</span>
 //         </div>
 
-//         {error && !showForm && (
-//           <div className="mx-4 mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
-//             {error}
+//         {loading ? (
+//           <div className="py-20 text-center text-sm text-slate-500">Loading...</div>
+//         ) : list.length === 0 ? (
+//           <div className="py-20 text-center">
+//             <p className="text-sm text-slate-500">
+//               {search || filterPolicyId
+//                 ? "No rules match your filters"
+//                 : "No applicability rules yet"}
+//             </p>
+//             {!search && !filterPolicyId && (
+//               <button
+//                 onClick={openAdd}
+//                 className="mt-3 rounded-lg bg-[#E42527] px-4 py-2 text-sm font-medium text-white hover:bg-[#c91f21]"
+//               >
+//                 + Create your first rule
+//               </button>
+//             )}
 //           </div>
-//         )}
-
-//         {/* Cards */}
-//         {!loading && list.length > 0 && (
+//         ) : (
 //           <div className="grid gap-4 border-b border-slate-100 bg-slate-50/50 p-4 sm:grid-cols-2 xl:grid-cols-3">
-//             {list.map((item, index) => (
+//             {list.map((item) => (
 //               <button
 //                 type="button"
-//                 key={item.applicability_id || item.id || index}
+//                 key={item.applicability_id}
 //                 onClick={() => setSelectedRule(item)}
 //                 className="group rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-red-200 hover:shadow-md"
 //               >
@@ -376,11 +633,11 @@
 //                     <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
 //                       Applicability Rule
 //                     </p>
-//                     <h3 className="mt-1 truncate text-base font-semibold text-slate-800 capitalize">
+//                     <h3 className="mt-1 truncate text-base font-semibold capitalize text-slate-800">
 //                       {getCriteriaLabel(item.criteria_type)}
 //                     </h3>
 //                     <span className="mt-2 inline-flex items-center rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
-//                       {item.criteria_value || "—"}
+//                       {getCriteriaValueLabel(item.criteria_type, item.criteria_value)}
 //                     </span>
 //                   </div>
 //                   <span
@@ -408,31 +665,11 @@
 //                     </p>
 //                   </div>
 //                 </div>
-
-//                 <div className="mt-4 flex items-center justify-end border-t border-slate-100 pt-3">
-//                   <span className="text-xs font-semibold text-[#E42527] opacity-0 transition group-hover:opacity-100">
-//                     View details →
-//                   </span>
-//                 </div>
 //               </button>
 //             ))}
 //           </div>
 //         )}
 
-//         {/* Loading / Empty */}
-//         <div>
-//           {loading ? (
-//             <div className="py-20 text-center text-sm text-slate-500">
-//               Loading...
-//             </div>
-//           ) : list.length === 0 ? (
-//             <div className="py-20 text-center text-sm text-slate-500">
-//               No rules found
-//             </div>
-//           ) : null}
-//         </div>
-
-//         {/* Pagination */}
 //         {totalPages > 1 && (
 //           <div className="flex justify-between border-t border-slate-100 px-4 py-3">
 //             <span className="text-sm text-slate-500">
@@ -440,16 +677,16 @@
 //             </span>
 //             <div className="flex gap-2">
 //               <button
-//                 disabled={page <= 1}
+//                 disabled={!canPrev}
 //                 onClick={() => setPage((p) => p - 1)}
-//                 className="rounded-lg border px-3 py-1.5 text-sm disabled:opacity-40"
+//                 className="rounded-lg border px-3 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-40"
 //               >
 //                 Prev
 //               </button>
 //               <button
-//                 disabled={page >= totalPages}
+//                 disabled={!canNext}
 //                 onClick={() => setPage((p) => p + 1)}
-//                 className="rounded-lg border px-3 py-1.5 text-sm disabled:opacity-40"
+//                 className="rounded-lg border px-3 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-40"
 //               >
 //                 Next
 //               </button>
@@ -458,21 +695,28 @@
 //         )}
 //       </div>
 
-//       {/* Add / Edit Modal */}
+//       {/* ══════════ FORM MODAL ══════════ */}
 //       {showForm && (
-//         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-900/50 p-4 pt-10 backdrop-blur-[2px]">
+//         <div
+//           className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-900/50 p-4 pt-10 backdrop-blur-[2px]"
+//           onClick={(e) => {
+//             if (e.target === e.currentTarget) closeForm();
+//           }}
+//         >
 //           <div className="mb-10 w-full max-w-3xl overflow-hidden rounded-xl bg-white shadow-2xl">
 //             <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
 //               <h2 className="text-base font-semibold text-slate-800">
-//                 {editId ? "Edit Applicability Rule" : "Add Applicability Rule"}
+//                 {isBulkMode
+//                   ? "Bulk Add Applicability Rules"
+//                   : editId
+//                   ? "Edit Applicability Rule"
+//                   : "Add Applicability Rule"}
 //               </h2>
 //               <button
 //                 type="button"
-//                 onClick={() => {
-//                   setShowForm(false);
-//                   setError("");
-//                 }}
-//                 className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100"
+//                 onClick={closeForm}
+//                 disabled={saving}
+//                 className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 disabled:opacity-40"
 //               >
 //                 ✕
 //               </button>
@@ -480,122 +724,272 @@
 
 //             <form onSubmit={handleSubmit}>
 //               <div className="max-h-[70vh] space-y-5 overflow-y-auto px-5 py-5">
-//                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-//                   <div>
-//                     <label className="mb-1.5 block text-sm font-medium text-slate-700">
-//                       Leave Policy *
-//                     </label>
-//                     <select
-//                       required
-//                       value={formData.leave_policy_id}
-//                       onChange={(e) =>
-//                         handleChange("leave_policy_id", e.target.value)
-//                       }
-//                       className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#E42527] focus:ring-1 focus:ring-[#E42527]/30"
-//                     >
-//                       <option value="">Select leave policy</option>
-//                       {leavePolicies.map((policy) => {
-//                         const id = getPolicyId(policy);
-//                         return id ? (
-//                           <option key={id} value={String(id)}>
-//                             {getPolicyName(policy)}
-//                           </option>
-//                         ) : null;
-//                       })}
-//                     </select>
-//                   </div>
+//                 {isBulkMode ? (
+//                   <>
+//                     {/* Bulk: Policy */}
+//                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+//                       <div>
+//                         <label className="mb-1.5 block text-sm font-medium text-slate-700">
+//                           Leave Policy *
+//                         </label>
+//                         <select
+//                           required
+//                           value={bulkPolicyId}
+//                           onChange={(e) => setBulkPolicyId(e.target.value)}
+//                           className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#E42527]"
+//                         >
+//                           <option value="">Select leave policy</option>
+//                           {leavePolicies.map((p) => {
+//                             const id = getPolicyId(p);
+//                             return id ? (
+//                               <option key={id} value={String(id)}>
+//                                 {getPolicyName(p)}
+//                               </option>
+//                             ) : null;
+//                           })}
+//                         </select>
+//                       </div>
 
-//                   <div>
-//                     <label className="mb-1.5 block text-sm font-medium text-slate-700">
-//                       Criteria Type *
-//                     </label>
-//                     <select
-//                       value={formData.criteria_type}
-//                       onChange={(e) => {
-//                         setFormData((prev) => ({
-//                           ...prev,
-//                           criteria_type: e.target.value,
-//                           criteria_value: "",
-//                         }));
-//                       }}
-//                       className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#E42527]"
-//                     >
-//                       {criteriaTypeOptions.map((opt) => (
-//                         <option key={opt.value} value={opt.value}>
-//                           {opt.label}
-//                         </option>
-//                       ))}
-//                     </select>
-//                   </div>
+//                       <div>
+//                         <label className="mb-1.5 block text-sm font-medium text-slate-700">
+//                           Criteria Type *
+//                         </label>
+//                         <select
+//                           value={bulkCriteriaType}
+//                           onChange={(e) => {
+//                             setBulkCriteriaType(e.target.value);
+//                             setBulkSelectedValues([]);
+//                           }}
+//                           className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#E42527]"
+//                         >
+//                           {criteriaTypeOptions.map((opt) => (
+//                             <option key={opt.value} value={opt.value}>
+//                               {opt.label}
+//                             </option>
+//                           ))}
+//                         </select>
+//                       </div>
+//                     </div>
 
-//                   <div className="sm:col-span-2">
-//                     <label className="mb-1.5 block text-sm font-medium text-slate-700">
-//                       Criteria Value *
-//                     </label>
-//                     {formData.criteria_type === "gender" ? (
+//                     {/* Bulk: Multi-select */}
+//                     <div>
+//                       <div className="mb-2 flex items-center justify-between">
+//                         <label className="text-sm font-medium text-slate-700">
+//                           Select {getCriteriaLabel(bulkCriteriaType)} *
+//                         </label>
+//                         <div className="flex gap-3 text-xs">
+//                           <button
+//                             type="button"
+//                             onClick={selectAllBulk}
+//                             className="text-blue-600 hover:underline"
+//                           >
+//                             Select All
+//                           </button>
+//                           <button
+//                             type="button"
+//                             onClick={clearAllBulk}
+//                             className="text-red-600 hover:underline"
+//                           >
+//                             Clear
+//                           </button>
+//                         </div>
+//                       </div>
+//                       <p className="mb-2 text-xs text-slate-500">
+//                         Tick the values you want. Duplicates will be skipped automatically.
+//                       </p>
+
+//                       <div className="max-h-60 overflow-y-auto rounded-lg border border-slate-200 p-3">
+//                         {mastersLoading ? (
+//                           <p className="py-6 text-center text-xs text-slate-400">
+//                             Loading...
+//                           </p>
+//                         ) : getBulkMasterItems().length === 0 ? (
+//                           <p className="py-6 text-center text-xs text-slate-400">
+//                             No items available
+//                           </p>
+//                         ) : (
+//                           getBulkMasterItems().map((item) => (
+//                             <label
+//                               key={item.id}
+//                               className="flex cursor-pointer items-center gap-2 py-1.5 text-sm hover:bg-slate-50"
+//                             >
+//                               <input
+//                                 type="checkbox"
+//                                 checked={bulkSelectedValues.includes(item.id)}
+//                                 onChange={() => toggleBulkValue(item.id)}
+//                                 className="rounded border-slate-300 text-[#E42527]"
+//                               />
+//                               <span className="text-slate-700">{item.label}</span>
+//                             </label>
+//                           ))
+//                         )}
+//                       </div>
+//                       <p className="mt-1.5 text-xs font-medium text-slate-600">
+//                         Selected: {bulkSelectedValues.length}
+//                       </p>
+//                     </div>
+
+//                     <div>
+//                       <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
+//                         <input
+//                           type="checkbox"
+//                           checked={bulkIsException}
+//                           onChange={(e) => setBulkIsException(e.target.checked)}
+//                           className="rounded border-slate-300 text-[#E42527]"
+//                         />
+//                         <span className="font-medium">
+//                           Is Exception (Exclude these employees)
+//                         </span>
+//                       </label>
+//                     </div>
+//                   </>
+//                 ) : (
+//                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+//                     {/* Single: Policy */}
+//                     <div>
+//                       <label className="mb-1.5 block text-sm font-medium text-slate-700">
+//                         Leave Policy *
+//                       </label>
 //                       <select
 //                         required
-//                         value={formData.criteria_value}
+//                         disabled={!!editId}
+//                         value={formData.leave_policy_id}
 //                         onChange={(e) =>
-//                           handleChange("criteria_value", e.target.value)
+//                           setFormData({ ...formData, leave_policy_id: e.target.value })
 //                         }
-//                         className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#E42527]"
+//                         className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#E42527] disabled:bg-slate-100 disabled:text-slate-500"
 //                       >
-//                         <option value="">Select gender</option>
-//                         <option value="male">Male</option>
-//                         <option value="female">Female</option>
-//                         <option value="other">Other</option>
-//                       </select>
-//                     ) : criteriaValueConfig[formData.criteria_type] ? (
-//                       <select
-//                         required
-//                         value={formData.criteria_value}
-//                         onChange={(e) =>
-//                           handleChange("criteria_value", e.target.value)
-//                         }
-//                         className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#E42527]"
-//                       >
-//                         <option value="">Select {criteriaValueConfig[formData.criteria_type].label.toLowerCase()}</option>
-//                         {(criteriaMasters[criteriaValueConfig[formData.criteria_type].itemsKey] || []).map((item) => {
-//                           const id = getOptionId(item);
+//                         <option value="">Select leave policy</option>
+//                         {leavePolicies.map((p) => {
+//                           const id = getPolicyId(p);
 //                           return id ? (
 //                             <option key={id} value={String(id)}>
-//                               {getCriteriaOptionLabel(formData.criteria_type, item)}
+//                               {getPolicyName(p)}
 //                             </option>
 //                           ) : null;
 //                         })}
 //                       </select>
-//                     ) : (
-//                       <input
-//                         required
-//                         value={formData.criteria_value}
-//                         onChange={(e) =>
-//                           handleChange("criteria_value", e.target.value)
-//                         }
-//                         placeholder="Enter criteria value"
-//                         className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#E42527]"
-//                       />
-//                     )}
-//                   </div>
+//                       {editId && (
+//                         <p className="mt-1 text-xs text-slate-500">
+//                           Policy cannot be changed after creation
+//                         </p>
+//                       )}
+//                     </div>
 
-//                   <div className="sm:col-span-2">
-//                     <label className="flex items-center gap-2 text-sm text-slate-700">
-//                       <input
-//                         type="checkbox"
-//                         checked={!!formData.is_exception}
+//                     {/* Single: Criteria Type */}
+//                     <div>
+//                       <label className="mb-1.5 block text-sm font-medium text-slate-700">
+//                         Criteria Type *
+//                       </label>
+//                       <select
+//                         value={formData.criteria_type}
 //                         onChange={(e) =>
-//                           handleChange("is_exception", e.target.checked)
+//                           setFormData({
+//                             ...formData,
+//                             criteria_type: e.target.value,
+//                             criteria_value: "",
+//                           })
 //                         }
-//                         className="rounded border-slate-300 text-[#E42527] focus:ring-[#E42527]"
-//                       />
-//                       <span className="font-medium">Is Exception</span>
-//                     </label>
-//                     <p className="mt-1 text-xs text-slate-500">
-//                       If checked, this rule will act as an exception (exclude
-//                       matching employees instead of including them).
-//                     </p>
+//                         className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#E42527]"
+//                       >
+//                         {criteriaTypeOptions.map((opt) => (
+//                           <option key={opt.value} value={opt.value}>
+//                             {opt.label}
+//                           </option>
+//                         ))}
+//                       </select>
+//                     </div>
+
+//                     {/* Single: Criteria Value */}
+//                     <div className="sm:col-span-2">
+//                       <label className="mb-1.5 block text-sm font-medium text-slate-700">
+//                         Criteria Value *
+//                       </label>
+//                       {formData.criteria_type === "gender" ? (
+//                         <select
+//                           required
+//                           value={formData.criteria_value}
+//                           onChange={(e) =>
+//                             setFormData({
+//                               ...formData,
+//                               criteria_value: e.target.value,
+//                             })
+//                           }
+//                           className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#E42527]"
+//                         >
+//                           <option value="">Select gender</option>
+//                           <option value="male">Male</option>
+//                           <option value="female">Female</option>
+//                           <option value="other">Other</option>
+//                         </select>
+//                       ) : criteriaValueConfig[formData.criteria_type] ? (
+//                         <select
+//                           required
+//                           value={formData.criteria_value}
+//                           onChange={(e) =>
+//                             setFormData({
+//                               ...formData,
+//                               criteria_value: e.target.value,
+//                             })
+//                           }
+//                           className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#E42527]"
+//                         >
+//                           <option value="">
+//                             {mastersLoading ? "Loading..." : "Select..."}
+//                           </option>
+//                           {(masters[
+//                             criteriaValueConfig[formData.criteria_type].masterKey
+//                           ] || []).map((item) => {
+//                             const id = getMasterItemId(
+//                               formData.criteria_type,
+//                               item
+//                             );
+//                             return id ? (
+//                               <option key={String(id)} value={String(id)}>
+//                                 {getMasterItemLabel(
+//                                   formData.criteria_type,
+//                                   item
+//                                 )}
+//                               </option>
+//                             ) : null;
+//                           })}
+//                         </select>
+//                       ) : (
+//                         <input
+//                           required
+//                           value={formData.criteria_value}
+//                           onChange={(e) =>
+//                             setFormData({
+//                               ...formData,
+//                               criteria_value: e.target.value,
+//                             })
+//                           }
+//                           className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#E42527]"
+//                         />
+//                       )}
+//                     </div>
+
+//                     {/* Single: Is Exception */}
+//                     <div className="sm:col-span-2">
+//                       <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
+//                         <input
+//                           type="checkbox"
+//                           checked={!!formData.is_exception}
+//                           onChange={(e) =>
+//                             setFormData({
+//                               ...formData,
+//                               is_exception: e.target.checked,
+//                             })
+//                           }
+//                           className="rounded border-slate-300 text-[#E42527]"
+//                         />
+//                         <span className="font-medium">
+//                           Is Exception (Exclude this value)
+//                         </span>
+//                       </label>
+//                     </div>
 //                   </div>
-//                 </div>
+//                 )}
 
 //                 {error && (
 //                   <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
@@ -607,8 +1001,9 @@
 //               <div className="flex justify-end gap-2 border-t border-slate-100 px-5 py-4">
 //                 <button
 //                   type="button"
-//                   onClick={() => setShowForm(false)}
-//                   className="rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50"
+//                   onClick={closeForm}
+//                   disabled={saving}
+//                   className="rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-50"
 //                 >
 //                   Cancel
 //                 </button>
@@ -617,7 +1012,13 @@
 //                   disabled={saving}
 //                   className="rounded-lg bg-[#E42527] px-5 py-2 text-sm font-medium text-white hover:bg-[#c91f21] disabled:opacity-60"
 //                 >
-//                   {saving ? "Saving..." : editId ? "Update" : "Submit"}
+//                   {saving
+//                     ? "Saving..."
+//                     : isBulkMode
+//                     ? `Add Selected${bulkSelectedValues.length ? ` (${bulkSelectedValues.length})` : ""}`
+//                     : editId
+//                     ? "Update"
+//                     : "Submit"}
 //                 </button>
 //               </div>
 //             </form>
@@ -625,16 +1026,21 @@
 //         </div>
 //       )}
 
-//       {/* Details Modal */}
+//       {/* ══════════ DETAILS MODAL ══════════ */}
 //       {selectedRule && (
-//         <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-[2px]">
+//         <div
+//           className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-[2px]"
+//           onClick={(e) => {
+//             if (e.target === e.currentTarget) setSelectedRule(null);
+//           }}
+//         >
 //           <div className="w-full max-w-lg overflow-hidden rounded-xl bg-white shadow-2xl">
 //             <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-//               <div>
+//               <div className="min-w-0">
 //                 <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
 //                   Rule details
 //                 </p>
-//                 <h2 className="mt-1 text-lg font-semibold text-slate-800 capitalize">
+//                 <h2 className="mt-1 truncate text-lg font-semibold capitalize text-slate-800">
 //                   {getCriteriaLabel(selectedRule.criteria_type)}
 //                 </h2>
 //               </div>
@@ -663,7 +1069,10 @@
 //               <div className="rounded-lg bg-slate-50 px-3 py-2.5">
 //                 <p className="text-xs text-slate-400">Criteria Value</p>
 //                 <p className="mt-1 break-all text-sm font-medium text-slate-800">
-//                   {selectedRule.criteria_value || "—"}
+//                   {getCriteriaValueLabel(
+//                     selectedRule.criteria_type,
+//                     selectedRule.criteria_value
+//                   )}
 //                 </p>
 //               </div>
 //               <div className="rounded-lg bg-slate-50 px-3 py-2.5">
@@ -694,8 +1103,9 @@
 //               <button
 //                 type="button"
 //                 onClick={() => {
+//                   const rule = selectedRule;
 //                   setSelectedRule(null);
-//                   openEdit(selectedRule);
+//                   openEdit(rule);
 //                 }}
 //                 className="rounded-lg bg-[#E42527] px-4 py-2 text-sm font-medium text-white hover:bg-[#c91f21]"
 //               >
@@ -711,8 +1121,12 @@
 
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "@/app/lib/api";
+
+// ═══════════════════════════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════════════════════════
 
 const initialForm = {
   leave_policy_id: "",
@@ -726,328 +1140,448 @@ const criteriaTypeOptions = [
   { value: "location", label: "Location" },
   { value: "employment_type", label: "Employment Type" },
   { value: "gender", label: "Gender" },
-  { value: "role", label: "Role" },
-  { value: "employee_id", label: "Employee ID" },
+  { value: "role", label: "Role / Designation" },
+  { value: "employee_id", label: "Employee" },
 ];
 
-const formatApiError = (err) => {
+// Static options for gender (not loaded from API)
+const GENDER_OPTIONS = [
+  { id: "male", label: "Male" },
+  { id: "female", label: "Female" },
+  { id: "other", label: "Other" },
+];
+
+// Which master data source maps to each criteria type
+const criteriaValueConfig = {
+  department: { label: "Department", masterKey: "departments" },
+  location: { label: "Location", masterKey: "locations" },
+  employment_type: { label: "Employment Type", masterKey: "employment_types" },
+  role: { label: "Designation", masterKey: "designations" },
+  employee_id: { label: "Employee", masterKey: "employees" },
+  // gender is handled separately (static options)
+};
+
+const BULK_WARN_THRESHOLD = 50;
+const SUCCESS_TIMEOUT = 3000;
+const PAGE_SIZE = 12;
+
+// ═══════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════
+
+function formatApiError(err) {
   const detail = err?.response?.data?.detail;
   if (Array.isArray(detail)) {
     return detail
-      .map((e) =>
-        Array.isArray(e.loc) ? `${e.loc.slice(1).join(".")}: ${e.msg}` : e.msg
-      )
+      .map((e) => {
+        const field = Array.isArray(e.loc) ? e.loc.slice(1).join(".") : "";
+        return field ? `${field}: ${e.msg}` : e.msg;
+      })
       .join(" • ");
   }
   if (typeof detail === "string") return detail;
-  return err?.message || "Something went wrong";
-};
+  if (err?.message === "Network Error") return "Cannot reach server.";
+  return err?.response?.data?.message || err?.message || "Something went wrong";
+}
 
-const getItems = (response) => {
-  const data = response?.data?.data ?? response?.data ?? [];
-  if (Array.isArray(data)) return data;
-  return (
-    data?.items ??
-    data?.results ??
-    data?.policies ??
-    data?.leave_policies ??
-    data?.applicability_rules ??
-    data?.rules ??
-    data?.data ??
-    []
-  );
-};
-
-const getPolicyId = (policy) =>
-  policy?.leave_policy_id || policy?.policy_id || policy?.id || policy?._id;
-
-const getPolicyName = (policy) =>
-  policy?.policy_name ||
-  policy?.leave_policy_name ||
-  policy?.name ||
-  getPolicyId(policy);
+const getPolicyId = (p) => p?.leave_policy_id || null;
+const getPolicyName = (p) => p?.policy_name || getPolicyId(p) || "Unknown policy";
 
 const getCriteriaLabel = (type) =>
   criteriaTypeOptions.find((o) => o.value === type)?.label ||
   (type || "").replace(/_/g, " ");
 
-const getMasterItems = (response, keys = []) => {
-  const data = response?.data?.data ?? response?.data ?? [];
-  if (Array.isArray(data)) return data;
-  return (
-    keys.reduce((items, key) => items || data?.[key], null) ||
-    data?.items ||
-    data?.results ||
-    data?.data ||
-    []
-  );
-};
+// Master item ID extractor — based on which type
+function getMasterItemId(type, item) {
+  if (!item) return null;
+  switch (type) {
+    case "department":      return item.department_id || null;
+    case "location":        return item.location_id || null;
+    case "employment_type": return item.employment_type_id || null;
+    case "role":            return item.designation_id || null;
+    case "employee_id":     return item.employee_id || null;
+    default:                return null;
+  }
+}
 
-const getOptionId = (item) =>
-  item?.id ||
-  item?.department_id ||
-  item?.employee_id ||
-  item?.location_id ||
-  item?.employment_type_id ||
-  item?.designation_id ||
-  item?.employment_type_code ||
-  item?.code ||
-  item?._id;
+function getMasterItemLabel(type, item) {
+  if (!item) return "—";
+  switch (type) {
+    case "department":      return item.department_name || getMasterItemId(type, item);
+    case "location":        return item.location_name || getMasterItemId(type, item);
+    case "employment_type": return item.name || item.employment_type_name || getMasterItemId(type, item);
+    case "role":            return item.job_title || item.designation_name || getMasterItemId(type, item);
+    case "employee_id":     return item.name || [item.first_name, item.last_name].filter(Boolean).join(" ") || item.personal_email || getMasterItemId(type, item);
+    default:                return getMasterItemId(type, item);
+  }
+}
 
-const getEmployeeName = (employee) =>
-  employee?.name ||
-  [employee?.first_name, employee?.last_name].filter(Boolean).join(" ") ||
-  employee?.company_email ||
-  getOptionId(employee);
-
-const criteriaValueConfig = {
-  department: { label: "Department", itemsKey: "departments" },
-  location: { label: "Location", itemsKey: "locations" },
-  employment_type: { label: "Employment Type", itemsKey: "employment_types" },
-  role: { label: "Role", itemsKey: "designations" },
-  employee_id: { label: "Employee", itemsKey: "employees" },
-};
-
-const getCriteriaOptionLabel = (type, item) => {
-  if (type === "employee_id") return getEmployeeName(item);
-  return (
-    item?.department_name ||
-    item?.location_name ||
-    item?.employment_type_name ||
-    item?.employment_type ||
-    item?.designation_name ||
-    item?.job_title ||
-    item?.name ||
-    item?.title ||
-    getOptionId(item)
-  );
-};
+// ═══════════════════════════════════════════════════════════
+// PAGE
+// ═══════════════════════════════════════════════════════════
 
 export default function LeaveApplicabilityRulesPage() {
+  // List state
   const [list, setList] = useState([]);
-  const [formData, setFormData] = useState(initialForm);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const [filterPolicyId, setFilterPolicyId] = useState("");
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+
+  // Feedback
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const successTimerRef = useRef(null);
+
+  // Form
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState(null);
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const [pageSize] = useState(12);
-  const [total, setTotal] = useState(0);
-  const [leavePolicyId, setLeavePolicyId] = useState("");
+  const [formData, setFormData] = useState(initialForm);
+  const [saving, setSaving] = useState(false);
+
+  // Bulk form
+  const [isBulkMode, setIsBulkMode] = useState(false);
+  const [bulkPolicyId, setBulkPolicyId] = useState("");
+  const [bulkCriteriaType, setBulkCriteriaType] = useState("employee_id");
+  const [bulkSelectedValues, setBulkSelectedValues] = useState([]);
+  const [bulkIsException, setBulkIsException] = useState(false);
+
+  // Masters + policies
   const [leavePolicies, setLeavePolicies] = useState([]);
-  const [selectedRule, setSelectedRule] = useState(null);
-  const [criteriaMasters, setCriteriaMasters] = useState({
+  const [masters, setMasters] = useState({
     departments: [],
     locations: [],
     employment_types: [],
     designations: [],
     employees: [],
   });
+  const [mastersLoading, setMastersLoading] = useState(true);
 
-  // Bulk related states
-  const [isBulkMode, setIsBulkMode] = useState(false);
-  const [bulkSelectedValues, setBulkSelectedValues] = useState([]);
-  const [bulkPolicyId, setBulkPolicyId] = useState("");
-  const [bulkCriteriaType, setBulkCriteriaType] = useState("employee_id");
-  const [bulkIsException, setBulkIsException] = useState(false);
+  // Details modal
+  const [selectedRule, setSelectedRule] = useState(null);
 
-  // Load policies
+  // ═════════════════════════════════════════════════════════
+  // SUCCESS AUTO-CLEAR
+  // ═════════════════════════════════════════════════════════
+
+  const showSuccess = useCallback((msg) => {
+    setSuccess(msg);
+    if (successTimerRef.current) clearTimeout(successTimerRef.current);
+    successTimerRef.current = setTimeout(() => setSuccess(""), SUCCESS_TIMEOUT);
+  }, []);
+
+  useEffect(() => () => {
+    if (successTimerRef.current) clearTimeout(successTimerRef.current);
+  }, []);
+
+  // ═════════════════════════════════════════════════════════
+  // LOAD POLICIES
+  // ═════════════════════════════════════════════════════════
+
   useEffect(() => {
-    const fetchPolicies = async () => {
+    (async () => {
       try {
-        const response = await api.get("/api/v1/leave/policies", {
+        const res = await api.get("/api/v1/leave/policies", {
           params: { page: 1, page_size: 200 },
         });
-        setLeavePolicies(getItems(response) || []);
-      } catch {
+        const items = res.data?.policies || [];
+        setLeavePolicies(Array.isArray(items) ? items : []);
+      } catch (err) {
+        console.error("Failed to load policies:", err);
         setLeavePolicies([]);
       }
-    };
-    fetchPolicies();
+    })();
   }, []);
 
-  // Load masters
+  // ═════════════════════════════════════════════════════════
+  // LOAD MASTERS
+  // ═════════════════════════════════════════════════════════
+
   useEffect(() => {
-    const fetchCriteriaMasters = async () => {
-      const requests = {
-        departments: api.get("/api/v1/get/departments", { params: { page: 1, page_size: 500 } }),
-        locations: api.get("/api/v1/get/location/master", { params: { page: 1, page_size: 500 } }),
-        employment_types: api.get("/api/v1/get/employment/type"),
-        designations: api.get("/api/v1/get/designations", { params: { page: 1, page_size: 500 } }),
-        employees: api.get("/api/v1/get/employees", { params: { page: 1, page_size: 500 } }),
+    (async () => {
+      setMastersLoading(true);
+      const fetchOne = async (url, params) => {
+        try {
+          const res = await api.get(url, { params });
+          return res.data;
+        } catch {
+          return null;
+        }
       };
 
-      const entries = await Promise.all(
-        Object.entries(requests).map(async ([key, request]) => {
-          try {
-            const response = await request;
-            return [key, getMasterItems(response, [key, key.replace(/s$/, "")])];
-          } catch {
-            return [key, []];
-          }
-        })
-      );
-      setCriteriaMasters(Object.fromEntries(entries));
-    };
-    fetchCriteriaMasters();
+      const [departmentsRes, locationsRes, employmentRes, designationsRes, employeesRes] =
+        await Promise.all([
+          fetchOne("/api/v1/get/departments", { page: 1, page_size: 500 }),
+          fetchOne("/api/v1/get/location/master", { page: 1, page_size: 500 }),
+          fetchOne("/api/v1/get/employment/type"),
+          fetchOne("/api/v1/get/designations", { page: 1, page_size: 500 }),
+          fetchOne("/api/v1/get/employees"),
+        ]);
+
+      setMasters({
+        departments: departmentsRes?.departments || [],
+        locations: locationsRes?.locations || [],
+        employment_types:
+          employmentRes?.data || employmentRes?.employment_types || [],
+        designations: designationsRes?.designations || [],
+        employees: employeesRes?.employees || [],
+      });
+      setMastersLoading(false);
+    })();
   }, []);
+
+  // ═════════════════════════════════════════════════════════
+  // FETCH RULES
+  // ═════════════════════════════════════════════════════════
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const params = { page, page_size: pageSize, search: search || undefined };
-      if (leavePolicyId) params.leave_policy_id = leavePolicyId;
+      const params = {
+        page,
+        page_size: PAGE_SIZE,
+        search: search || undefined,
+      };
+      if (filterPolicyId) params.leave_policy_id = filterPolicyId;
 
       const res = await api.get("/api/v1/leave/applicability/rules", { params });
-      const items = getItems(res);
+      const items = res.data?.applicability_rules || [];
       setList(Array.isArray(items) ? items : []);
-      setTotal(res.data?.total ?? res.data?.count ?? items.length);
+      setTotal(Number(res.data?.total) || items.length);
     } catch (err) {
       setError(formatApiError(err));
       setList([]);
+      setTotal(0);
     } finally {
       setLoading(false);
     }
-  }, [leavePolicyId, page, pageSize, search]);
+  }, [filterPolicyId, page, search]);
 
   useEffect(() => {
-    const timeoutId = setTimeout(() => fetchData(), 0);
+    const timeoutId = setTimeout(() => {
+      fetchData();
+    }, 0);
+
     return () => clearTimeout(timeoutId);
   }, [fetchData]);
 
-  const openAdd = () => {
+  // ═════════════════════════════════════════════════════════
+  // FILTER RESET HELPERS
+  // ═════════════════════════════════════════════════════════
+
+  const handleFilterPolicyChange = (value) => {
+    setFilterPolicyId(value);
+    setPage(1);
+  };
+
+  const handleSearchChange = (value) => {
+    setSearch(value);
+    setPage(1);
+  };
+
+  const handleResetFilters = () => {
+    setFilterPolicyId("");
+    setSearch("");
+    setPage(1);
+  };
+
+  const hasActiveFilters = Boolean(filterPolicyId || search);
+
+  // ═════════════════════════════════════════════════════════
+  // FORM OPEN / CLOSE
+  // ═════════════════════════════════════════════════════════
+
+  const resetForm = () => {
+    setFormData(initialForm);
     setEditId(null);
     setIsBulkMode(false);
+    setBulkSelectedValues([]);
+    setBulkPolicyId("");
+    setBulkCriteriaType("employee_id");
+    setBulkIsException(false);
+    setError("");
+  };
+
+  const openAdd = () => {
+    resetForm();
     setFormData({
       ...initialForm,
-      leave_policy_id: leavePolicyId || (leavePolicies[0] ? String(getPolicyId(leavePolicies[0])) : ""),
+      leave_policy_id:
+        filterPolicyId || (leavePolicies[0] ? String(getPolicyId(leavePolicies[0])) : ""),
     });
-    setError("");
     setShowForm(true);
   };
 
   const openBulkAdd = () => {
-    setEditId(null);
+    resetForm();
     setIsBulkMode(true);
-    setBulkPolicyId(leavePolicyId || (leavePolicies[0] ? String(getPolicyId(leavePolicies[0])) : ""));
-    setBulkCriteriaType("employee_id");
-    setBulkSelectedValues([]);
-    setBulkIsException(false);
-    setError("");
+    setBulkPolicyId(
+      filterPolicyId || (leavePolicies[0] ? String(getPolicyId(leavePolicies[0])) : "")
+    );
     setShowForm(true);
   };
 
   const openEdit = (item) => {
-    setEditId(item.applicability_id || item.id);
-    setIsBulkMode(false);
+    setEditId(item.applicability_id);
     setFormData({
       leave_policy_id: item.leave_policy_id || "",
       criteria_type: item.criteria_type || "department",
       criteria_value: item.criteria_value || "",
       is_exception: !!item.is_exception,
     });
+    setIsBulkMode(false);
     setError("");
     setShowForm(true);
   };
 
-  const getNewCriteriaValues = async (policyId, criteriaType, values) => {
-    const response = await api.get("/api/v1/leave/applicability/rules", {
-      params: { page: 1, page_size: 1000, leave_policy_id: policyId },
-    });
-    const existingRules = getItems(response);
-    const existingValues = new Set(
-      (Array.isArray(existingRules) ? existingRules : [])
-        .filter((rule) => rule.criteria_type === criteriaType)
-        .map((rule) => String(rule.criteria_value))
-    );
-    return values.filter((value) => !existingValues.has(String(value)));
+  const closeForm = () => {
+    if (saving) return;
+    setShowForm(false);
+    resetForm();
   };
+
+  // ═════════════════════════════════════════════════════════
+  // DUPLICATE CHECK (fresh fetch — no stale cache)
+  // ═════════════════════════════════════════════════════════
+
+  const filterNewValues = async (policyId, criteriaType, values) => {
+    try {
+      const res = await api.get("/api/v1/leave/applicability/rules", {
+        params: { page: 1, page_size: 1000, leave_policy_id: policyId },
+      });
+      const existing = res.data?.applicability_rules || [];
+      const existingSet = new Set(
+        existing
+          .filter((r) => r.criteria_type === criteriaType)
+          .map((r) => String(r.criteria_value))
+      );
+      return values.filter((v) => !existingSet.has(String(v)));
+    } catch {
+      return values; // network fail — don't block, backend will error if dup
+    }
+  };
+
+  // ═════════════════════════════════════════════════════════
+  // SUBMIT
+  // ═════════════════════════════════════════════════════════
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSaving(true);
     setError("");
 
-    try {
-      if (isBulkMode) {
-        // Bulk Create
-        if (!bulkPolicyId) {
-          setError("Please select Leave Policy");
-          setSaving(false);
-          return;
-        }
-        if (bulkSelectedValues.length === 0) {
-          setError("Please select at least one value");
-          setSaving(false);
-          return;
-        }
+    // ─── BULK ───
+    if (isBulkMode) {
+      if (!bulkPolicyId) return setError("Please select a Leave Policy");
+      if (bulkSelectedValues.length === 0)
+        return setError("Please select at least one value");
 
-        const newValues = await getNewCriteriaValues(
+      // ⭐ Extra warning for exceptions
+      if (bulkIsException) {
+        const confirmMsg = `⚠️ You are about to EXCLUDE ${bulkSelectedValues.length} item(s) from this policy.\n\nThese employees will NOT get this leave policy.\n\nContinue?`;
+        if (!confirm(confirmMsg)) return;
+      } else if (
+        bulkSelectedValues.length > BULK_WARN_THRESHOLD &&
+        !confirm(
+          `You are about to create ${bulkSelectedValues.length} INCLUDE rules. Continue?`
+        )
+      ) {
+        return;
+      }
+
+      setSaving(true);
+      try {
+        const newValues = await filterNewValues(
           bulkPolicyId,
           bulkCriteriaType,
           bulkSelectedValues
         );
 
         if (newValues.length === 0) {
-          setError("Selected values already have a rule for this leave policy.");
+          setError("All selected values already have a rule for this policy.");
+          setSaving(false);
           return;
         }
 
         const payload = newValues.map((value) => ({
           leave_policy_id: bulkPolicyId,
           criteria_type: bulkCriteriaType,
-          criteria_value: value,
-          is_exception: bulkIsException,
+          criteria_value: String(value),
+          is_exception: !!bulkIsException,
         }));
 
         await api.post("/api/v1/leave/applicability/rules/bulk", payload);
-      } else if (editId) {
-        // Update
-        if (!formData.leave_policy_id) {
-          setError("Leave Policy is required");
-          return;
-        }
 
-        await api.put(`/api/v1/leave/applicability/rules/${editId}`, {
-          leave_policy_id: formData.leave_policy_id,
-          criteria_type: formData.criteria_type,
-          criteria_value: formData.criteria_value,
-          is_exception: !!formData.is_exception,
-        });
-      } else {
-        // Single Create
-        if (!formData.leave_policy_id) {
-          setError("Please select Leave Policy");
-          return;
-        }
-
-        const newValues = await getNewCriteriaValues(
-          formData.leave_policy_id,
-          formData.criteria_type,
-          [formData.criteria_value]
+        const skipped = bulkSelectedValues.length - newValues.length;
+        const kind = bulkIsException ? "exclude" : "include";
+        showSuccess(
+          `Created ${newValues.length} ${kind} rule(s)${
+            skipped ? `, skipped ${skipped} duplicate(s)` : ""
+          }`
         );
 
-        if (newValues.length === 0) {
-          setError("This value already has a rule for this leave policy.");
-          return;
-        }
+        closeForm();
+        await fetchData();
+      } catch (err) {
+        setError(formatApiError(err));
+      } finally {
+        setSaving(false);
+      }
+      return;
+    }
 
-        await api.post("/api/v1/leave/applicability/rules", {
-          leave_policy_id: formData.leave_policy_id,
+    // ─── EDIT ───
+    if (editId) {
+      if (!formData.criteria_type || !formData.criteria_value)
+        return setError("Criteria type and value are required");
+
+      setSaving(true);
+      try {
+        await api.put(`/api/v1/leave/applicability/rules/${editId}`, {
           criteria_type: formData.criteria_type,
-          criteria_value: formData.criteria_value,
+          criteria_value: String(formData.criteria_value),
           is_exception: !!formData.is_exception,
         });
+        showSuccess("Rule updated successfully");
+        closeForm();
+        await fetchData();
+      } catch (err) {
+        setError(formatApiError(err));
+      } finally {
+        setSaving(false);
+      }
+      return;
+    }
+
+    // ─── CREATE ───
+    if (!formData.leave_policy_id)
+      return setError("Please select a Leave Policy");
+    if (!formData.criteria_value)
+      return setError("Criteria value is required");
+
+    setSaving(true);
+    try {
+      const newValues = await filterNewValues(
+        formData.leave_policy_id,
+        formData.criteria_type,
+        [String(formData.criteria_value)]
+      );
+
+      if (newValues.length === 0) {
+        setError("This value already has a rule for this policy.");
+        setSaving(false);
+        return;
       }
 
-      setShowForm(false);
-      setFormData(initialForm);
-      setEditId(null);
-      setIsBulkMode(false);
-      setBulkSelectedValues([]);
+      await api.post("/api/v1/leave/applicability/rules", {
+        leave_policy_id: formData.leave_policy_id,
+        criteria_type: formData.criteria_type,
+        criteria_value: String(formData.criteria_value),
+        is_exception: !!formData.is_exception,
+      });
+      showSuccess("Rule created successfully");
+      closeForm();
       await fetchData();
     } catch (err) {
       setError(formatApiError(err));
@@ -1056,58 +1590,110 @@ export default function LeaveApplicabilityRulesPage() {
     }
   };
 
+  // ═════════════════════════════════════════════════════════
+  // DELETE
+  // ═════════════════════════════════════════════════════════
+
   const handleDelete = async (item) => {
-    if (!confirm("Are you sure you want to delete this rule?")) return;
+    const policyName = getPolicyNameById(item.leave_policy_id);
+    const criteriaText = `${getCriteriaLabel(item.criteria_type)} = ${getCriteriaValueLabel(item.criteria_type, item.criteria_value)}`;
+    const confirmMsg = `Delete this rule?\n\nPolicy: ${policyName}\nRule: ${criteriaText}\n\nThis cannot be undone.`;
+
+    if (!confirm(confirmMsg)) return;
     try {
-      await api.delete(`/api/v1/leave/applicability/rules/${item.applicability_id || item.id}`);
+      await api.delete(`/api/v1/leave/applicability/rules/${item.applicability_id}`);
       setSelectedRule(null);
+      showSuccess("Rule deleted");
       await fetchData();
     } catch (err) {
       setError(formatApiError(err));
     }
   };
 
-  const totalPages = Math.ceil(total / pageSize) || 1;
+  // ═════════════════════════════════════════════════════════
+  // HELPERS
+  // ═════════════════════════════════════════════════════════
 
-  const getPolicyNameById = (id) => {
-    const policy = leavePolicies.find((p) => String(getPolicyId(p)) === String(id));
-    return policy ? getPolicyName(policy) : id || "—";
-  };
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const canPrev = page > 1;
+  const canNext = page < totalPages;
+
+  const getPolicyNameById = useCallback(
+    (id) => {
+      const p = leavePolicies.find((x) => String(getPolicyId(x)) === String(id));
+      return p ? getPolicyName(p) : id || "—";
+    },
+    [leavePolicies]
+  );
 
   const getCriteriaValueLabel = (type, value) => {
     if (!value) return "—";
-    if (type === "gender") return value.charAt(0).toUpperCase() + value.slice(1);
+
+    // Gender — static options
+    if (type === "gender") {
+      const g = GENDER_OPTIONS.find((x) => x.id === String(value).toLowerCase());
+      return g ? g.label : String(value).charAt(0).toUpperCase() + String(value).slice(1);
+    }
 
     const config = criteriaValueConfig[type];
     if (!config) return value;
 
-    const items = criteriaMasters[config.itemsKey] || [];
-    const found = items.find((item) => String(getOptionId(item)) === String(value));
-    return found ? getCriteriaOptionLabel(type, found) : value;
+    const items = masters[config.masterKey] || [];
+    const found = items.find(
+      (item) => String(getMasterItemId(type, item)) === String(value)
+    );
+    return found ? getMasterItemLabel(type, found) : value;
   };
 
-  const toggleBulkValue = (value) => {
+  const getBulkMasterItems = () => {
+    if (bulkCriteriaType === "gender") {
+      return GENDER_OPTIONS.map((g) => ({ id: g.id, label: g.label }));
+    }
+
+    const config = criteriaValueConfig[bulkCriteriaType];
+    if (!config) return [];
+
+    return (masters[config.masterKey] || [])
+      .map((item) => ({
+        id: String(getMasterItemId(bulkCriteriaType, item) || ""),
+        label: getMasterItemLabel(bulkCriteriaType, item),
+      }))
+      .filter((x) => x.id);
+  };
+
+  const toggleBulkValue = (id) => {
     setBulkSelectedValues((prev) =>
-      prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
+      prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id]
     );
   };
 
-  const selectAllBulk = () => {
-    const config = criteriaValueConfig[bulkCriteriaType];
-    if (!config) return;
-      const items = criteriaMasters[config.itemsKey] || [];
-      const allIds = items.map((item) => String(getOptionId(item))).filter(Boolean);
-    setBulkSelectedValues(allIds);
-  };
+  const selectAllBulk = () =>
+    setBulkSelectedValues(getBulkMasterItems().map((x) => x.id));
 
   const clearAllBulk = () => setBulkSelectedValues([]);
 
+  // Selected chips preview
+  const bulkChips = useMemo(() => {
+    const itemsMap = new Map(getBulkMasterItems().map((x) => [x.id, x.label]));
+    return bulkSelectedValues.map((id) => ({
+      id,
+      label: itemsMap.get(id) || id,
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bulkSelectedValues, bulkCriteriaType, masters]);
+
+  // ═════════════════════════════════════════════════════════
+  // RENDER
+  // ═════════════════════════════════════════════════════════
+
   return (
     <div>
-      {/* Header */}
+      {/* ══════════ HEADER ══════════ */}
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-slate-800">Leave Applicability Rules</h1>
+          <h1 className="text-xl font-semibold text-slate-800">
+            Leave Applicability Rules
+          </h1>
           <p className="mt-0.5 text-sm text-slate-500">
             Configure which employees can access leave policies
           </p>
@@ -1130,24 +1716,47 @@ export default function LeaveApplicabilityRulesPage() {
         </div>
       </div>
 
+      {/* ══════════ FEEDBACK BANNERS ══════════ */}
+      {error && !showForm && (
+        <div className="mb-4 flex items-start gap-3 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+          <span className="flex-1">{error}</span>
+          <button
+            onClick={() => setError("")}
+            className="opacity-60 hover:opacity-100"
+            aria-label="Dismiss"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+      {success && (
+        <div className="mb-4 flex items-start gap-3 rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          <span className="flex-1">✓ {success}</span>
+          <button
+            onClick={() => setSuccess("")}
+            className="opacity-60 hover:opacity-100"
+            aria-label="Dismiss"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* ══════════ LIST CARD ══════════ */}
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-        {/* Toolbar */}
         <div className="flex flex-col gap-3 border-b border-slate-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
             <select
-              value={leavePolicyId}
-              onChange={(e) => {
-                setLeavePolicyId(e.target.value);
-                setPage(1);
-              }}
+              value={filterPolicyId}
+              onChange={(e) => handleFilterPolicyChange(e.target.value)}
               className="w-full max-w-xs rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-[#E42527]"
             >
               <option value="">All Policies</option>
-              {leavePolicies.map((policy, index) => {
-                const id = getPolicyId(policy);
+              {leavePolicies.map((p) => {
+                const id = getPolicyId(p);
                 return id ? (
-                  <option key={`${id}-${index}`} value={String(id)}>
-                    {getPolicyName(policy)}
+                  <option key={id} value={String(id)}>
+                    {getPolicyName(p)}
                   </option>
                 ) : null;
               })}
@@ -1155,28 +1764,55 @@ export default function LeaveApplicabilityRulesPage() {
 
             <input
               value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
+              onChange={(e) => handleSearchChange(e.target.value)}
               placeholder="Search rules..."
               className="w-full max-w-xs rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-[#E42527]"
             />
+
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={handleResetFilters}
+                className="shrink-0 rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50"
+              >
+                ✕ Reset
+              </button>
+            )}
           </div>
           <span className="text-sm text-slate-500">{total} rules</span>
         </div>
 
-        {error && !showForm && (
-          <div className="mx-4 mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</div>
-        )}
-
-        {/* Cards */}
-        {!loading && list.length > 0 && (
+        {loading ? (
+          <div className="py-20 text-center text-sm text-slate-500">Loading...</div>
+        ) : list.length === 0 ? (
+          <div className="py-20 text-center">
+            <p className="text-sm text-slate-500">
+              {hasActiveFilters
+                ? "No rules match your filters"
+                : "No applicability rules yet"}
+            </p>
+            {!hasActiveFilters ? (
+              <button
+                onClick={openAdd}
+                className="mt-3 rounded-lg bg-[#E42527] px-4 py-2 text-sm font-medium text-white hover:bg-[#c91f21]"
+              >
+                + Create your first rule
+              </button>
+            ) : (
+              <button
+                onClick={handleResetFilters}
+                className="mt-3 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+              >
+                Reset filters
+              </button>
+            )}
+          </div>
+        ) : (
           <div className="grid gap-4 border-b border-slate-100 bg-slate-50/50 p-4 sm:grid-cols-2 xl:grid-cols-3">
-            {list.map((item, index) => (
+            {list.map((item) => (
               <button
                 type="button"
-                key={item.applicability_id || item.id || index}
+                key={item.applicability_id}
                 onClick={() => setSelectedRule(item)}
                 className="group rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-red-200 hover:shadow-md"
               >
@@ -1185,7 +1821,7 @@ export default function LeaveApplicabilityRulesPage() {
                     <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
                       Applicability Rule
                     </p>
-                    <h3 className="mt-1 truncate text-base font-semibold text-slate-800 capitalize">
+                    <h3 className="mt-1 truncate text-base font-semibold capitalize text-slate-800">
                       {getCriteriaLabel(item.criteria_type)}
                     </h3>
                     <span className="mt-2 inline-flex items-center rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
@@ -1194,7 +1830,9 @@ export default function LeaveApplicabilityRulesPage() {
                   </div>
                   <span
                     className={`shrink-0 rounded-full px-2 py-1 text-xs font-semibold ${
-                      item.is_exception ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"
+                      item.is_exception
+                        ? "bg-amber-50 text-amber-700"
+                        : "bg-emerald-50 text-emerald-700"
                     }`}
                   >
                     {item.is_exception ? "Exception" : "Include"}
@@ -1220,13 +1858,6 @@ export default function LeaveApplicabilityRulesPage() {
           </div>
         )}
 
-        {loading ? (
-          <div className="py-20 text-center text-sm text-slate-500">Loading...</div>
-        ) : list.length === 0 ? (
-          <div className="py-20 text-center text-sm text-slate-500">No rules found</div>
-        ) : null}
-
-        {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex justify-between border-t border-slate-100 px-4 py-3">
             <span className="text-sm text-slate-500">
@@ -1234,16 +1865,16 @@ export default function LeaveApplicabilityRulesPage() {
             </span>
             <div className="flex gap-2">
               <button
-                disabled={page <= 1}
+                disabled={!canPrev}
                 onClick={() => setPage((p) => p - 1)}
-                className="rounded-lg border px-3 py-1.5 text-sm disabled:opacity-40"
+                className="rounded-lg border px-3 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Prev
               </button>
               <button
-                disabled={page >= totalPages}
+                disabled={!canNext}
                 onClick={() => setPage((p) => p + 1)}
-                className="rounded-lg border px-3 py-1.5 text-sm disabled:opacity-40"
+                className="rounded-lg border px-3 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Next
               </button>
@@ -1252,9 +1883,14 @@ export default function LeaveApplicabilityRulesPage() {
         )}
       </div>
 
-      {/* ===================== FORM MODAL ===================== */}
+      {/* ══════════ FORM MODAL ══════════ */}
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-900/50 p-4 pt-10 backdrop-blur-[2px]">
+        <div
+          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-900/50 p-4 pt-10 backdrop-blur-[2px]"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeForm();
+          }}
+        >
           <div className="mb-10 w-full max-w-3xl overflow-hidden rounded-xl bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
               <h2 className="text-base font-semibold text-slate-800">
@@ -1266,11 +1902,9 @@ export default function LeaveApplicabilityRulesPage() {
               </h2>
               <button
                 type="button"
-                onClick={() => {
-                  setShowForm(false);
-                  setError("");
-                }}
-                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100"
+                onClick={closeForm}
+                disabled={saving}
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 disabled:opacity-40"
               >
                 ✕
               </button>
@@ -1279,8 +1913,21 @@ export default function LeaveApplicabilityRulesPage() {
             <form onSubmit={handleSubmit}>
               <div className="max-h-[70vh] space-y-5 overflow-y-auto px-5 py-5">
                 {isBulkMode ? (
-                  /* ================= BULK FORM ================= */
                   <>
+                    {/* ⭐ Exception warning banner */}
+                    {bulkIsException && (
+                      <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5 text-xs text-amber-800">
+                        <p className="font-semibold">
+                          ⚠️ Exception Mode ON
+                        </p>
+                        <p className="mt-0.5">
+                          Selected employees will be <strong>excluded</strong> from this policy,
+                          even if they match other inclusion rules.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Bulk: Policy + Criteria Type */}
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <div>
                         <label className="mb-1.5 block text-sm font-medium text-slate-700">
@@ -1293,11 +1940,11 @@ export default function LeaveApplicabilityRulesPage() {
                           className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#E42527]"
                         >
                           <option value="">Select leave policy</option>
-                          {leavePolicies.map((policy, index) => {
-                            const id = getPolicyId(policy);
+                          {leavePolicies.map((p) => {
+                            const id = getPolicyId(p);
                             return id ? (
-                              <option key={`${id}-${index}`} value={String(id)}>
-                                {getPolicyName(policy)}
+                              <option key={id} value={String(id)}>
+                                {getPolicyName(p)}
                               </option>
                             ) : null;
                           })}
@@ -1325,77 +1972,109 @@ export default function LeaveApplicabilityRulesPage() {
                       </div>
                     </div>
 
-                    {/* Multi select */}
+                    {/* Bulk: Multi-select */}
                     <div>
                       <div className="mb-2 flex items-center justify-between">
                         <label className="text-sm font-medium text-slate-700">
                           Select {getCriteriaLabel(bulkCriteriaType)} *
                         </label>
-                        <div className="flex gap-2 text-xs">
-                          <button type="button" onClick={selectAllBulk} className="text-blue-600 hover:underline">
+                        <div className="flex gap-3 text-xs">
+                          <button
+                            type="button"
+                            onClick={selectAllBulk}
+                            className="text-blue-600 hover:underline"
+                          >
                             Select All
                           </button>
-                          <button type="button" onClick={clearAllBulk} className="text-red-600 hover:underline">
+                          <button
+                            type="button"
+                            onClick={clearAllBulk}
+                            className="text-red-600 hover:underline"
+                          >
                             Clear
                           </button>
                         </div>
                       </div>
                       <p className="mb-2 text-xs text-slate-500">
-                        Select only the values you need. You can choose one, two, or any number of employees.
+                        Tick the values you want. Duplicates will be skipped automatically.
                       </p>
 
                       <div className="max-h-60 overflow-y-auto rounded-lg border border-slate-200 p-3">
-                        {bulkCriteriaType === "gender" ? (
-                          ["male", "female", "other"].map((g) => (
-                            <label key={g} className="flex items-center gap-2 py-1.5 text-sm">
+                        {mastersLoading ? (
+                          <p className="py-6 text-center text-xs text-slate-400">
+                            Loading...
+                          </p>
+                        ) : getBulkMasterItems().length === 0 ? (
+                          <p className="py-6 text-center text-xs text-slate-400">
+                            No items available
+                          </p>
+                        ) : (
+                          getBulkMasterItems().map((item) => (
+                            <label
+                              key={item.id}
+                              className="flex cursor-pointer items-center gap-2 py-1.5 text-sm hover:bg-slate-50"
+                            >
                               <input
                                 type="checkbox"
-                                checked={bulkSelectedValues.includes(g)}
-                                onChange={() => toggleBulkValue(g)}
+                                checked={bulkSelectedValues.includes(item.id)}
+                                onChange={() => toggleBulkValue(item.id)}
                                 className="rounded border-slate-300 text-[#E42527]"
                               />
-                              {g.charAt(0).toUpperCase() + g.slice(1)}
+                              <span className="text-slate-700">{item.label}</span>
                             </label>
                           ))
-                        ) : (
-                          (criteriaMasters[criteriaValueConfig[bulkCriteriaType]?.itemsKey] || []).map(
-                            (item, index) => {
-                              const id = String(getOptionId(item));
-                              return (
-                                <label key={`${id}-${index}`} className="flex items-center gap-2 py-1.5 text-sm">
-                                  <input
-                                    type="checkbox"
-                                    checked={bulkSelectedValues.includes(id)}
-                                    onChange={() => toggleBulkValue(id)}
-                                    className="rounded border-slate-300 text-[#E42527]"
-                                  />
-                                  {getCriteriaOptionLabel(bulkCriteriaType, item)}
-                                </label>
-                              );
-                            }
-                          )
                         )}
                       </div>
-                      <p className="mt-1 text-xs text-slate-500">
-                        Selected: {bulkSelectedValues.length}
-                      </p>
+
+                      {/* ⭐ Selected chips preview */}
+                      {bulkChips.length > 0 && (
+                        <div className="mt-3 rounded-lg border border-slate-100 bg-slate-50 p-2.5">
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs font-semibold text-slate-600">
+                              Selected ({bulkChips.length})
+                            </p>
+                            <button
+                              type="button"
+                              onClick={clearAllBulk}
+                              className="text-[11px] text-red-600 hover:underline"
+                            >
+                              Clear all
+                            </button>
+                          </div>
+                          <div className="mt-2 flex max-h-20 flex-wrap gap-1 overflow-y-auto">
+                            {bulkChips.map((chip) => (
+                              <button
+                                type="button"
+                                key={chip.id}
+                                onClick={() => toggleBulkValue(chip.id)}
+                                className="inline-flex items-center gap-1 rounded-full border border-[#E42527] bg-white px-2 py-0.5 text-[10px] font-medium text-[#E42527] hover:bg-red-50"
+                              >
+                                {chip.label}
+                                <span className="opacity-60">✕</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <div>
-                      <label className="flex items-center gap-2 text-sm text-slate-700">
+                      <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
                         <input
                           type="checkbox"
                           checked={bulkIsException}
                           onChange={(e) => setBulkIsException(e.target.checked)}
                           className="rounded border-slate-300 text-[#E42527]"
                         />
-                        <span className="font-medium">Is Exception (Exclude)</span>
+                        <span className="font-medium">
+                          Is Exception (Exclude these employees)
+                        </span>
                       </label>
                     </div>
                   </>
                 ) : (
-                  /* ================= SINGLE FORM ================= */
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    {/* Single: Policy */}
                     <div>
                       <label className="mb-1.5 block text-sm font-medium text-slate-700">
                         Leave Policy *
@@ -1404,21 +2083,29 @@ export default function LeaveApplicabilityRulesPage() {
                         required
                         disabled={!!editId}
                         value={formData.leave_policy_id}
-                        onChange={(e) => setFormData({ ...formData, leave_policy_id: e.target.value })}
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#E42527] disabled:bg-slate-100"
+                        onChange={(e) =>
+                          setFormData({ ...formData, leave_policy_id: e.target.value })
+                        }
+                        className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#E42527] disabled:bg-slate-100 disabled:text-slate-500"
                       >
                         <option value="">Select leave policy</option>
-                        {leavePolicies.map((policy, index) => {
-                          const id = getPolicyId(policy);
+                        {leavePolicies.map((p) => {
+                          const id = getPolicyId(p);
                           return id ? (
-                            <option key={`${id}-${index}`} value={String(id)}>
-                              {getPolicyName(policy)}
+                            <option key={id} value={String(id)}>
+                              {getPolicyName(p)}
                             </option>
                           ) : null;
                         })}
                       </select>
+                      {editId && (
+                        <p className="mt-1 text-xs text-slate-500">
+                          Policy cannot be changed after creation
+                        </p>
+                      )}
                     </div>
 
+                    {/* Single: Criteria Type */}
                     <div>
                       <label className="mb-1.5 block text-sm font-medium text-slate-700">
                         Criteria Type *
@@ -1442,6 +2129,7 @@ export default function LeaveApplicabilityRulesPage() {
                       </select>
                     </div>
 
+                    {/* Single: Criteria Value */}
                     <div className="sm:col-span-2">
                       <label className="mb-1.5 block text-sm font-medium text-slate-700">
                         Criteria Value *
@@ -1450,67 +2138,108 @@ export default function LeaveApplicabilityRulesPage() {
                         <select
                           required
                           value={formData.criteria_value}
-                          onChange={(e) => setFormData({ ...formData, criteria_value: e.target.value })}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              criteria_value: e.target.value,
+                            })
+                          }
                           className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#E42527]"
                         >
                           <option value="">Select gender</option>
-                          <option value="male">Male</option>
-                          <option value="female">Female</option>
-                          <option value="other">Other</option>
+                          {GENDER_OPTIONS.map((g) => (
+                            <option key={g.id} value={g.id}>
+                              {g.label}
+                            </option>
+                          ))}
                         </select>
                       ) : criteriaValueConfig[formData.criteria_type] ? (
                         <select
                           required
                           value={formData.criteria_value}
-                          onChange={(e) => setFormData({ ...formData, criteria_value: e.target.value })}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              criteria_value: e.target.value,
+                            })
+                          }
                           className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#E42527]"
                         >
-                          <option value="">Select...</option>
-                          {(criteriaMasters[criteriaValueConfig[formData.criteria_type].itemsKey] || []).map(
-                            (item, index) => {
-                              const id = getOptionId(item);
-                              return id ? (
-                                <option key={`${id}-${index}`} value={String(id)}>
-                                  {getCriteriaOptionLabel(formData.criteria_type, item)}
-                                </option>
-                              ) : null;
-                            }
-                          )}
+                          <option value="">
+                            {mastersLoading ? "Loading..." : "Select..."}
+                          </option>
+                          {(masters[
+                            criteriaValueConfig[formData.criteria_type].masterKey
+                          ] || []).map((item) => {
+                            const id = getMasterItemId(
+                              formData.criteria_type,
+                              item
+                            );
+                            return id ? (
+                              <option key={String(id)} value={String(id)}>
+                                {getMasterItemLabel(
+                                  formData.criteria_type,
+                                  item
+                                )}
+                              </option>
+                            ) : null;
+                          })}
                         </select>
                       ) : (
                         <input
                           required
                           value={formData.criteria_value}
-                          onChange={(e) => setFormData({ ...formData, criteria_value: e.target.value })}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              criteria_value: e.target.value,
+                            })
+                          }
                           className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#E42527]"
                         />
                       )}
                     </div>
 
+                    {/* Single: Is Exception */}
                     <div className="sm:col-span-2">
-                      <label className="flex items-center gap-2 text-sm text-slate-700">
+                      <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
                         <input
                           type="checkbox"
                           checked={!!formData.is_exception}
-                          onChange={(e) => setFormData({ ...formData, is_exception: e.target.checked })}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              is_exception: e.target.checked,
+                            })
+                          }
                           className="rounded border-slate-300 text-[#E42527]"
                         />
-                        <span className="font-medium">Is Exception</span>
+                        <span className="font-medium">
+                          Is Exception (Exclude this value)
+                        </span>
                       </label>
+                      {formData.is_exception && (
+                        <p className="mt-1.5 text-xs text-amber-700">
+                          ⚠️ This value will be <strong>excluded</strong> from the policy.
+                        </p>
+                      )}
                     </div>
                   </div>
                 )}
 
                 {error && (
-                  <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</div>
+                  <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
+                    {error}
+                  </div>
                 )}
               </div>
 
               <div className="flex justify-end gap-2 border-t border-slate-100 px-5 py-4">
                 <button
                   type="button"
-                  onClick={() => setShowForm(false)}
-                  className="rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50"
+                  onClick={closeForm}
+                  disabled={saving}
+                  className="rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -1519,7 +2248,13 @@ export default function LeaveApplicabilityRulesPage() {
                   disabled={saving}
                   className="rounded-lg bg-[#E42527] px-5 py-2 text-sm font-medium text-white hover:bg-[#c91f21] disabled:opacity-60"
                 >
-                  {saving ? "Saving..." : isBulkMode ? "Add Selected" : editId ? "Update" : "Submit"}
+                  {saving
+                    ? "Saving..."
+                    : isBulkMode
+                    ? `Add Selected${bulkSelectedValues.length ? ` (${bulkSelectedValues.length})` : ""}`
+                    : editId
+                    ? "Update"
+                    : "Submit"}
                 </button>
               </div>
             </form>
@@ -1527,14 +2262,21 @@ export default function LeaveApplicabilityRulesPage() {
         </div>
       )}
 
-      {/* Details Modal */}
+      {/* ══════════ DETAILS MODAL ══════════ */}
       {selectedRule && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-[2px]">
+        <div
+          className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-[2px]"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setSelectedRule(null);
+          }}
+        >
           <div className="w-full max-w-lg overflow-hidden rounded-xl bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Rule details</p>
-                <h2 className="mt-1 text-lg font-semibold capitalize text-slate-800">
+              <div className="min-w-0">
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                  Rule details
+                </p>
+                <h2 className="mt-1 truncate text-lg font-semibold capitalize text-slate-800">
                   {getCriteriaLabel(selectedRule.criteria_type)}
                 </h2>
               </div>
@@ -1563,7 +2305,10 @@ export default function LeaveApplicabilityRulesPage() {
               <div className="rounded-lg bg-slate-50 px-3 py-2.5">
                 <p className="text-xs text-slate-400">Criteria Value</p>
                 <p className="mt-1 break-all text-sm font-medium text-slate-800">
-                  {getCriteriaValueLabel(selectedRule.criteria_type, selectedRule.criteria_value)}
+                  {getCriteriaValueLabel(
+                    selectedRule.criteria_type,
+                    selectedRule.criteria_value
+                  )}
                 </p>
               </div>
               <div className="rounded-lg bg-slate-50 px-3 py-2.5">
@@ -1594,8 +2339,9 @@ export default function LeaveApplicabilityRulesPage() {
               <button
                 type="button"
                 onClick={() => {
+                  const rule = selectedRule;
                   setSelectedRule(null);
-                  openEdit(selectedRule);
+                  openEdit(rule);
                 }}
                 className="rounded-lg bg-[#E42527] px-4 py-2 text-sm font-medium text-white hover:bg-[#c91f21]"
               >

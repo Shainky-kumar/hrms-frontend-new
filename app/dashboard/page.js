@@ -1,40 +1,1719 @@
+// // "use client";
+
+// // import { useEffect, useState, useCallback, useMemo } from "react";
+// // import {
+// //   Users,
+// //   UserCheck2,
+// //   UserX,
+// //   CalendarDays,
+// //   Clock,
+// //   AlertTriangle,
+// //   Building2,
+// //   Briefcase,
+// //   ClipboardList,
+// //   Cake,
+// //   RefreshCw,
+// //   TrendingUp,
+// //   Sun,
+// //   X,
+// // } from "lucide-react";
+// // import {
+// //   ResponsiveContainer,
+// //   AreaChart,
+// //   Area,
+// //   XAxis,
+// //   YAxis,
+// //   CartesianGrid,
+// //   Tooltip,
+// //   BarChart,
+// //   Bar,
+// // } from "recharts";
+// // import { api } from "@/app/lib/api";
+
+// // function getErrorMessage(err) {
+// //   const detail = err?.response?.data?.detail;
+// //   if (Array.isArray(detail)) return detail.map((i) => i?.msg || "Error").join(", ");
+// //   if (typeof detail === "string") return detail;
+// //   if (detail && typeof detail === "object") return detail.msg || detail.message || "Request failed";
+// //   return err?.message || "Something went wrong";
+// // }
+
+// // function formatDate(value) {
+// //   if (!value) return "—";
+// //   try {
+// //     if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+// //       const [y, m, d] = value.split("-").map(Number);
+// //       return new Date(y, m - 1, d).toLocaleDateString("en-IN", {
+// //         day: "2-digit",
+// //         month: "short",
+// //         year: "numeric",
+// //       });
+// //     }
+// //     return new Date(value).toLocaleDateString("en-IN", {
+// //       day: "2-digit",
+// //       month: "short",
+// //       year: "numeric",
+// //     });
+// //   } catch {
+// //     return String(value);
+// //   }
+// // }
+
+// // function calendarParts(value) {
+// //   if (!value) return { day: "--", month: "", weekday: "" };
+// //   try {
+// //     const date = new Date(
+// //       typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)
+// //         ? `${value}T00:00:00`
+// //         : value
+// //     );
+// //     return {
+// //       day: date.toLocaleDateString("en-IN", { day: "2-digit" }),
+// //       month: date.toLocaleDateString("en-IN", { month: "short" }),
+// //       weekday: date.toLocaleDateString("en-IN", { weekday: "short" }),
+// //     };
+// //   } catch {
+// //     return { day: "--", month: "", weekday: "" };
+// //   }
+// // }
+
+// // function greeting() {
+// //   const h = new Date().getHours();
+// //   if (h < 12) return "Good morning";
+// //   if (h < 17) return "Good afternoon";
+// //   return "Good evening";
+// // }
+
+// // function StatCard({ icon: Icon, label, value, hint, accent, onClick }) {
+// //   const accents = {
+// //     red: "from-[#E42527]/10 to-white border-[#E42527]/20 text-[#E42527]",
+// //     green: "from-emerald-50 to-white border-emerald-100 text-emerald-600",
+// //     amber: "from-amber-50 to-white border-amber-100 text-amber-600",
+// //     blue: "from-sky-50 to-white border-sky-100 text-sky-600",
+// //     slate: "from-slate-50 to-white border-slate-200 text-slate-700",
+// //     violet: "from-violet-50 to-white border-violet-100 text-violet-600",
+// //   };
+// //   const a = accents[accent] || accents.slate;
+
+// //   return (
+// //     <button
+// //       type="button"
+// //       onClick={onClick}
+// //       disabled={!onClick}
+// //       className={`relative w-full overflow-hidden rounded-2xl border bg-gradient-to-br p-5 text-left shadow-sm transition ${a} ${
+// //         onClick ? "cursor-pointer hover:shadow-md hover:scale-[1.01]" : "cursor-default"
+// //       }`}
+// //     >
+// //       <div className="flex items-start justify-between">
+// //         <div>
+// //           <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+// //             {label}
+// //           </p>
+// //           <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900 tabular-nums">
+// //             {value ?? 0}
+// //           </p>
+// //           {hint ? <p className="mt-1 text-xs text-slate-500">{hint}</p> : null}
+// //           {onClick ? (
+// //             <p className="mt-2 text-[11px] font-medium text-slate-400">Click to view list →</p>
+// //           ) : null}
+// //         </div>
+// //         <div className="rounded-xl bg-white/80 p-2.5 shadow-sm ring-1 ring-black/5">
+// //           <Icon className="h-5 w-5 opacity-80" />
+// //         </div>
+// //       </div>
+// //     </button>
+// //   );
+// // }
+
+// // function Panel({ title, subtitle, right, children, className = "" }) {
+// //   return (
+// //     <div className={`rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm ${className}`}>
+// //       <div className="mb-4 flex items-start justify-between gap-3">
+// //         <div>
+// //           <h2 className="text-[15px] font-semibold text-slate-900">{title}</h2>
+// //           {subtitle ? <p className="mt-0.5 text-xs text-slate-500">{subtitle}</p> : null}
+// //         </div>
+// //         {right}
+// //       </div>
+// //       {children}
+// //     </div>
+// //   );
+// // }
+
+// // function Empty({ text }) {
+// //   return <div className="py-12 text-center text-sm text-slate-400">{text}</div>;
+// // }
+
+// // export default function HrmsDashboardPage() {
+// //   const [summary, setSummary] = useState(null);
+// //   const [trend, setTrend] = useState([]);
+// //   const [pendingItems, setPendingItems] = useState([]);
+// //   const [peopleStatus, setPeopleStatus] = useState(null);
+// //   const [loading, setLoading] = useState(true);
+// //   const [error, setError] = useState("");
+
+// //   // Modal: "leave" | "absent" | null
+// //   const [listModal, setListModal] = useState(null);
+
+// //   const loadDashboard = useCallback(async () => {
+// //     setLoading(true);
+// //     setError("");
+// //     try {
+// //       const [sumRes, trendRes, pendingRes, peopleRes] = await Promise.all([
+// //         api.get("/api/v1/dashboard/summary"),
+// //         api.get("/api/v1/dashboard/attendance-trend", { params: { days: 7 } }),
+// //         api.get("/api/v1/dashboard/pending-approvals", { params: { limit: 8 } }),
+// //         api.get("/api/v1/dashboard/today-people-status"),
+// //       ]);
+
+// //       setSummary(sumRes?.data ?? sumRes);
+// //       const tr = trendRes?.data ?? trendRes;
+// //       setTrend(Array.isArray(tr?.trend) ? tr.trend : []);
+// //       const pe = pendingRes?.data ?? pendingRes;
+// //       setPendingItems(Array.isArray(pe?.items) ? pe.items : []);
+// //       setPeopleStatus(peopleRes?.data ?? peopleRes);
+// //     } catch (err) {
+// //       setError(getErrorMessage(err));
+// //       setSummary(null);
+// //       setTrend([]);
+// //       setPendingItems([]);
+// //       setPeopleStatus(null);
+// //     } finally {
+// //       setLoading(false);
+// //     }
+// //   }, []);
+
+// //   useEffect(() => {
+// //     const timeoutId = setTimeout(() => {
+// //       loadDashboard();
+// //     }, 0);
+
+// //     return () => clearTimeout(timeoutId);
+// //   }, [loadDashboard]);
+
+// //   const headcount = summary?.headcount || {};
+// //   const att = summary?.attendance_today || {};
+// //   const pending = summary?.pending_approvals || {};
+// //   const month = summary?.this_month || {};
+// //   const holidays = summary?.upcoming_holidays || [];
+// //   const birthdays = summary?.birthdays_this_week || [];
+// //   const deptPresent = summary?.department_present_today || [];
+
+// //   const onLeaveCount =
+// //     peopleStatus?.on_leave?.count ?? att.on_leave ?? 0;
+// //   const absentNoLeaveCount =
+// //     peopleStatus?.absent_without_leave?.count ?? att.absent ?? 0;
+// //   const onLeaveList = peopleStatus?.on_leave?.list || [];
+// //   const absentList = peopleStatus?.absent_without_leave?.list || [];
+
+// //   const trendData = useMemo(() => {
+// //     return (trend || []).map((row) => {
+// //       let day = row.date;
+// //       try {
+// //         if (row.date) day = new Date(row.date).toLocaleDateString("en-IN", { weekday: "short" });
+// //       } catch {}
+// //       return {
+// //         day,
+// //         present: row.present || 0,
+// //         absent: row.absent || 0,
+// //         leave: row.on_leave || 0,
+// //       };
+// //     });
+// //   }, [trend]);
+
+// //   const presentRate = useMemo(() => {
+// //     const p = att.present || 0;
+// //     const total =
+// //       (att.present || 0) + (att.absent || 0) + (att.on_leave || 0) + (att.half_day || 0);
+// //     if (!total) return null;
+// //     return Math.round((p / total) * 100);
+// //   }, [att]);
+
+// //   const typeStyle = (type) => {
+// //     const t = (type || "").toLowerCase();
+// //     if (t === "leave") return "bg-sky-50 text-sky-700 ring-sky-100";
+// //     if (t === "regularization") return "bg-violet-50 text-violet-700 ring-violet-100";
+// //     return "bg-amber-50 text-amber-700 ring-amber-100";
+// //   };
+
+// //   const modalTitle =
+// //     listModal === "leave"
+// //       ? "On leave today"
+// //       : listModal === "absent"
+// //       ? "Absent without leave"
+// //       : "";
+// //   const modalList = listModal === "leave" ? onLeaveList : listModal === "absent" ? absentList : [];
+
+// //   return (
+// //     <div className="min-h-screen bg-gradient-to-b from-slate-100/80 to-slate-50">
+// //       <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+// //         {/* Hero */}
+// //         <div className="relative overflow-hidden rounded-3xl bg-slate-900 px-6 py-7 text-white shadow-xl shadow-slate-900/10 sm:px-8">
+// //           <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-[#E42527]/30 blur-3xl" />
+// //           <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+// //             <div>
+// //               <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-slate-200 ring-1 ring-white/10">
+// //                 <Sun className="h-3.5 w-3.5 text-amber-300" />
+// //                 {greeting()}
+// //               </div>
+// //               <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">HR Overview</h1>
+// //               <p className="mt-1 text-sm text-slate-300">
+// //                 Live headcount, attendance & who is off today
+// //                 {summary?.date ? ` · ${formatDate(summary.date)}` : ""}
+// //               </p>
+// //             </div>
+// //             <button
+// //               type="button"
+// //               onClick={loadDashboard}
+// //               disabled={loading}
+// //               className="inline-flex items-center gap-2 self-start rounded-xl bg-white/10 px-4 py-2.5 text-sm font-medium text-white ring-1 ring-white/15 hover:bg-white/15 disabled:opacity-50"
+// //             >
+// //               <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+// //               Refresh
+// //             </button>
+// //           </div>
+
+// //           {!loading && summary && (
+// //             <div className="relative mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+// //               {[
+// //                 { label: "Active staff", value: headcount.active ?? 0 },
+// //                 { label: "Present now", value: att.present ?? 0 },
+// //                 { label: "On leave", value: onLeaveCount },
+// //                 { label: "Absent (no leave)", value: absentNoLeaveCount },
+// //               ].map((item) => (
+// //                 <div
+// //                   key={item.label}
+// //                   className="rounded-2xl bg-white/5 px-4 py-3 ring-1 ring-white/10"
+// //                 >
+// //                   <p className="text-[11px] uppercase tracking-wide text-slate-400">{item.label}</p>
+// //                   <p className="mt-1 text-xl font-semibold tabular-nums">{item.value}</p>
+// //                 </div>
+// //               ))}
+// //             </div>
+// //           )}
+// //         </div>
+
+// //         {error && (
+// //           <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+// //             {error}
+// //           </div>
+// //         )}
+
+// //         {loading && !summary ? (
+// //           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+// //             {Array.from({ length: 6 }).map((_, i) => (
+// //               <div key={i} className="h-28 animate-pulse rounded-2xl bg-white shadow-sm" />
+// //             ))}
+// //           </div>
+// //         ) : (
+// //           <>
+// //             {/* KPI — clickable leave & absent */}
+// //             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+// //               <StatCard
+// //                 icon={Users}
+// //                 label="Active"
+// //                 value={headcount.active ?? 0}
+// //                 hint={`Total ${headcount.total ?? 0}`}
+// //                 accent="slate"
+// //               />
+// //               <StatCard
+// //                 icon={UserCheck2}
+// //                 label="Present"
+// //                 value={att.present ?? 0}
+// //                 hint={`Late ${att.late ?? 0}`}
+// //                 accent="green"
+// //               />
+// //               <StatCard
+// //                 icon={CalendarDays}
+// //                 label="On leave"
+// //                 value={onLeaveCount}
+// //                 hint="Approved leave today"
+// //                 accent="blue"
+// //                 onClick={() => setListModal("leave")}
+// //               />
+// //               <StatCard
+// //                 icon={UserX}
+// //                 label="Absent (no leave)"
+// //                 value={absentNoLeaveCount}
+// //                 hint="No punch, no approved leave"
+// //                 accent="red"
+// //                 onClick={() => setListModal("absent")}
+// //               />
+// //               <StatCard
+// //                 icon={ClipboardList}
+// //                 label="Approvals"
+// //                 value={pending.total ?? 0}
+// //                 hint={`Leave ${pending.leaves ?? 0}`}
+// //                 accent="amber"
+// //               />
+// //               <StatCard
+// //                 icon={Briefcase}
+// //                 label="New joiners"
+// //                 value={headcount.new_joiners_this_month ?? 0}
+// //                 hint="This month"
+// //                 accent="violet"
+// //               />
+// //             </div>
+
+// //             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+// //               <StatCard icon={Clock} label="WFH today" value={att.wfh ?? 0} accent="blue" />
+// //               <StatCard
+// //                 icon={AlertTriangle}
+// //                 label="Alerts"
+// //                 value={summary?.unread_alerts ?? 0}
+// //                 accent={(summary?.unread_alerts || 0) > 0 ? "amber" : "slate"}
+// //               />
+// //               <StatCard
+// //                 icon={Building2}
+// //                 label="Notice period"
+// //                 value={headcount.notice_period ?? 0}
+// //                 accent="slate"
+// //               />
+// //               <StatCard
+// //                 icon={TrendingUp}
+// //                 label="Onboarding"
+// //                 value={summary?.onboarding_candidates ?? 0}
+// //                 hint={presentRate != null ? `Present ${presentRate}%` : "Pipeline"}
+// //                 accent="violet"
+// //               />
+// //             </div>
+
+// //             {/* Charts */}
+// //             <div className="grid gap-4 lg:grid-cols-5">
+// //               <Panel className="lg:col-span-3" title="Attendance trend" subtitle="Last 7 days">
+// //                 {trendData.length === 0 ? (
+// //                   <Empty text="No trend data yet" />
+// //                 ) : (
+// //                   <div className="h-72">
+// //                     <ResponsiveContainer width="100%" height="100%">
+// //                       <AreaChart data={trendData}>
+// //                         <defs>
+// //                           <linearGradient id="gPresent" x1="0" y1="0" x2="0" y2="1">
+// //                             <stop offset="0%" stopColor="#10b981" stopOpacity={0.35} />
+// //                             <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
+// //                           </linearGradient>
+// //                           <linearGradient id="gAbsent" x1="0" y1="0" x2="0" y2="1">
+// //                             <stop offset="0%" stopColor="#E42527" stopOpacity={0.25} />
+// //                             <stop offset="100%" stopColor="#E42527" stopOpacity={0} />
+// //                           </linearGradient>
+// //                         </defs>
+// //                         <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+// //                         <XAxis dataKey="day" tick={{ fontSize: 11, fill: "#94a3b8" }} />
+// //                         <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "#94a3b8" }} />
+// //                         <Tooltip
+// //                           contentStyle={{
+// //                             borderRadius: 12,
+// //                             border: "1px solid #e2e8f0",
+// //                             fontSize: 12,
+// //                           }}
+// //                         />
+// //                         <Area type="monotone" dataKey="present" name="Present" stroke="#10b981" fill="url(#gPresent)" strokeWidth={2.5} />
+// //                         <Area type="monotone" dataKey="absent" name="Absent" stroke="#E42527" fill="url(#gAbsent)" strokeWidth={2} />
+// //                         <Area type="monotone" dataKey="leave" name="On leave" stroke="#6366f1" fill="transparent" strokeWidth={2} strokeDasharray="4 4" />
+// //                       </AreaChart>
+// //                     </ResponsiveContainer>
+// //                   </div>
+// //                 )}
+// //               </Panel>
+
+// //               <Panel className="lg:col-span-2" title="Dept presence" subtitle="In office today">
+// //                 {deptPresent.length === 0 ? (
+// //                   <Empty text="No department data" />
+// //                 ) : (
+// //                   <div className="h-72">
+// //                     <ResponsiveContainer width="100%" height="100%">
+// //                       <BarChart data={deptPresent} layout="vertical" margin={{ left: 4, right: 8 }}>
+// //                         <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
+// //                         <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11, fill: "#94a3b8" }} />
+// //                         <YAxis type="category" dataKey="department" width={88} tick={{ fontSize: 10, fill: "#64748b" }} />
+// //                         <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid #e2e8f0", fontSize: 12 }} />
+// //                         <Bar dataKey="present" fill="#E42527" radius={[0, 8, 8, 0]} barSize={14} />
+// //                       </BarChart>
+// //                     </ResponsiveContainer>
+// //                   </div>
+// //                 )}
+// //               </Panel>
+// //             </div>
+
+// //             {/* Quick lists preview + pending */}
+// //             <div className="grid gap-4 lg:grid-cols-3">
+// //               <Panel
+// //                 title="On leave today"
+// //                 subtitle="Approved leave"
+// //                 right={
+// //                   <button
+// //                     type="button"
+// //                     onClick={() => setListModal("leave")}
+// //                     className="text-xs font-medium text-[#E42527] hover:underline"
+// //                   >
+// //                     View all
+// //                   </button>
+// //                 }
+// //               >
+// //                 {onLeaveList.length === 0 ? (
+// //                   <Empty text="No one on leave today" />
+// //                 ) : (
+// //                   <div className="space-y-2">
+// //                     {onLeaveList.slice(0, 4).map((row, i) => (
+// //                       <div
+// //                         key={row.employee_id || i}
+// //                         className="flex items-center justify-between rounded-xl bg-sky-50/80 px-3 py-2.5"
+// //                       >
+// //                         <div className="min-w-0">
+// //                           <p className="truncate text-sm font-medium text-slate-900">
+// //                             {row.name || row.employee_id}
+// //                           </p>
+// //                           <p className="text-xs text-slate-500">
+// //                             {row.leave_type || "Leave"}
+// //                             {row.start_date ? ` · ${formatDate(row.start_date)}` : ""}
+// //                             {row.end_date ? ` – ${formatDate(row.end_date)}` : ""}
+// //                           </p>
+// //                         </div>
+// //                       </div>
+// //                     ))}
+// //                   </div>
+// //                 )}
+// //               </Panel>
+
+// //               <Panel
+// //                 title="Absent without leave"
+// //                 subtitle="No punch, no approved leave"
+// //                 right={
+// //                   <button
+// //                     type="button"
+// //                     onClick={() => setListModal("absent")}
+// //                     className="text-xs font-medium text-[#E42527] hover:underline"
+// //                   >
+// //                     View all
+// //                   </button>
+// //                 }
+// //               >
+// //                 {absentList.length === 0 ? (
+// //                   <Empty text="No unexplained absents" />
+// //                 ) : (
+// //                   <div className="space-y-2">
+// //                     {absentList.slice(0, 4).map((row, i) => (
+// //                       <div
+// //                         key={row.employee_id || i}
+// //                         className="flex items-center justify-between rounded-xl bg-red-50/80 px-3 py-2.5"
+// //                       >
+// //                         <div className="min-w-0">
+// //                           <p className="truncate text-sm font-medium text-slate-900">
+// //                             {row.name || row.employee_id}
+// //                           </p>
+// //                           <p className="text-xs text-slate-500">{row.reason || "Absent"}</p>
+// //                         </div>
+// //                       </div>
+// //                     ))}
+// //                   </div>
+// //                 )}
+// //               </Panel>
+
+// //               <Panel title="Pending approvals" subtitle="Needs action">
+// //                 {pendingItems.length === 0 ? (
+// //                   <Empty text="All clear" />
+// //                 ) : (
+// //                   <div className="divide-y divide-slate-100">
+// //                     {pendingItems.slice(0, 5).map((item, i) => (
+// //                       <div key={`${item.type}-${item.id || i}`} className="flex items-center justify-between gap-2 py-2.5">
+// //                         <div className="min-w-0">
+// //                           <p className="truncate text-sm font-medium text-slate-900">
+// //                             {item.title || "Request"}
+// //                           </p>
+// //                           <p className="text-xs text-slate-500">{item.employee_id}</p>
+// //                         </div>
+// //                         <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize ring-1 ${typeStyle(item.type)}`}>
+// //                           {(item.type || "").replace(/_/g, " ")}
+// //                         </span>
+// //                       </div>
+// //                     ))}
+// //                   </div>
+// //                 )}
+// //               </Panel>
+// //             </div>
+
+// //             {/* Holidays + Birthdays */}
+// //             <div className="grid gap-4 lg:grid-cols-2">
+// //               <Panel
+// //                 title="Upcoming holidays"
+// //                 subtitle="Next 30 days"
+// //                 right={
+// //                   <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-600 ring-1 ring-amber-100">
+// //                     <CalendarDays className="h-4.5 w-4.5" />
+// //                   </div>
+// //                 }
+// //                 className="overflow-hidden"
+// //               >
+// //                 {holidays.length === 0 ? (
+// //                   <div className="flex items-center gap-3 rounded-xl border border-dashed border-slate-200 bg-slate-50/70 px-4 py-5">
+// //                     <Sun className="h-5 w-5 text-amber-500" />
+// //                     <p className="text-sm text-slate-500">No holidays upcoming</p>
+// //                   </div>
+// //                 ) : (
+// //                   <div className="space-y-2.5">
+// //                     {holidays.map((h, i) => (
+// //                       <div
+// //                         key={h.holiday_id || i}
+// //                         className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/70 px-3 py-2.5 transition hover:border-amber-200 hover:bg-amber-50/40"
+// //                       >
+// //                         {(() => {
+// //                           const date = calendarParts(h.date);
+// //                           return (
+// //                             <div className="flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-lg bg-white text-amber-700 shadow-sm ring-1 ring-amber-100">
+// //                               <span className="text-[10px] font-bold uppercase">{date.month}</span>
+// //                               <span className="text-lg font-bold leading-4">{date.day}</span>
+// //                             </div>
+// //                           );
+// //                         })()}
+// //                         <div className="min-w-0 flex-1">
+// //                           <p className="truncate text-sm font-semibold text-slate-900">
+// //                             {h.name || h.holiday_name}
+// //                           </p>
+// //                           <p className="mt-0.5 text-xs text-slate-500">{formatDate(h.date)}</p>
+// //                         </div>
+// //                         <Sun className="h-4 w-4 shrink-0 text-amber-400" />
+// //                       </div>
+// //                     ))}
+// //                   </div>
+// //                 )}
+// //               </Panel>
+
+// //               <Panel
+// //                 title="Birthdays this week"
+// //                 subtitle="Next 7 days"
+// //                 right={
+// //                   <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-50 text-rose-600 ring-1 ring-rose-100">
+// //                     <Cake className="h-4.5 w-4.5" />
+// //                   </div>
+// //                 }
+// //                 className="overflow-hidden"
+// //               >
+// //                 {birthdays.length === 0 ? (
+// //                   <div className="flex items-center gap-3 rounded-xl border border-dashed border-slate-200 bg-slate-50/70 px-4 py-5">
+// //                     <Cake className="h-5 w-5 text-rose-400" />
+// //                     <p className="text-sm text-slate-500">No birthdays this week</p>
+// //                   </div>
+// //                 ) : (
+// //                   <div className="space-y-2.5">
+// //                     {birthdays.map((b, i) => (
+// //                       <div
+// //                         key={b.employee_id || i}
+// //                         className="flex items-center gap-3 rounded-xl border border-rose-100/80 bg-rose-50/50 px-3 py-2.5 transition hover:border-rose-200 hover:bg-rose-50"
+// //                       >
+// //                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#E42527] text-xs font-bold text-white shadow-sm shadow-red-200">
+// //                             {(b.name || "E")[0]?.toUpperCase()}
+// //                         </div>
+// //                         <div className="min-w-0 flex-1">
+// //                           <p className="truncate text-sm font-semibold text-slate-900">
+// //                             {b.name || b.employee_id}
+// //                           </p>
+// //                           <p className="mt-0.5 text-xs text-slate-500">{formatDate(b.birthday_on || b.dob)}</p>
+// //                         </div>
+// //                         <Cake className="h-4 w-4 shrink-0 text-[#E42527]" />
+// //                       </div>
+// //                     ))}
+// //                   </div>
+// //                 )}
+// //               </Panel>
+// //             </div>
+// //           </>
+// //         )}
+// //       </div>
+
+// //       {/* List modal — On leave / Absent */}
+// //       {listModal && (
+// //         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+// //           <div className="flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+// //             <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+// //               <div>
+// //                 <h3 className="text-lg font-semibold text-slate-900">{modalTitle}</h3>
+// //                 <p className="text-xs text-slate-500">
+// //                   {formatDate(peopleStatus?.date || summary?.date)} · {modalList.length} people
+// //                 </p>
+// //               </div>
+// //               <button
+// //                 type="button"
+// //                 onClick={() => setListModal(null)}
+// //                 className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"
+// //               >
+// //                 <X className="h-5 w-5" />
+// //               </button>
+// //             </div>
+// //             <div className="flex-1 overflow-y-auto px-5 py-3">
+// //               {modalList.length === 0 ? (
+// //                 <Empty text="No one in this list" />
+// //               ) : (
+// //                 <ul className="divide-y divide-slate-100">
+// //                   {modalList.map((row, i) => (
+// //                     <li key={row.employee_id || i} className="py-3">
+// //                       <p className="text-sm font-semibold text-slate-900">
+// //                         {row.name || row.employee_id}
+// //                       </p>
+// //                       <p className="text-xs text-slate-500">{row.employee_id}</p>
+// //                       {listModal === "leave" ? (
+// //                         <p className="mt-1 text-xs text-sky-700">
+// //                           {row.leave_type || "Leave"}
+// //                           {row.start_date ? ` · ${formatDate(row.start_date)}` : ""}
+// //                           {row.end_date ? ` → ${formatDate(row.end_date)}` : ""}
+// //                         </p>
+// //                       ) : (
+// //                         <p className="mt-1 text-xs text-red-600">
+// //                           {row.reason || "Absent without approved leave"}
+// //                         </p>
+// //                       )}
+// //                     </li>
+// //                   ))}
+// //                 </ul>
+// //               )}
+// //             </div>
+// //             <div className="border-t border-slate-100 px-5 py-3">
+// //               <button
+// //                 type="button"
+// //                 onClick={() => setListModal(null)}
+// //                 className="w-full rounded-xl bg-slate-900 py-2.5 text-sm font-medium text-white hover:bg-slate-800"
+// //               >
+// //                 Close
+// //               </button>
+// //             </div>
+// //           </div>
+// //         </div>
+// //       )}
+// //     </div>
+// //   );
+// // }
+
+// "use client";
+
+// import { useEffect, useState, useCallback, useMemo, useRef } from "react";
+// import Link from "next/link";
+// import {
+//   Users, UserCheck2, UserX, CalendarDays, Clock, AlertTriangle,
+//   Building2, Briefcase, ClipboardList, Cake, RefreshCw, TrendingUp,
+//   TrendingDown, Sun, X, Printer, Zap, CircleDot, Award, Bell,
+//   ChevronRight, Sparkles, AlertCircle, UserPlus, Timer,
+// } from "lucide-react";
+// import {
+//   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid,
+//   Tooltip, BarChart, Bar, RadialBarChart, RadialBar, PolarAngleAxis,
+// } from "recharts";
+// import { api } from "@/app/lib/api";
+
+// /* ══════════════════════════════════════════════════════════
+//    HELPERS
+//    ══════════════════════════════════════════════════════════ */
+
+// function getErrorMessage(err) {
+//   const detail = err?.response?.data?.detail;
+//   if (Array.isArray(detail)) return detail.map((i) => i?.msg || "Error").join(", ");
+//   if (typeof detail === "string") return detail;
+//   if (detail && typeof detail === "object") return detail.msg || detail.message || "Request failed";
+//   return err?.message || "Something went wrong";
+// }
+
+// function formatDate(value) {
+//   if (!value) return "—";
+//   try {
+//     if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+//       const [y, m, d] = value.split("-").map(Number);
+//       return new Date(y, m - 1, d).toLocaleDateString("en-IN", {
+//         day: "2-digit", month: "short", year: "numeric",
+//       });
+//     }
+//     return new Date(value).toLocaleDateString("en-IN", {
+//       day: "2-digit", month: "short", year: "numeric",
+//     });
+//   } catch { return String(value); }
+// }
+
+// function calendarParts(value) {
+//   if (!value) return { day: "--", month: "", weekday: "" };
+//   try {
+//     const date = new Date(
+//       typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)
+//         ? `${value}T00:00:00` : value
+//     );
+//     return {
+//       day: date.toLocaleDateString("en-IN", { day: "2-digit" }),
+//       month: date.toLocaleDateString("en-IN", { month: "short" }),
+//       weekday: date.toLocaleDateString("en-IN", { weekday: "short" }),
+//     };
+//   } catch { return { day: "--", month: "", weekday: "" }; }
+// }
+
+// function greeting() {
+//   const h = new Date().getHours();
+//   if (h < 12) return "Good morning";
+//   if (h < 17) return "Good afternoon";
+//   return "Good evening";
+// }
+
+// function relativeTime(ts) {
+//   if (!ts) return "";
+//   const diff = Math.floor((Date.now() - ts) / 1000);
+//   if (diff < 5) return "just now";
+//   if (diff < 60) return `${diff}s ago`;
+//   if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+//   return `${Math.floor(diff / 3600)}h ago`;
+// }
+
+// /* ══════════════════════════════════════════════════════════
+//    SUB COMPONENTS
+//    ══════════════════════════════════════════════════════════ */
+
+// function StatCard({ icon: Icon, label, value, hint, accent, onClick, delta }) {
+//   const accents = {
+//     red: "from-[#E42527]/10 to-white border-[#E42527]/20 text-[#E42527]",
+//     green: "from-emerald-50 to-white border-emerald-100 text-emerald-600",
+//     amber: "from-amber-50 to-white border-amber-100 text-amber-600",
+//     blue: "from-sky-50 to-white border-sky-100 text-sky-600",
+//     slate: "from-slate-50 to-white border-slate-200 text-slate-700",
+//     violet: "from-violet-50 to-white border-violet-100 text-violet-600",
+//   };
+//   const a = accents[accent] || accents.slate;
+
+//   const deltaContent = () => {
+//     if (delta == null) return null;
+//     if (delta > 0) {
+//       return (
+//         <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700">
+//           <TrendingUp className="h-3 w-3" />
+//           {delta > 0 ? `+${delta}` : delta}
+//         </span>
+//       );
+//     }
+//     if (delta < 0) {
+//       return (
+//         <span className="inline-flex items-center gap-0.5 rounded-full bg-red-50 px-1.5 py-0.5 text-[10px] font-semibold text-red-700">
+//           <TrendingDown className="h-3 w-3" />
+//           {delta}
+//         </span>
+//       );
+//     }
+//     return (
+//       <span className="inline-flex items-center gap-0.5 rounded-full bg-slate-50 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">
+//         — 0
+//       </span>
+//     );
+//   };
+
+//   return (
+//     <button
+//       type="button"
+//       onClick={onClick}
+//       disabled={!onClick}
+//       className={`relative w-full overflow-hidden rounded-2xl border bg-gradient-to-br p-5 text-left shadow-sm transition ${a} ${
+//         onClick ? "cursor-pointer hover:shadow-md hover:scale-[1.01]" : "cursor-default"
+//       }`}
+//     >
+//       <div className="flex items-start justify-between">
+//         <div className="min-w-0 flex-1">
+//           <div className="flex items-center gap-2">
+//             <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+//               {label}
+//             </p>
+//             {deltaContent()}
+//           </div>
+//           <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900 tabular-nums">
+//             {value ?? 0}
+//           </p>
+//           {hint ? <p className="mt-1 text-xs text-slate-500">{hint}</p> : null}
+//           {onClick ? (
+//             <p className="mt-2 text-[11px] font-medium text-slate-400">Click to view list →</p>
+//           ) : null}
+//         </div>
+//         <div className="rounded-xl bg-white/80 p-2.5 shadow-sm ring-1 ring-black/5">
+//           <Icon className="h-5 w-5 opacity-80" />
+//         </div>
+//       </div>
+//     </button>
+//   );
+// }
+
+// function Panel({ title, subtitle, right, children, className = "" }) {
+//   return (
+//     <div className={`rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm ${className}`}>
+//       <div className="mb-4 flex items-start justify-between gap-3">
+//         <div>
+//           <h2 className="text-[15px] font-semibold text-slate-900">{title}</h2>
+//           {subtitle ? <p className="mt-0.5 text-xs text-slate-500">{subtitle}</p> : null}
+//         </div>
+//         {right}
+//       </div>
+//       {children}
+//     </div>
+//   );
+// }
+
+// function Empty({ text, icon: Icon, action }) {
+//   return (
+//     <div className="flex flex-col items-center justify-center gap-2 py-10 text-center">
+//       {Icon && (
+//         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+//           <Icon className="h-6 w-6" />
+//         </div>
+//       )}
+//       <p className="text-sm text-slate-500">{text}</p>
+//       {action}
+//     </div>
+//   );
+// }
+
+// function AttendanceRing({ percent, present, total }) {
+//   const pct = Math.max(0, Math.min(100, percent ?? 0));
+//   const data = [{ name: "rate", value: pct, fill: pct >= 75 ? "#10b981" : pct >= 50 ? "#f59e0b" : "#E42527" }];
+
+//   return (
+//     <div className="relative flex h-[180px] w-full items-center justify-center">
+//       <ResponsiveContainer width="100%" height="100%">
+//         <RadialBarChart
+//           cx="50%" cy="50%" innerRadius="72%" outerRadius="100%"
+//           startAngle={90} endAngle={-270} data={data}
+//         >
+//           <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
+//           <RadialBar dataKey="value" cornerRadius={12} background={{ fill: "#f1f5f9" }} />
+//         </RadialBarChart>
+//       </ResponsiveContainer>
+//       <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+//         <p className="text-4xl font-bold text-slate-900 tabular-nums">{pct}%</p>
+//         <p className="mt-0.5 text-[11px] font-medium uppercase tracking-wide text-slate-500">
+//           Attendance
+//         </p>
+//         {present != null && total != null && (
+//           <p className="mt-0.5 text-xs text-slate-500">
+//             {present} of {total}
+//           </p>
+//         )}
+//       </div>
+//     </div>
+//   );
+// }
+
+// function QuickAction({ icon: Icon, label, href, tone = "slate" }) {
+//   const tones = {
+//     red: "bg-red-50 text-red-700 hover:bg-red-100 ring-red-100",
+//     green: "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 ring-emerald-100",
+//     amber: "bg-amber-50 text-amber-700 hover:bg-amber-100 ring-amber-100",
+//     blue: "bg-sky-50 text-sky-700 hover:bg-sky-100 ring-sky-100",
+//     violet: "bg-violet-50 text-violet-700 hover:bg-violet-100 ring-violet-100",
+//   };
+//   const t = tones[tone] || tones.slate;
+//   return (
+//     <Link
+//       href={href}
+//       className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium ring-1 transition ${t}`}
+//     >
+//       <Icon className="h-4 w-4 shrink-0" />
+//       <span className="truncate">{label}</span>
+//       <ChevronRight className="ml-auto h-3.5 w-3.5 opacity-40" />
+//     </Link>
+//   );
+// }
+
+// /* ══════════════════════════════════════════════════════════
+//    MAIN
+//    ══════════════════════════════════════════════════════════ */
+
+// export default function HrmsDashboardPage() {
+//   const [summary, setSummary] = useState(null);
+//   const [trend, setTrend] = useState([]);
+//   const [pendingItems, setPendingItems] = useState([]);
+//   const [peopleStatus, setPeopleStatus] = useState(null);
+//   const [actionItems, setActionItems] = useState([]);
+//   const [recentHires, setRecentHires] = useState([]);
+//   const [myTeam, setMyTeam] = useState(null);
+//   const [heatmap, setHeatmap] = useState([]);
+//   const [lastUpdated, setLastUpdated] = useState(null);
+//   const [tick, setTick] = useState(0);
+//   const [loading, setLoading] = useState(true);
+//   const [error, setError] = useState("");
+//   const [autoRefresh, setAutoRefresh] = useState(true);
+//   const [listModal, setListModal] = useState(null);
+//   const reqIdRef = useRef(0);
+
+//   /* ══════════════ LOAD ══════════════ */
+//   const loadDashboard = useCallback(async ({ silent = false } = {}) => {
+//     const myReqId = ++reqIdRef.current;
+//     if (!silent) setLoading(true);
+//     if (!silent) setError("");
+
+//     try {
+//       const [sumRes, trendRes, pendingRes, peopleRes, actionsRes, hiresRes, teamRes, heatRes] =
+//         await Promise.allSettled([
+//           api.get("/api/v1/dashboard/summary"),
+//           api.get("/api/v1/dashboard/attendance-trend", { params: { days: 7 } }),
+//           api.get("/api/v1/dashboard/pending-approvals", { params: { limit: 8 } }),
+//           api.get("/api/v1/dashboard/today-people-status"),
+//           api.get("/api/v1/dashboard/action-required"),
+//           api.get("/api/v1/dashboard/recent-hires", { params: { days: 30 } }),
+//           api.get("/api/v1/dashboard/my-team-today"),
+//           api.get("/api/v1/dashboard/attendance-heatmap", { params: { days: 7 } }),
+//         ]);
+
+//       if (myReqId !== reqIdRef.current) return;
+
+//       const safe = (res) => (res.status === "fulfilled" ? (res.value?.data ?? res.value) : null);
+
+//       const sumData = safe(sumRes);
+//       setSummary(sumData);
+
+//       const trData = safe(trendRes);
+//       setTrend(Array.isArray(trData?.trend) ? trData.trend : []);
+
+//       const pendData = safe(pendingRes);
+//       setPendingItems(Array.isArray(pendData?.items) ? pendData.items : []);
+
+//       setPeopleStatus(safe(peopleRes));
+
+//       const actData = safe(actionsRes);
+//       setActionItems(Array.isArray(actData?.items) ? actData.items : []);
+
+//       const hireData = safe(hiresRes);
+//       setRecentHires(Array.isArray(hireData?.employees) ? hireData.employees : Array.isArray(hireData?.items) ? hireData.items : []);
+
+//       setMyTeam(safe(teamRes));
+
+//       const heatData = safe(heatRes);
+//       setHeatmap(Array.isArray(heatData?.rows) ? heatData.rows : []);
+
+//       setLastUpdated(Date.now());
+//     } catch (err) {
+//       if (myReqId !== reqIdRef.current) return;
+//       setError(getErrorMessage(err));
+//     } finally {
+//       if (myReqId === reqIdRef.current) setLoading(false);
+//     }
+//   }, []);
+
+//   useEffect(() => {
+//     const t = setTimeout(() => loadDashboard(), 0);
+//     return () => clearTimeout(t);
+//   }, [loadDashboard]);
+
+//   /* auto-refresh 2 min */
+//   useEffect(() => {
+//     if (!autoRefresh) return;
+//     const t = setInterval(() => loadDashboard({ silent: true }), 120_000);
+//     return () => clearInterval(t);
+//   }, [autoRefresh, loadDashboard]);
+
+//   /* relative time ticker */
+//   useEffect(() => {
+//     const t = setInterval(() => setTick((x) => x + 1), 10_000);
+//     return () => clearInterval(t);
+//   }, []);
+
+//   /* ══════════════ DERIVED ══════════════ */
+//   const headcount = summary?.headcount || {};
+//   const att = summary?.attendance_today || {};
+//   const pending = summary?.pending_approvals || {};
+//   const holidays = summary?.upcoming_holidays || [];
+//   const birthdays = summary?.birthdays_this_week || [];
+//   const deptPresent = summary?.department_present_today || [];
+//   const deltas = summary?.deltas || {};
+
+//   const onLeaveCount = peopleStatus?.on_leave?.count ?? att.on_leave ?? 0;
+//   const absentNoLeaveCount = peopleStatus?.absent_without_leave?.count ?? att.absent ?? 0;
+//   const onLeaveList = peopleStatus?.on_leave?.list || [];
+//   const absentList = peopleStatus?.absent_without_leave?.list || [];
+
+//   const trendData = useMemo(() => {
+//     return (trend || []).map((row) => {
+//       let day = row.date;
+//       try {
+//         if (row.date) day = new Date(row.date).toLocaleDateString("en-IN", { weekday: "short" });
+//       } catch {}
+//       return {
+//         day,
+//         present: row.present || 0,
+//         absent: row.absent || 0,
+//         leave: row.on_leave || 0,
+//       };
+//     });
+//   }, [trend]);
+
+//   const presentRate = useMemo(() => {
+//     const p = att.present || 0;
+//     const total =
+//       (att.present || 0) + (att.absent || 0) + (att.on_leave || 0) + (att.half_day || 0);
+//     if (!total) return null;
+//     return Math.round((p / total) * 100);
+//   }, [att]);
+
+//   const activeStaff = headcount.active || 0;
+//   const presentTotal = (att.present || 0) + (att.wfh || 0) + (att.on_duty || 0);
+//   const attendancePercent = activeStaff
+//     ? Math.round((presentTotal / activeStaff) * 100)
+//     : presentRate ?? 0;
+
+//   const typeStyle = (type) => {
+//     const t = (type || "").toLowerCase();
+//     if (t === "leave") return "bg-sky-50 text-sky-700 ring-sky-100";
+//     if (t === "regularization") return "bg-violet-50 text-violet-700 ring-violet-100";
+//     return "bg-amber-50 text-amber-700 ring-amber-100";
+//   };
+
+//   const modalTitle =
+//     listModal === "leave"
+//       ? "On leave today"
+//       : listModal === "absent"
+//       ? "Absent without leave"
+//       : "";
+
+//   const modalList = listModal === "leave" ? onLeaveList : listModal === "absent" ? absentList : [];
+
+//   /* ══════════════ PRINT ══════════════ */
+//   const handlePrint = () => {
+//     try { window.print(); } catch {}
+//   };
+
+//   /* ══════════════ RENDER ══════════════ */
+//   return (
+//     <div className="min-h-screen bg-gradient-to-b from-slate-100/80 to-slate-50">
+//       <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+//         {/* HERO */}
+//         <div className="relative overflow-hidden rounded-3xl bg-slate-900 px-6 py-7 text-white shadow-xl shadow-slate-900/10 sm:px-8">
+//           <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-[#E42527]/30 blur-3xl" />
+//           <div className="pointer-events-none absolute -bottom-16 -left-10 h-48 w-48 rounded-full bg-emerald-500/10 blur-3xl" />
+
+//           <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+//             <div>
+//               <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-slate-200 ring-1 ring-white/10">
+//                 <Sun className="h-3.5 w-3.5 text-amber-300" />
+//                 {greeting()}
+//               </div>
+//               <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">HR Overview</h1>
+//               <p className="mt-1 text-sm text-slate-300">
+//                 Live headcount, attendance & who is off today
+//                 {summary?.date ? ` · ${formatDate(summary.date)}` : ""}
+//               </p>
+//               {lastUpdated && (
+//                 <p className="mt-1 inline-flex items-center gap-1 text-[11px] text-slate-400">
+//                   <CircleDot className="h-2.5 w-2.5 text-emerald-400" />
+//                   Updated {relativeTime(lastUpdated)}
+//                 </p>
+//               )}
+//             </div>
+//             <div className="flex flex-wrap items-center gap-2 self-start">
+//               <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-white/10 px-3 py-2.5 text-sm font-medium text-white ring-1 ring-white/15 hover:bg-white/15">
+//                 <input
+//                   type="checkbox"
+//                   checked={autoRefresh}
+//                   onChange={(e) => setAutoRefresh(e.target.checked)}
+//                   className="h-3.5 w-3.5 rounded border-white/40 accent-[#E42527]"
+//                 />
+//                 Auto
+//               </label>
+//               <button
+//                 type="button"
+//                 onClick={handlePrint}
+//                 className="inline-flex items-center gap-2 rounded-xl bg-white/10 px-3 py-2.5 text-sm font-medium text-white ring-1 ring-white/15 hover:bg-white/15"
+//               >
+//                 <Printer className="h-4 w-4" />
+//                 Export
+//               </button>
+//               <button
+//                 type="button"
+//                 onClick={() => loadDashboard()}
+//                 disabled={loading}
+//                 className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 hover:bg-slate-100 disabled:opacity-50"
+//               >
+//                 <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+//                 Refresh
+//               </button>
+//             </div>
+//           </div>
+
+//           {!loading && summary && (
+//             <div className="relative mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+//               {[
+//                 { label: "Active staff", value: activeStaff, delta: deltas.active },
+//                 { label: "Present now", value: att.present ?? 0, delta: deltas.present },
+//                 { label: "On leave", value: onLeaveCount, delta: deltas.on_leave },
+//                 { label: "Absent", value: absentNoLeaveCount, delta: deltas.absent },
+//               ].map((item) => (
+//                 <div
+//                   key={item.label}
+//                   className="rounded-2xl bg-white/5 px-4 py-3 ring-1 ring-white/10"
+//                 >
+//                   <div className="flex items-center justify-between gap-2">
+//                     <p className="text-[11px] uppercase tracking-wide text-slate-400">{item.label}</p>
+//                     {item.delta != null && item.delta !== 0 && (
+//                       <span className={`inline-flex items-center gap-0.5 text-[10px] font-semibold ${item.delta > 0 ? "text-emerald-400" : "text-red-400"}`}>
+//                         {item.delta > 0 ? "▲" : "▼"} {Math.abs(item.delta)}
+//                       </span>
+//                     )}
+//                   </div>
+//                   <p className="mt-1 text-xl font-semibold tabular-nums">{item.value}</p>
+//                 </div>
+//               ))}
+//             </div>
+//           )}
+//         </div>
+
+//         {/* ERROR */}
+//         {error && (
+//           <div className="flex items-center justify-between gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+//             <div className="flex items-center gap-2">
+//               <AlertCircle className="h-4 w-4 shrink-0" />
+//               <span>{error}</span>
+//             </div>
+//             <button
+//               onClick={() => loadDashboard()}
+//               className="shrink-0 rounded-md border border-red-300 bg-white px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-100"
+//             >
+//               Retry
+//             </button>
+//           </div>
+//         )}
+
+//         {/* QUICK ACTIONS */}
+//         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+//           <QuickAction icon={Zap} label="Run Payroll" href="/payroll/run" tone="red" />
+//           <QuickAction icon={UserPlus} label="Add Employee" href="/employees/add" tone="green" />
+//           <QuickAction icon={ClipboardList} label="Pending Approvals" href="/approvals" tone="amber" />
+//           <QuickAction icon={Timer} label="My Attendance" href="/attendance/today" tone="blue" />
+//         </div>
+
+//         {loading && !summary ? (
+//           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+//             {Array.from({ length: 6 }).map((_, i) => (
+//               <div key={i} className="h-28 animate-pulse rounded-2xl bg-white shadow-sm" />
+//             ))}
+//           </div>
+//         ) : (
+//           <>
+//             {/* KPI CARDS */}
+//             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+//               <StatCard
+//                 icon={Users} label="Active" value={activeStaff}
+//                 hint={`Total ${headcount.total ?? 0}`} accent="slate"
+//                 delta={deltas.active}
+//               />
+//               <StatCard
+//                 icon={UserCheck2} label="Present" value={att.present ?? 0}
+//                 hint={`Late ${att.late ?? 0}`} accent="green"
+//                 delta={deltas.present}
+//               />
+//               <StatCard
+//                 icon={CalendarDays} label="On leave" value={onLeaveCount}
+//                 hint="Approved leave today" accent="blue"
+//                 onClick={() => setListModal("leave")}
+//                 delta={deltas.on_leave}
+//               />
+//               <StatCard
+//                 icon={UserX} label="Absent" value={absentNoLeaveCount}
+//                 hint="No punch, no leave" accent="red"
+//                 onClick={() => setListModal("absent")}
+//                 delta={deltas.absent}
+//               />
+//               <StatCard
+//                 icon={ClipboardList} label="Approvals" value={pending.total ?? 0}
+//                 hint={`Leave ${pending.leaves ?? 0}`} accent="amber"
+//               />
+//               <StatCard
+//                 icon={Briefcase} label="New joiners" value={headcount.new_joiners_this_month ?? 0}
+//                 hint="This month" accent="violet"
+//               />
+//             </div>
+
+//             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+//               <StatCard icon={Clock} label="WFH today" value={att.wfh ?? 0} accent="blue" />
+//               <StatCard
+//                 icon={AlertTriangle} label="Alerts" value={summary?.unread_alerts ?? 0}
+//                 accent={(summary?.unread_alerts || 0) > 0 ? "amber" : "slate"}
+//               />
+//               <StatCard
+//                 icon={Building2} label="Notice period" value={headcount.notice_period ?? 0}
+//                 accent="slate"
+//               />
+//               <StatCard
+//                 icon={TrendingUp} label="Onboarding" value={summary?.onboarding_candidates ?? 0}
+//                 hint={presentRate != null ? `Present ${presentRate}%` : "Pipeline"} accent="violet"
+//               />
+//             </div>
+
+//             {/* CHARTS + RING */}
+//             <div className="grid gap-4 lg:grid-cols-12">
+//               <Panel
+//                 className="lg:col-span-6"
+//                 title="Attendance trend"
+//                 subtitle="Last 7 days"
+//               >
+//                 {trendData.length === 0 ? (
+//                   <Empty text="No trend data yet" icon={TrendingUp} />
+//                 ) : (
+//                   <div className="h-72">
+//                     <ResponsiveContainer width="100%" height="100%">
+//                       <AreaChart data={trendData}>
+//                         <defs>
+//                           <linearGradient id="gPresent" x1="0" y1="0" x2="0" y2="1">
+//                             <stop offset="0%" stopColor="#10b981" stopOpacity={0.35} />
+//                             <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
+//                           </linearGradient>
+//                           <linearGradient id="gAbsent" x1="0" y1="0" x2="0" y2="1">
+//                             <stop offset="0%" stopColor="#E42527" stopOpacity={0.25} />
+//                             <stop offset="100%" stopColor="#E42527" stopOpacity={0} />
+//                           </linearGradient>
+//                         </defs>
+//                         <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+//                         <XAxis dataKey="day" tick={{ fontSize: 11, fill: "#94a3b8" }} />
+//                         <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "#94a3b8" }} />
+//                         <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid #e2e8f0", fontSize: 12 }} />
+//                         <Area type="monotone" dataKey="present" name="Present" stroke="#10b981" fill="url(#gPresent)" strokeWidth={2.5} />
+//                         <Area type="monotone" dataKey="absent" name="Absent" stroke="#E42527" fill="url(#gAbsent)" strokeWidth={2} />
+//                         <Area type="monotone" dataKey="leave" name="On leave" stroke="#6366f1" fill="transparent" strokeWidth={2} strokeDasharray="4 4" />
+//                       </AreaChart>
+//                     </ResponsiveContainer>
+//                   </div>
+//                 )}
+//               </Panel>
+
+//               <Panel
+//                 className="lg:col-span-3"
+//                 title="Today's rate"
+//                 subtitle="Present + WFH + OD"
+//               >
+//                 <AttendanceRing
+//                   percent={attendancePercent}
+//                   present={presentTotal}
+//                   total={activeStaff}
+//                 />
+//               </Panel>
+
+//               <Panel
+//                 className="lg:col-span-3"
+//                 title="Dept presence"
+//                 subtitle="In office today"
+//               >
+//                 {deptPresent.length === 0 ? (
+//                   <Empty text="No department data" icon={Building2} />
+//                 ) : (
+//                   <div className="h-[220px]">
+//                     <ResponsiveContainer width="100%" height="100%">
+//                       <BarChart data={deptPresent} layout="vertical" margin={{ left: 4, right: 8 }}>
+//                         <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
+//                         <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11, fill: "#94a3b8" }} />
+//                         <YAxis type="category" dataKey="department" width={88} tick={{ fontSize: 10, fill: "#64748b" }} />
+//                         <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid #e2e8f0", fontSize: 12 }} />
+//                         <Bar dataKey="present" fill="#E42527" radius={[0, 8, 8, 0]} barSize={14} />
+//                       </BarChart>
+//                     </ResponsiveContainer>
+//                   </div>
+//                 )}
+//               </Panel>
+//             </div>
+
+//             {/* ACTION REQUIRED + RECENT HIRES */}
+//             {(actionItems.length > 0 || recentHires.length > 0) && (
+//               <div className="grid gap-4 lg:grid-cols-2">
+//                 <Panel
+//                   title="Action required"
+//                   subtitle="Needs your attention"
+//                   right={
+//                     <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-600 ring-1 ring-amber-100">
+//                       <Sparkles className="h-4 w-4" />
+//                     </div>
+//                   }
+//                 >
+//                   {actionItems.length === 0 ? (
+//                     <Empty text="You're all caught up" icon={Award} />
+//                   ) : (
+//                     <ul className="divide-y divide-slate-100">
+//                       {actionItems.slice(0, 5).map((it, i) => (
+//                         <li key={it.id || i} className="flex items-start gap-3 py-2.5">
+//                           <span className={`mt-0.5 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
+//                             it.priority === "high"
+//                               ? "bg-red-100 text-red-700"
+//                               : it.priority === "medium"
+//                               ? "bg-amber-100 text-amber-700"
+//                               : "bg-slate-100 text-slate-600"
+//                           }`}>
+//                             {it.priority || "low"}
+//                           </span>
+//                           <div className="min-w-0 flex-1">
+//                             <p className="truncate text-sm font-medium text-slate-900">{it.title}</p>
+//                             {it.description && <p className="text-xs text-slate-500">{it.description}</p>}
+//                           </div>
+//                           {it.href && (
+//                             <Link href={it.href} className="shrink-0 text-xs font-medium text-[#E42527] hover:underline">
+//                               Open →
+//                             </Link>
+//                           )}
+//                         </li>
+//                       ))}
+//                     </ul>
+//                   )}
+//                 </Panel>
+
+//                 <Panel
+//                   title="Recent hires"
+//                   subtitle="Last 30 days"
+//                   right={
+//                     <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100">
+//                       <UserPlus className="h-4 w-4" />
+//                     </div>
+//                   }
+//                 >
+//                   {recentHires.length === 0 ? (
+//                     <Empty text="No new hires recently" icon={UserPlus} />
+//                   ) : (
+//                     <ul className="divide-y divide-slate-100">
+//                       {recentHires.slice(0, 5).map((h, i) => (
+//                         <li key={h.employee_id || i} className="flex items-center gap-3 py-2.5">
+//                           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-sm font-bold text-emerald-700">
+//                             {(h.name || "E")[0]?.toUpperCase()}
+//                           </div>
+//                           <div className="min-w-0 flex-1">
+//                             <p className="truncate text-sm font-medium text-slate-900">{h.name || h.employee_id}</p>
+//                             <p className="text-xs text-slate-500">
+//                               {h.designation || "—"}{h.joining_date ? ` · Joined ${formatDate(h.joining_date)}` : ""}
+//                             </p>
+//                           </div>
+//                         </li>
+//                       ))}
+//                     </ul>
+//                   )}
+//                 </Panel>
+//               </div>
+//             )}
+
+//             {/* MY TEAM TODAY */}
+//             {myTeam && (
+//               <Panel
+//                 title="My team today"
+//                 subtitle={myTeam.total ? `${myTeam.present || 0} of ${myTeam.total} present` : "Team attendance"}
+//                 right={
+//                   <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600 ring-1 ring-blue-100">
+//                     <Users className="h-4 w-4" />
+//                   </div>
+//                 }
+//               >
+//                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+//                   <div className="rounded-xl bg-emerald-50 px-4 py-3 text-emerald-900">
+//                     <p className="text-[11px] font-medium uppercase tracking-wide opacity-70">Present</p>
+//                     <p className="mt-0.5 text-2xl font-bold">{myTeam.present ?? 0}</p>
+//                   </div>
+//                   <div className="rounded-xl bg-red-50 px-4 py-3 text-red-900">
+//                     <p className="text-[11px] font-medium uppercase tracking-wide opacity-70">Absent</p>
+//                     <p className="mt-0.5 text-2xl font-bold">{myTeam.absent ?? 0}</p>
+//                   </div>
+//                   <div className="rounded-xl bg-sky-50 px-4 py-3 text-sky-900">
+//                     <p className="text-[11px] font-medium uppercase tracking-wide opacity-70">On Leave</p>
+//                     <p className="mt-0.5 text-2xl font-bold">{myTeam.on_leave ?? 0}</p>
+//                   </div>
+//                   <div className="rounded-xl bg-amber-50 px-4 py-3 text-amber-900">
+//                     <p className="text-[11px] font-medium uppercase tracking-wide opacity-70">Late</p>
+//                     <p className="mt-0.5 text-2xl font-bold">{myTeam.late ?? 0}</p>
+//                   </div>
+//                 </div>
+//                 {Array.isArray(myTeam.members) && myTeam.members.length > 0 && (
+//                   <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+//                     {myTeam.members.slice(0, 6).map((m, i) => (
+//                       <div key={m.employee_id || i} className="flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2">
+//                         <div className={`h-2 w-2 rounded-full ${
+//                           m.status === "present" ? "bg-emerald-500"
+//                           : m.status === "absent" ? "bg-red-500"
+//                           : m.status === "on_leave" ? "bg-sky-500"
+//                           : "bg-slate-400"
+//                         }`} />
+//                         <p className="truncate text-xs text-slate-700">{m.name || m.employee_id}</p>
+//                       </div>
+//                     ))}
+//                   </div>
+//                 )}
+//               </Panel>
+//             )}
+
+//             {/* QUICK LISTS */}
+//             <div className="grid gap-4 lg:grid-cols-3">
+//               <Panel
+//                 title="On leave today"
+//                 subtitle="Approved leave"
+//                 right={
+//                   <button
+//                     type="button"
+//                     onClick={() => setListModal("leave")}
+//                     className="text-xs font-medium text-[#E42527] hover:underline"
+//                   >
+//                     View all
+//                   </button>
+//                 }
+//               >
+//                 {onLeaveList.length === 0 ? (
+//                   <Empty text="No one on leave today" icon={CalendarDays} />
+//                 ) : (
+//                   <div className="space-y-2">
+//                     {onLeaveList.slice(0, 4).map((row, i) => (
+//                       <div key={row.employee_id || i} className="flex items-center justify-between rounded-xl bg-sky-50/80 px-3 py-2.5">
+//                         <div className="min-w-0">
+//                           <p className="truncate text-sm font-medium text-slate-900">{row.name || row.employee_id}</p>
+//                           <p className="text-xs text-slate-500">
+//                             {row.leave_type || "Leave"}
+//                             {row.start_date ? ` · ${formatDate(row.start_date)}` : ""}
+//                             {row.end_date ? ` – ${formatDate(row.end_date)}` : ""}
+//                           </p>
+//                         </div>
+//                       </div>
+//                     ))}
+//                   </div>
+//                 )}
+//               </Panel>
+
+//               <Panel
+//                 title="Absent without leave"
+//                 subtitle="No punch, no approved leave"
+//                 right={
+//                   <button
+//                     type="button"
+//                     onClick={() => setListModal("absent")}
+//                     className="text-xs font-medium text-[#E42527] hover:underline"
+//                   >
+//                     View all
+//                   </button>
+//                 }
+//               >
+//                 {absentList.length === 0 ? (
+//                   <Empty text="No unexplained absents" icon={UserX} />
+//                 ) : (
+//                   <div className="space-y-2">
+//                     {absentList.slice(0, 4).map((row, i) => (
+//                       <div key={row.employee_id || i} className="flex items-center justify-between rounded-xl bg-red-50/80 px-3 py-2.5">
+//                         <div className="min-w-0">
+//                           <p className="truncate text-sm font-medium text-slate-900">{row.name || row.employee_id}</p>
+//                           <p className="text-xs text-slate-500">{row.reason || "Absent"}</p>
+//                         </div>
+//                       </div>
+//                     ))}
+//                   </div>
+//                 )}
+//               </Panel>
+
+//               <Panel title="Pending approvals" subtitle="Needs action">
+//                 {pendingItems.length === 0 ? (
+//                   <Empty text="All clear" icon={Award} />
+//                 ) : (
+//                   <div className="divide-y divide-slate-100">
+//                     {pendingItems.slice(0, 5).map((item, i) => (
+//                       <div key={`${item.type}-${item.id || i}`} className="flex items-center justify-between gap-2 py-2.5">
+//                         <div className="min-w-0">
+//                           <p className="truncate text-sm font-medium text-slate-900">{item.title || "Request"}</p>
+//                           <p className="text-xs text-slate-500">{item.employee_id}</p>
+//                         </div>
+//                         <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize ring-1 ${typeStyle(item.type)}`}>
+//                           {(item.type || "").replace(/_/g, " ")}
+//                         </span>
+//                       </div>
+//                     ))}
+//                   </div>
+//                 )}
+//               </Panel>
+//             </div>
+
+//             {/* HOLIDAYS + BIRTHDAYS */}
+//             <div className="grid gap-4 lg:grid-cols-2">
+//               <Panel
+//                 title="Upcoming holidays"
+//                 subtitle="Next 30 days"
+//                 right={
+//                   <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-600 ring-1 ring-amber-100">
+//                     <CalendarDays className="h-4 w-4" />
+//                   </div>
+//                 }
+//                 className="overflow-hidden"
+//               >
+//                 {holidays.length === 0 ? (
+//                   <Empty text="No holidays upcoming" icon={Sun} />
+//                 ) : (
+//                   <div className="space-y-2.5">
+//                     {holidays.map((h, i) => {
+//                       const date = calendarParts(h.date);
+//                       return (
+//                         <div key={h.holiday_id || i} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/70 px-3 py-2.5 transition hover:border-amber-200 hover:bg-amber-50/40">
+//                           <div className="flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-lg bg-white text-amber-700 shadow-sm ring-1 ring-amber-100">
+//                             <span className="text-[10px] font-bold uppercase">{date.month}</span>
+//                             <span className="text-lg font-bold leading-4">{date.day}</span>
+//                           </div>
+//                           <div className="min-w-0 flex-1">
+//                             <p className="truncate text-sm font-semibold text-slate-900">{h.name || h.holiday_name}</p>
+//                             <p className="mt-0.5 text-xs text-slate-500">{formatDate(h.date)}</p>
+//                           </div>
+//                           <Sun className="h-4 w-4 shrink-0 text-amber-400" />
+//                         </div>
+//                       );
+//                     })}
+//                   </div>
+//                 )}
+//               </Panel>
+
+//               <Panel
+//                 title="Birthdays this week"
+//                 subtitle="Next 7 days"
+//                 right={
+//                   <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-50 text-rose-600 ring-1 ring-rose-100">
+//                     <Cake className="h-4 w-4" />
+//                   </div>
+//                 }
+//                 className="overflow-hidden"
+//               >
+//                 {birthdays.length === 0 ? (
+//                   <Empty text="No birthdays this week" icon={Cake} />
+//                 ) : (
+//                   <div className="space-y-2.5">
+//                     {birthdays.map((b, i) => (
+//                       <div key={b.employee_id || i} className="flex items-center gap-3 rounded-xl border border-rose-100/80 bg-rose-50/50 px-3 py-2.5 transition hover:border-rose-200 hover:bg-rose-50">
+//                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#E42527] text-xs font-bold text-white shadow-sm shadow-red-200">
+//                           {(b.name || "E")[0]?.toUpperCase()}
+//                         </div>
+//                         <div className="min-w-0 flex-1">
+//                           <p className="truncate text-sm font-semibold text-slate-900">{b.name || b.employee_id}</p>
+//                           <p className="mt-0.5 text-xs text-slate-500">{formatDate(b.birthday_on || b.dob)}</p>
+//                         </div>
+//                         <Cake className="h-4 w-4 shrink-0 text-[#E42527]" />
+//                       </div>
+//                     ))}
+//                   </div>
+//                 )}
+//               </Panel>
+//             </div>
+//           </>
+//         )}
+//       </div>
+
+//       {/* MODAL: on leave / absent list */}
+//       {listModal && (
+//         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+//           <div className="flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+//             <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+//               <div>
+//                 <h3 className="text-lg font-semibold text-slate-900">{modalTitle}</h3>
+//                 <p className="text-xs text-slate-500">
+//                   {formatDate(peopleStatus?.date || summary?.date)} · {modalList.length} people
+//                 </p>
+//               </div>
+//               <button
+//                 type="button"
+//                 onClick={() => setListModal(null)}
+//                 className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"
+//               >
+//                 <X className="h-5 w-5" />
+//               </button>
+//             </div>
+//             <div className="flex-1 overflow-y-auto px-5 py-3">
+//               {modalList.length === 0 ? (
+//                 <Empty text="No one in this list" />
+//               ) : (
+//                 <ul className="divide-y divide-slate-100">
+//                   {modalList.map((row, i) => (
+//                     <li key={row.employee_id || i} className="py-3">
+//                       <p className="text-sm font-semibold text-slate-900">{row.name || row.employee_id}</p>
+//                       <p className="text-xs text-slate-500">{row.employee_id}</p>
+//                       {listModal === "leave" ? (
+//                         <p className="mt-1 text-xs text-sky-700">
+//                           {row.leave_type || "Leave"}
+//                           {row.start_date ? ` · ${formatDate(row.start_date)}` : ""}
+//                           {row.end_date ? ` → ${formatDate(row.end_date)}` : ""}
+//                         </p>
+//                       ) : (
+//                         <p className="mt-1 text-xs text-red-600">
+//                           {row.reason || "Absent without approved leave"}
+//                         </p>
+//                       )}
+//                     </li>
+//                   ))}
+//                 </ul>
+//               )}
+//             </div>
+//             <div className="border-t border-slate-100 px-5 py-3">
+//               <button
+//                 type="button"
+//                 onClick={() => setListModal(null)}
+//                 className="w-full rounded-xl bg-slate-900 py-2.5 text-sm font-medium text-white hover:bg-slate-800"
+//               >
+//                 Close
+//               </button>
+//             </div>
+//           </div>
+//         </div>
+//       )}
+//     </div>
+//   );
+// }
+
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+/**
+ * HRMS Dashboard — Production Ready (Zoho / greytHR / HROne level)
+ * ==================================================================
+ *  COMPLETE FEATURE LIST:
+ *  ✓ Hero with greeting, live ticker, deltas, print
+ *  ✓ Quick actions bar
+ *  ✓ Personal: My Attendance Today
+ *  ✓ Personal: My Leave Balance
+ *  ✓ Announcements / Notice Board
+ *  ✓ Upcoming Events (week view)
+ *  ✓ Department Headcount Pie
+ *  ✓ KPI Cards (10 total, delta indicators)
+ *  ✓ Attendance Trend (Area chart)
+ *  ✓ Attendance Rate Ring (Radial)
+ *  ✓ Department Presence Bar
+ *  ✓ Working Hours Average
+ *  ✓ Payroll Status Card
+ *  ✓ Attrition / Turnover KPI
+ *  ✓ Document Expiry Alerts
+ *  ✓ Recruitment Pipeline
+ *  ✓ My Team Today (managers)
+ *  ✓ Action Required
+ *  ✓ Recent Hires
+ *  ✓ On Leave / Absent lists + modals
+ *  ✓ Pending Approvals
+ *  ✓ Upcoming Holidays
+ *  ✓ Birthdays this week
+ *  ✓ Auto-refresh (2 min)
+ *  ✓ Role-aware + graceful fallbacks
+ *  ✓ Mobile responsive
+ *  ✓ Error retry
+ *  ✓ Empty states with icons
+ */
+
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import {
-  Users,
-  UserCheck2,
-  UserX,
-  CalendarDays,
-  Clock,
-  AlertTriangle,
-  Building2,
-  Briefcase,
-  ClipboardList,
-  Cake,
-  RefreshCw,
-  TrendingUp,
-  Sun,
-  X,
+  Users, UserCheck2, UserX, CalendarDays, Clock, AlertTriangle,
+  Building2, Briefcase, ClipboardList, Cake, RefreshCw, TrendingUp,
+  TrendingDown, Sun, X, Printer, Zap, CircleDot, Award, Bell,
+  ChevronRight, Sparkles, AlertCircle, UserPlus, Timer, Wallet,
+  FileText, Target, Activity, Heart, Coffee, Moon, BadgeCheck,
+  ArrowUpRight, ArrowDownRight, Megaphone, GraduationCap, Info,
 } from "lucide-react";
 import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  BarChart,
-  Bar,
+  ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid,
+  Tooltip, BarChart, Bar, RadialBarChart, RadialBar, PolarAngleAxis,
+  PieChart, Pie, Cell, Legend, LineChart, Line,
 } from "recharts";
 import { api } from "@/app/lib/api";
+import { useAuthStore } from "@/app/store/authStore";
+
+/* ══════════════════════════════════════════════════════════
+   CONSTANTS
+   ══════════════════════════════════════════════════════════ */
+
+const AUTO_REFRESH_MS = 120_000;
+const RELATIVE_TICK_MS = 10_000;
+const DEPT_COLORS = [
+  "#E42527", "#10b981", "#6366f1", "#f59e0b",
+  "#0ea5e9", "#8b5cf6", "#ec4899", "#14b8a6",
+  "#f97316", "#84cc16",
+];
+
+/* ══════════════════════════════════════════════════════════
+   HELPERS
+   ══════════════════════════════════════════════════════════ */
 
 function getErrorMessage(err) {
-  const detail = err?.response?.data?.detail;
-  if (Array.isArray(detail)) return detail.map((i) => i?.msg || "Error").join(", ");
-  if (typeof detail === "string") return detail;
-  if (detail && typeof detail === "object") return detail.msg || detail.message || "Request failed";
+  const d = err?.response?.data?.detail;
+  if (Array.isArray(d)) return d.map((i) => i?.msg || "Error").join(", ");
+  if (typeof d === "string") return d;
+  if (d && typeof d === "object") return d.msg || d.message || "Request failed";
   return err?.message || "Something went wrong";
 }
 
@@ -44,18 +1723,25 @@ function formatDate(value) {
     if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
       const [y, m, d] = value.split("-").map(Number);
       return new Date(y, m - 1, d).toLocaleDateString("en-IN", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
+        day: "2-digit", month: "short", year: "numeric",
       });
     }
     return new Date(value).toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
+      day: "2-digit", month: "short", year: "numeric",
     });
   } catch {
     return String(value);
+  }
+}
+
+function formatTime(value, tz = "Asia/Kolkata") {
+  if (!value) return "—";
+  try {
+    return new Date(value).toLocaleTimeString("en-IN", {
+      hour: "2-digit", minute: "2-digit", hour12: true, timeZone: tz,
+    });
+  } catch {
+    return "—";
   }
 }
 
@@ -84,7 +1770,28 @@ function greeting() {
   return "Good evening";
 }
 
-function StatCard({ icon: Icon, label, value, hint, accent, onClick }) {
+function relativeTime(ts) {
+  if (!ts) return "";
+  const diff = Math.floor((Date.now() - ts) / 1000);
+  if (diff < 5) return "just now";
+  if (diff < 60) return `${diff}s ago`;
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return `${Math.floor(diff / 86400)}d ago`;
+}
+
+function minutesToHhMm(m) {
+  if (!m) return "0h 0m";
+  const n = Number(m);
+  if (Number.isNaN(n)) return "0h 0m";
+  return `${Math.floor(n / 60)}h ${n % 60}m`;
+}
+
+/* ══════════════════════════════════════════════════════════
+   PRIMITIVE COMPONENTS
+   ══════════════════════════════════════════════════════════ */
+
+function StatCard({ icon: Icon, label, value, hint, accent, onClick, delta, href }) {
   const accents = {
     red: "from-[#E42527]/10 to-white border-[#E42527]/20 text-[#E42527]",
     green: "from-emerald-50 to-white border-emerald-100 text-emerald-600",
@@ -92,46 +1799,94 @@ function StatCard({ icon: Icon, label, value, hint, accent, onClick }) {
     blue: "from-sky-50 to-white border-sky-100 text-sky-600",
     slate: "from-slate-50 to-white border-slate-200 text-slate-700",
     violet: "from-violet-50 to-white border-violet-100 text-violet-600",
+    rose: "from-rose-50 to-white border-rose-100 text-rose-600",
   };
   const a = accents[accent] || accents.slate;
 
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={!onClick}
-      className={`relative w-full overflow-hidden rounded-2xl border bg-gradient-to-br p-5 text-left shadow-sm transition ${a} ${
-        onClick ? "cursor-pointer hover:shadow-md hover:scale-[1.01]" : "cursor-default"
-      }`}
-    >
+  const inner = (
+    <>
       <div className="flex items-start justify-between">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-            {label}
-          </p>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+              {label}
+            </p>
+            {delta != null && (
+              <span
+                className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
+                  delta > 0
+                    ? "bg-emerald-50 text-emerald-700"
+                    : delta < 0
+                    ? "bg-red-50 text-red-700"
+                    : "bg-slate-50 text-slate-600"
+                }`}
+              >
+                {delta > 0 ? (
+                  <TrendingUp className="h-3 w-3" />
+                ) : delta < 0 ? (
+                  <TrendingDown className="h-3 w-3" />
+                ) : null}
+                {delta > 0 ? `+${delta}` : delta === 0 ? "—" : delta}
+              </span>
+            )}
+          </div>
           <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900 tabular-nums">
             {value ?? 0}
           </p>
           {hint ? <p className="mt-1 text-xs text-slate-500">{hint}</p> : null}
-          {onClick ? (
-            <p className="mt-2 text-[11px] font-medium text-slate-400">Click to view list →</p>
+          {onClick || href ? (
+            <p className="mt-2 text-[11px] font-medium text-slate-400">
+              Click to view →
+            </p>
           ) : null}
         </div>
         <div className="rounded-xl bg-white/80 p-2.5 shadow-sm ring-1 ring-black/5">
           <Icon className="h-5 w-5 opacity-80" />
         </div>
       </div>
+    </>
+  );
+
+  const baseClass = `relative w-full overflow-hidden rounded-2xl border bg-gradient-to-br p-5 text-left shadow-sm transition ${a}`;
+
+  if (href) {
+    return (
+      <Link
+        href={href}
+        className={`${baseClass} cursor-pointer hover:shadow-md hover:scale-[1.01]`}
+      >
+        {inner}
+      </Link>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={!onClick}
+      className={`${baseClass} ${
+        onClick
+          ? "cursor-pointer hover:shadow-md hover:scale-[1.01]"
+          : "cursor-default"
+      }`}
+    >
+      {inner}
     </button>
   );
 }
 
 function Panel({ title, subtitle, right, children, className = "" }) {
   return (
-    <div className={`rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm ${className}`}>
+    <div
+      className={`rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm ${className}`}
+    >
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
           <h2 className="text-[15px] font-semibold text-slate-900">{title}</h2>
-          {subtitle ? <p className="mt-0.5 text-xs text-slate-500">{subtitle}</p> : null}
+          {subtitle ? (
+            <p className="mt-0.5 text-xs text-slate-500">{subtitle}</p>
+          ) : null}
         </div>
         {right}
       </div>
@@ -140,67 +1895,932 @@ function Panel({ title, subtitle, right, children, className = "" }) {
   );
 }
 
-function Empty({ text }) {
-  return <div className="py-12 text-center text-sm text-slate-400">{text}</div>;
+function Empty({ text, icon: Icon, action }) {
+  return (
+    <div className="flex flex-col items-center justify-center gap-2 py-10 text-center">
+      {Icon && (
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+          <Icon className="h-6 w-6" />
+        </div>
+      )}
+      <p className="text-sm text-slate-500">{text}</p>
+      {action}
+    </div>
+  );
 }
 
+function QuickAction({ icon: Icon, label, href, tone = "slate" }) {
+  const tones = {
+    red: "bg-red-50 text-red-700 hover:bg-red-100 ring-red-100",
+    green: "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 ring-emerald-100",
+    amber: "bg-amber-50 text-amber-700 hover:bg-amber-100 ring-amber-100",
+    blue: "bg-sky-50 text-sky-700 hover:bg-sky-100 ring-sky-100",
+    violet: "bg-violet-50 text-violet-700 hover:bg-violet-100 ring-violet-100",
+    slate: "bg-slate-50 text-slate-700 hover:bg-slate-100 ring-slate-200",
+  };
+  const t = tones[tone] || tones.slate;
+  return (
+    <Link
+      href={href}
+      className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium ring-1 transition ${t}`}
+    >
+      <Icon className="h-4 w-4 shrink-0" />
+      <span className="truncate">{label}</span>
+      <ChevronRight className="ml-auto h-3.5 w-3.5 opacity-40" />
+    </Link>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════
+   PERSONAL PANELS
+   ══════════════════════════════════════════════════════════ */
+
+function MyAttendanceToday({ data, tz, loading }) {
+  if (loading) {
+    return (
+      <Panel title="Your day" subtitle="Loading...">
+        <div className="h-40 animate-pulse rounded-xl bg-slate-100" />
+      </Panel>
+    );
+  }
+  if (!data) {
+    return (
+      <Panel title="Your day" subtitle="Today's punch status">
+        <Empty text="No punch record yet" icon={Timer} />
+      </Panel>
+    );
+  }
+
+  const firstIn = data.first_punch_in ? new Date(data.first_punch_in) : null;
+  const lastOut = data.last_punch_out ? new Date(data.last_punch_out) : null;
+  const isPunchedIn = firstIn && !lastOut;
+  const workMinutes = data.total_work_minutes || 0;
+
+  const fmt = (d) =>
+    d
+      ? d.toLocaleTimeString("en-IN", {
+          hour: "2-digit", minute: "2-digit", hour12: true, timeZone: tz,
+        })
+      : "—";
+
+  return (
+    <Panel
+      title="Your day"
+      subtitle="Today's punch status"
+      right={
+        <div
+          className={`flex h-9 w-9 items-center justify-center rounded-xl ring-1 ${
+            isPunchedIn
+              ? "bg-emerald-50 text-emerald-600 ring-emerald-100"
+              : "bg-slate-100 text-slate-500 ring-slate-200"
+          }`}
+        >
+          <Timer className="h-4 w-4" />
+        </div>
+      }
+    >
+      <div className="space-y-3">
+        <div className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2.5">
+          <span className="text-xs font-medium text-slate-500">Status</span>
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+              isPunchedIn
+                ? "bg-emerald-100 text-emerald-700"
+                : lastOut
+                ? "bg-green-100 text-green-700"
+                : "bg-amber-100 text-amber-700"
+            }`}
+          >
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${
+                isPunchedIn
+                  ? "bg-emerald-500 animate-pulse"
+                  : lastOut
+                  ? "bg-green-500"
+                  : "bg-amber-500"
+              }`}
+            />
+            {isPunchedIn ? "Punched in" : lastOut ? "Completed" : "Not punched"}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <div className="rounded-xl bg-slate-50 px-3 py-2.5">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+              Punch in
+            </p>
+            <p className="mt-0.5 text-sm font-semibold text-slate-900">
+              {fmt(firstIn)}
+            </p>
+          </div>
+          <div className="rounded-xl bg-slate-50 px-3 py-2.5">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+              Punch out
+            </p>
+            <p className="mt-0.5 text-sm font-semibold text-slate-900">
+              {fmt(lastOut)}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between rounded-xl bg-blue-50 px-3 py-2.5">
+          <span className="text-xs font-medium text-blue-700">Work so far</span>
+          <span className="text-sm font-bold text-blue-900 tabular-nums">
+            {minutesToHhMm(workMinutes)}
+          </span>
+        </div>
+
+        {data.is_late && (
+          <div className="flex items-center gap-2 rounded-xl bg-orange-50 px-3 py-2 text-xs text-orange-700">
+            <AlertTriangle className="h-3.5 w-3.5" />
+            Late by {data.late_minutes || 0} min
+          </div>
+        )}
+
+        <Link
+          href="/attendance/today"
+          className="flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 py-2.5 text-sm font-semibold text-white hover:bg-slate-800"
+        >
+          <Clock className="h-4 w-4" />
+          {isPunchedIn
+            ? "Punch Out"
+            : lastOut
+            ? "View details"
+            : "Punch In"}
+        </Link>
+      </div>
+    </Panel>
+  );
+}
+
+function MyLeaveBalance({ balances, loading }) {
+  if (loading) {
+    return (
+      <Panel title="Your leave balance" subtitle="Loading...">
+        <div className="h-40 animate-pulse rounded-xl bg-slate-100" />
+      </Panel>
+    );
+  }
+
+  if (!balances || balances.length === 0) {
+    return (
+      <Panel title="Your leave balance" subtitle="Leave summary">
+        <Empty text="No leave balance yet" icon={CalendarDays} />
+      </Panel>
+    );
+  }
+
+  const totalAvailable = balances.reduce(
+    (s, b) => s + (Number(b.leaves_remaining) || 0),
+    0
+  );
+
+  const color = (used, total) => {
+    const pct = total ? used / total : 0;
+    if (pct > 0.8) return "bg-red-500";
+    if (pct > 0.5) return "bg-amber-500";
+    return "bg-emerald-500";
+  };
+
+  return (
+    <Panel
+      title="Your leave balance"
+      subtitle={`${totalAvailable.toFixed(1)} days available`}
+      right={
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-50 text-sky-600 ring-1 ring-sky-100">
+          <CalendarDays className="h-4 w-4" />
+        </div>
+      }
+    >
+      <div className="space-y-3">
+        {balances.slice(0, 4).map((b, i) => {
+          const used = Number(b.leaves_taken) || 0;
+          const total = Number(b.total_leaves) || 0;
+          const remaining = Number(b.leaves_remaining) || 0;
+          const usedPct = total ? Math.min(100, (used / total) * 100) : 0;
+
+          return (
+            <div key={b.balance_id || i}>
+              <div className="mb-1 flex items-center justify-between text-xs">
+                <span className="font-medium text-slate-700">
+                  {b.leave_type_name || b.leave_type_code || "Leave"}
+                </span>
+                <span className="text-slate-500 tabular-nums">
+                  <span className="font-semibold text-slate-900">
+                    {remaining}
+                  </span>
+                  <span className="text-slate-400"> / {total}</span>
+                </span>
+              </div>
+              <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                <div
+                  className={`h-full rounded-full transition-all ${color(
+                    used,
+                    total
+                  )}`}
+                  style={{ width: `${usedPct}%` }}
+                />
+              </div>
+            </div>
+          );
+        })}
+
+        <Link
+          href="/leave/my-balance"
+          className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 py-2.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+        >
+          View full balance
+          <ChevronRight className="h-3.5 w-3.5" />
+        </Link>
+      </div>
+    </Panel>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════
+   ANNOUNCEMENTS + EVENTS
+   ══════════════════════════════════════════════════════════ */
+
+function AnnouncementsPanel({ announcements, loading }) {
+  const priorityStyles = {
+    high: "border-l-red-500 bg-red-50/50",
+    normal: "border-l-sky-500 bg-sky-50/50",
+    low: "border-l-slate-300 bg-slate-50",
+  };
+
+  return (
+    <Panel
+      title="Announcements"
+      subtitle="Company updates"
+      right={
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-50 text-violet-600 ring-1 ring-violet-100">
+          <Megaphone className="h-4 w-4" />
+        </div>
+      }
+    >
+      {loading ? (
+        <div className="space-y-2">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="h-12 animate-pulse rounded-lg bg-slate-100" />
+          ))}
+        </div>
+      ) : !announcements || announcements.length === 0 ? (
+        <Empty text="No announcements" icon={Bell} />
+      ) : (
+        <div className="space-y-2.5">
+          {announcements.slice(0, 4).map((a, i) => (
+            <div
+              key={a.id || i}
+              className={`rounded-lg border-l-4 px-3 py-2.5 ${
+                priorityStyles[a.priority] || priorityStyles.normal
+              }`}
+            >
+              <p className="text-sm font-semibold text-slate-900">{a.title}</p>
+              {a.body && (
+                <p className="mt-0.5 line-clamp-2 text-xs text-slate-600">
+                  {a.body}
+                </p>
+              )}
+              <div className="mt-1.5 flex items-center gap-2 text-[10px] text-slate-400">
+                <span>{a.posted_by || "HR"}</span>
+                <span>·</span>
+                <span>{relativeTime(a.posted_at)}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </Panel>
+  );
+}
+
+function UpcomingEventsPanel({ events, loading }) {
+  const eventIcons = {
+    meeting: "👥",
+    training: "📚",
+    birthday: "🎂",
+    holiday: "🎉",
+    townhall: "🎤",
+    lunch: "🍽",
+    default: "📅",
+  };
+
+  return (
+    <Panel
+      title="This week"
+      subtitle={events?.length ? `${events.length} events` : "Events & reminders"}
+      right={
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 ring-1 ring-indigo-100">
+          <CalendarDays className="h-4 w-4" />
+        </div>
+      }
+    >
+      {loading ? (
+        <div className="space-y-2">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="h-12 animate-pulse rounded-lg bg-slate-100" />
+          ))}
+        </div>
+      ) : !events || events.length === 0 ? (
+        <Empty text="No events scheduled" icon={CalendarDays} />
+      ) : (
+        <div className="space-y-2">
+          {events.slice(0, 5).map((e, i) => {
+            const date = calendarParts(e.date);
+            return (
+              <div
+                key={e.id || i}
+                className="flex items-center gap-3 rounded-xl bg-slate-50 px-3 py-2.5 transition hover:bg-slate-100"
+              >
+                <div className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-lg bg-white text-slate-700 shadow-sm ring-1 ring-slate-200">
+                  <span className="text-[9px] font-bold uppercase text-slate-500">
+                    {date.weekday}
+                  </span>
+                  <span className="text-sm font-bold leading-4">
+                    {date.day}
+                  </span>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-slate-900">
+                    {eventIcons[e.type] || eventIcons.default} {e.title}
+                  </p>
+                  {e.time && (
+                    <p className="text-[11px] text-slate-500">{e.time}</p>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </Panel>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════
+   CHARTS
+   ══════════════════════════════════════════════════════════ */
+
+function AttendanceRing({ percent, present, total }) {
+  const pct = Math.max(0, Math.min(100, percent ?? 0));
+  const data = [
+    {
+      name: "rate",
+      value: pct,
+      fill: pct >= 75 ? "#10b981" : pct >= 50 ? "#f59e0b" : "#E42527",
+    },
+  ];
+
+  return (
+    <div className="relative flex h-[200px] w-full items-center justify-center">
+      <ResponsiveContainer width="100%" height="100%">
+        <RadialBarChart
+          cx="50%"
+          cy="50%"
+          innerRadius="72%"
+          outerRadius="100%"
+          startAngle={90}
+          endAngle={-270}
+          data={data}
+        >
+          <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
+          <RadialBar
+            dataKey="value"
+            cornerRadius={12}
+            background={{ fill: "#f1f5f9" }}
+          />
+        </RadialBarChart>
+      </ResponsiveContainer>
+      <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+        <p className="text-4xl font-bold text-slate-900 tabular-nums">{pct}%</p>
+        <p className="mt-0.5 text-[11px] font-medium uppercase tracking-wide text-slate-500">
+          Attendance
+        </p>
+        {present != null && total != null && (
+          <p className="mt-0.5 text-xs text-slate-500">
+            {present} of {total}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function DepartmentHeadcountPie({ data, loading }) {
+  return (
+    <Panel
+      title="Headcount by department"
+      subtitle={
+        data?.length
+          ? `${data.reduce((s, d) => s + (d.count || 0), 0)} employees`
+          : "Distribution"
+      }
+      right={
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-50 text-rose-600 ring-1 ring-rose-100">
+          <Building2 className="h-4 w-4" />
+        </div>
+      }
+    >
+      {loading ? (
+        <div className="h-[220px] animate-pulse rounded-xl bg-slate-100" />
+      ) : !data || data.length === 0 ? (
+        <Empty text="No department data" icon={Building2} />
+      ) : (
+        <div className="h-[240px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={data}
+                cx="50%"
+                cy="50%"
+                innerRadius={50}
+                outerRadius={80}
+                paddingAngle={2}
+                dataKey="count"
+                nameKey="department"
+              >
+                {data.map((_, i) => (
+                  <Cell key={i} fill={DEPT_COLORS[i % DEPT_COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip
+                contentStyle={{
+                  borderRadius: 12,
+                  border: "1px solid #e2e8f0",
+                  fontSize: 12,
+                }}
+                formatter={(v) => [`${v} employees`, ""]}
+              />
+              <Legend
+                iconType="circle"
+                wrapperStyle={{ fontSize: 11 }}
+                formatter={(value, entry) =>
+                  `${value} (${entry?.payload?.count || 0})`
+                }
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+    </Panel>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════
+   PRODUCTION PANELS
+   ══════════════════════════════════════════════════════════ */
+
+function PayrollStatusCard({ data, loading }) {
+  const statusMap = {
+    processed: { label: "Processed", tone: "bg-blue-50 text-blue-700" },
+    approved: { label: "Approved", tone: "bg-violet-50 text-violet-700" },
+    paid: { label: "Paid", tone: "bg-emerald-50 text-emerald-700" },
+    pending: { label: "Pending", tone: "bg-amber-50 text-amber-700" },
+    draft: { label: "Draft", tone: "bg-slate-100 text-slate-600" },
+    failed: { label: "Failed", tone: "bg-red-50 text-red-700" },
+  };
+
+  const status = statusMap[data?.status] || statusMap.draft;
+
+  return (
+    <Panel
+      title="Payroll status"
+      subtitle="Current cycle"
+      right={
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100">
+          <Wallet className="h-4 w-4" />
+        </div>
+      }
+    >
+      {loading ? (
+        <div className="h-32 animate-pulse rounded-xl bg-slate-100" />
+      ) : !data ? (
+        <Empty text="No payroll data" icon={Wallet} />
+      ) : (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-slate-500">
+              {data.period || "Current month"}
+            </span>
+            <span
+              className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${status.tone}`}
+            >
+              {status.label}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div className="rounded-xl bg-slate-50 px-3 py-2.5">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                Net pay
+              </p>
+              <p className="mt-0.5 text-sm font-bold text-slate-900 tabular-nums">
+                ₹{Number(data.total_net_pay || 0).toLocaleString("en-IN")}
+              </p>
+            </div>
+            <div className="rounded-xl bg-slate-50 px-3 py-2.5">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                Employees
+              </p>
+              <p className="mt-0.5 text-sm font-bold text-slate-900 tabular-nums">
+                {data.total_employees || 0}
+              </p>
+            </div>
+          </div>
+
+          <Link
+            href="/payroll/run"
+            className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
+          >
+            Open payroll
+            <ChevronRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+      )}
+    </Panel>
+  );
+}
+
+function DocumentExpiryCard({ docs, loading }) {
+  const urgencyStyles = {
+    critical: "border-l-red-500 bg-red-50/50",
+    warning: "border-l-amber-500 bg-amber-50/50",
+    normal: "border-l-sky-500 bg-sky-50/50",
+  };
+
+  return (
+    <Panel
+      title="Document expiries"
+      subtitle="Next 30 days"
+      right={
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-600 ring-1 ring-amber-100">
+          <FileText className="h-4 w-4" />
+        </div>
+      }
+    >
+      {loading ? (
+        <div className="h-32 animate-pulse rounded-xl bg-slate-100" />
+      ) : !docs || docs.length === 0 ? (
+        <Empty text="No upcoming expiries" icon={FileText} />
+      ) : (
+        <div className="space-y-2">
+          {docs.slice(0, 4).map((d, i) => {
+            const daysLeft = d.days_left ?? 0;
+            const urgency =
+              daysLeft <= 7 ? "critical" : daysLeft <= 15 ? "warning" : "normal";
+            return (
+              <div
+                key={d.id || i}
+                className={`rounded-lg border-l-4 px-3 py-2 ${
+                  urgencyStyles[urgency]
+                }`}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="truncate text-xs font-semibold text-slate-900">
+                      {d.document_type || "Document"} · {d.employee_name || "—"}
+                    </p>
+                    <p className="mt-0.5 text-[11px] text-slate-500">
+                      Expires {formatDate(d.expiry_date)}
+                    </p>
+                  </div>
+                  <span
+                    className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                      urgency === "critical"
+                        ? "bg-red-100 text-red-700"
+                        : urgency === "warning"
+                        ? "bg-amber-100 text-amber-700"
+                        : "bg-sky-100 text-sky-700"
+                    }`}
+                  >
+                    {daysLeft}d
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </Panel>
+  );
+}
+
+function RecruitmentPipelineCard({ data, loading }) {
+  return (
+    <Panel
+      title="Recruitment pipeline"
+      subtitle="Open roles & candidates"
+      right={
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-50 text-violet-600 ring-1 ring-violet-100">
+          <Target className="h-4 w-4" />
+        </div>
+      }
+    >
+      {loading ? (
+        <div className="h-32 animate-pulse rounded-xl bg-slate-100" />
+      ) : !data ? (
+        <Empty text="No recruitment data" icon={Target} />
+      ) : (
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="rounded-xl bg-violet-50 px-3 py-2.5">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-violet-700">
+                Open roles
+              </p>
+              <p className="mt-0.5 text-2xl font-bold text-violet-900 tabular-nums">
+                {data.open_positions || 0}
+              </p>
+            </div>
+            <div className="rounded-xl bg-sky-50 px-3 py-2.5">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-sky-700">
+                Candidates
+              </p>
+              <p className="mt-0.5 text-2xl font-bold text-sky-900 tabular-nums">
+                {data.in_pipeline || 0}
+              </p>
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            {(data.stages || []).slice(0, 4).map((s, i) => (
+              <div
+                key={i}
+                className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-1.5 text-xs"
+              >
+                <span className="text-slate-600">{s.name}</span>
+                <span className="font-semibold text-slate-900">
+                  {s.count}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </Panel>
+  );
+}
+
+function WorkingHoursCard({ data, loading }) {
+  return (
+    <Panel
+      title="Avg working hours"
+      subtitle="This week"
+      right={
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-teal-50 text-teal-600 ring-1 ring-teal-100">
+          <Clock className="h-4 w-4" />
+        </div>
+      }
+    >
+      {loading ? (
+        <div className="h-32 animate-pulse rounded-xl bg-slate-100" />
+      ) : !data ? (
+        <Empty text="No data" icon={Clock} />
+      ) : (
+        <div className="space-y-3">
+          <div>
+            <p className="text-3xl font-bold text-slate-900 tabular-nums">
+              {data.avg_hours || "0h 0m"}
+            </p>
+            <p className="mt-0.5 text-xs text-slate-500">
+              Daily average this week
+            </p>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            <div className="rounded-lg bg-slate-50 px-2 py-2 text-center">
+              <p className="text-[10px] uppercase text-slate-500">Min</p>
+              <p className="text-xs font-bold text-slate-900">{data.min || "—"}</p>
+            </div>
+            <div className="rounded-lg bg-slate-50 px-2 py-2 text-center">
+              <p className="text-[10px] uppercase text-slate-500">Max</p>
+              <p className="text-xs font-bold text-slate-900">{data.max || "—"}</p>
+            </div>
+            <div className="rounded-lg bg-slate-50 px-2 py-2 text-center">
+              <p className="text-[10px] uppercase text-slate-500">Total</p>
+              <p className="text-xs font-bold text-slate-900">{data.total || "—"}</p>
+            </div>
+          </div>
+        </div>
+      )}
+    </Panel>
+  );
+}
+
+function AttritionCard({ data, loading }) {
+  return (
+    <Panel
+      title="Attrition"
+      subtitle="This month"
+      right={
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-50 text-red-600 ring-1 ring-red-100">
+          <Activity className="h-4 w-4" />
+        </div>
+      }
+    >
+      {loading ? (
+        <div className="h-32 animate-pulse rounded-xl bg-slate-100" />
+      ) : !data ? (
+        <Empty text="No attrition data" icon={Activity} />
+      ) : (
+        <div className="space-y-3">
+          <div className="flex items-baseline gap-2">
+            <p className="text-3xl font-bold text-red-600 tabular-nums">
+              {data.rate || 0}%
+            </p>
+            {data.delta != null && data.delta !== 0 && (
+              <span
+                className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
+                  data.delta > 0
+                    ? "bg-red-100 text-red-700"
+                    : "bg-emerald-100 text-emerald-700"
+                }`}
+              >
+                {data.delta > 0 ? (
+                  <ArrowUpRight className="h-3 w-3" />
+                ) : (
+                  <ArrowDownRight className="h-3 w-3" />
+                )}
+                {Math.abs(data.delta)}%
+              </span>
+            )}
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="rounded-lg bg-slate-50 px-3 py-2">
+              <p className="text-[10px] uppercase text-slate-500">Exits</p>
+              <p className="text-sm font-bold text-slate-900">
+                {data.exits || 0}
+              </p>
+            </div>
+            <div className="rounded-lg bg-slate-50 px-3 py-2">
+              <p className="text-[10px] uppercase text-slate-500">Avg tenure</p>
+              <p className="text-sm font-bold text-slate-900">
+                {data.avg_tenure || "—"}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+    </Panel>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════
+   MAIN PAGE
+   ══════════════════════════════════════════════════════════ */
+
 export default function HrmsDashboardPage() {
+  const user = useAuthStore((s) => s.user);
+  const tz = useAuthStore((s) => s.timezone) || "Asia/Kolkata";
+  const role = String(user?.role?.value || user?.role || "").toLowerCase();
+  const isAdmin = role === "admin" || role === "approle.admin";
+
+  /* data */
   const [summary, setSummary] = useState(null);
   const [trend, setTrend] = useState([]);
   const [pendingItems, setPendingItems] = useState([]);
   const [peopleStatus, setPeopleStatus] = useState(null);
+  const [actionItems, setActionItems] = useState([]);
+  const [recentHires, setRecentHires] = useState([]);
+  const [myTeam, setMyTeam] = useState(null);
+  const [myToday, setMyToday] = useState(null);
+  const [myBalances, setMyBalances] = useState([]);
+  const [announcements, setAnnouncements] = useState([]);
+  const [events, setEvents] = useState([]);
+  const [deptHeadcount, setDeptHeadcount] = useState([]);
+  const [payroll, setPayroll] = useState(null);
+  const [docExpiries, setDocExpiries] = useState([]);
+  const [recruitment, setRecruitment] = useState(null);
+  const [workingHours, setWorkingHours] = useState(null);
+  const [attrition, setAttrition] = useState(null);
+  const [lastUpdated, setLastUpdated] = useState(null);
+
+  /* ui */
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
-  // Modal: "leave" | "absent" | null
+  const [autoRefresh, setAutoRefresh] = useState(true);
   const [listModal, setListModal] = useState(null);
+  const [, setTick] = useState(0);
 
-  const loadDashboard = useCallback(async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const [sumRes, trendRes, pendingRes, peopleRes] = await Promise.all([
-        api.get("/api/v1/dashboard/summary"),
-        api.get("/api/v1/dashboard/attendance-trend", { params: { days: 7 } }),
-        api.get("/api/v1/dashboard/pending-approvals", { params: { limit: 8 } }),
-        api.get("/api/v1/dashboard/today-people-status"),
-      ]);
+  const reqIdRef = useRef(0);
 
-      setSummary(sumRes?.data ?? sumRes);
-      const tr = trendRes?.data ?? trendRes;
-      setTrend(Array.isArray(tr?.trend) ? tr.trend : []);
-      const pe = pendingRes?.data ?? pendingRes;
-      setPendingItems(Array.isArray(pe?.items) ? pe.items : []);
-      setPeopleStatus(peopleRes?.data ?? peopleRes);
-    } catch (err) {
-      setError(getErrorMessage(err));
-      setSummary(null);
-      setTrend([]);
-      setPendingItems([]);
-      setPeopleStatus(null);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  /* ══════════════ LOAD ══════════════ */
+  const loadDashboard = useCallback(
+    async ({ silent = false } = {}) => {
+      const myReqId = ++reqIdRef.current;
+      if (!silent) setLoading(true);
+      if (!silent) setError("");
+
+      try {
+        const results = await Promise.allSettled([
+          api.get("/api/v1/dashboard/summary"),
+          api.get("/api/v1/dashboard/attendance-trend", { params: { days: 7 } }),
+          api.get("/api/v1/dashboard/pending-approvals", { params: { limit: 8 } }),
+          api.get("/api/v1/dashboard/today-people-status"),
+          api.get("/api/v1/dashboard/action-required"),
+          api.get("/api/v1/dashboard/recent-hires", { params: { days: 30 } }),
+          api.get("/api/v1/dashboard/my-team-today"),
+          api.get("/api/v1/dashboard/my-today"),
+          api.get("/api/v1/dashboard/my-leave-balance"),
+          api.get("/api/v1/dashboard/announcements", { params: { limit: 5 } }),
+          api.get("/api/v1/dashboard/upcoming-events", { params: { days: 7 } }),
+          api.get("/api/v1/dashboard/dept-headcount"),
+          api.get("/api/v1/dashboard/payroll-status"),
+          api.get("/api/v1/dashboard/document-expiries", { params: { days: 30 } }),
+          api.get("/api/v1/dashboard/recruitment-pipeline"),
+          api.get("/api/v1/dashboard/working-hours-avg"),
+          api.get("/api/v1/dashboard/attrition"),
+        ]);
+
+        if (myReqId !== reqIdRef.current) return;
+
+        const safe = (r) =>
+          r.status === "fulfilled" ? r.value?.data ?? r.value : null;
+
+        const [sumR, trendR, pendR, peopleR, actionsR, hiresR, teamR,
+          myTodayR, myBalR, annR, eventsR, deptR, payrollR, docsR,
+          recruitR, hoursR, attrR] = results;
+
+        setSummary(safe(sumR));
+
+        const tr = safe(trendR);
+        setTrend(Array.isArray(tr?.trend) ? tr.trend : []);
+
+        const pe = safe(pendR);
+        setPendingItems(Array.isArray(pe?.items) ? pe.items : []);
+
+        setPeopleStatus(safe(peopleR));
+
+        const a = safe(actionsR);
+        setActionItems(Array.isArray(a?.items) ? a.items : []);
+
+        const h = safe(hiresR);
+        setRecentHires(
+          Array.isArray(h?.employees) ? h.employees : Array.isArray(h?.items) ? h.items : []
+        );
+
+        setMyTeam(safe(teamR));
+        setMyToday(safe(myTodayR));
+
+        const mb = safe(myBalR);
+        setMyBalances(Array.isArray(mb?.balances) ? mb.balances : []);
+
+        const an = safe(annR);
+        setAnnouncements(Array.isArray(an?.announcements) ? an.announcements : []);
+
+        const ev = safe(eventsR);
+        setEvents(Array.isArray(ev?.events) ? ev.events : []);
+
+        const de = safe(deptR);
+        setDeptHeadcount(
+          Array.isArray(de?.departments) ? de.departments : Array.isArray(de) ? de : []
+        );
+
+        setPayroll(safe(payrollR));
+
+        const docs = safe(docsR);
+        setDocExpiries(Array.isArray(docs?.documents) ? docs.documents : []);
+
+        setRecruitment(safe(recruitR));
+        setWorkingHours(safe(hoursR));
+        setAttrition(safe(attrR));
+
+        setLastUpdated(Date.now());
+      } catch (err) {
+        if (myReqId !== reqIdRef.current) return;
+        setError(getErrorMessage(err));
+      } finally {
+        if (myReqId === reqIdRef.current) setLoading(false);
+      }
+    },
+    []
+  );
 
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      loadDashboard();
-    }, 0);
-
-    return () => clearTimeout(timeoutId);
+    const t = setTimeout(() => loadDashboard(), 0);
+    return () => clearTimeout(t);
   }, [loadDashboard]);
 
+  /* auto-refresh */
+  useEffect(() => {
+    if (!autoRefresh) return;
+    const t = setInterval(() => loadDashboard({ silent: true }), AUTO_REFRESH_MS);
+    return () => clearInterval(t);
+  }, [autoRefresh, loadDashboard]);
+
+  /* relative time ticker */
+  useEffect(() => {
+    const t = setInterval(() => setTick((x) => x + 1), RELATIVE_TICK_MS);
+    return () => clearInterval(t);
+  }, []);
+
+  /* ══════════════ DERIVED ══════════════ */
   const headcount = summary?.headcount || {};
   const att = summary?.attendance_today || {};
   const pending = summary?.pending_approvals || {};
-  const month = summary?.this_month || {};
   const holidays = summary?.upcoming_holidays || [];
   const birthdays = summary?.birthdays_this_week || [];
   const deptPresent = summary?.department_present_today || [];
+  const deltas = summary?.deltas || {};
 
-  const onLeaveCount =
-    peopleStatus?.on_leave?.count ?? att.on_leave ?? 0;
+  const onLeaveCount = peopleStatus?.on_leave?.count ?? att.on_leave ?? 0;
   const absentNoLeaveCount =
     peopleStatus?.absent_without_leave?.count ?? att.absent ?? 0;
   const onLeaveList = peopleStatus?.on_leave?.list || [];
@@ -210,7 +2830,8 @@ export default function HrmsDashboardPage() {
     return (trend || []).map((row) => {
       let day = row.date;
       try {
-        if (row.date) day = new Date(row.date).toLocaleDateString("en-IN", { weekday: "short" });
+        if (row.date)
+          day = new Date(row.date).toLocaleDateString("en-IN", { weekday: "short" });
       } catch {}
       return {
         day,
@@ -224,10 +2845,19 @@ export default function HrmsDashboardPage() {
   const presentRate = useMemo(() => {
     const p = att.present || 0;
     const total =
-      (att.present || 0) + (att.absent || 0) + (att.on_leave || 0) + (att.half_day || 0);
+      (att.present || 0) +
+      (att.absent || 0) +
+      (att.on_leave || 0) +
+      (att.half_day || 0);
     if (!total) return null;
     return Math.round((p / total) * 100);
   }, [att]);
+
+  const activeStaff = headcount.active || 0;
+  const presentTotal = (att.present || 0) + (att.wfh || 0) + (att.on_duty || 0);
+  const attendancePercent = activeStaff
+    ? Math.round((presentTotal / activeStaff) * 100)
+    : presentRate ?? 0;
 
   const typeStyle = (type) => {
     const t = (type || "").toLowerCase();
@@ -242,62 +2872,140 @@ export default function HrmsDashboardPage() {
       : listModal === "absent"
       ? "Absent without leave"
       : "";
-  const modalList = listModal === "leave" ? onLeaveList : listModal === "absent" ? absentList : [];
 
+  const modalList =
+    listModal === "leave" ? onLeaveList : listModal === "absent" ? absentList : [];
+
+  /* ══════════════ RENDER ══════════════ */
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-100/80 to-slate-50">
       <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
-        {/* Hero */}
+        {/* HERO */}
         <div className="relative overflow-hidden rounded-3xl bg-slate-900 px-6 py-7 text-white shadow-xl shadow-slate-900/10 sm:px-8">
           <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-[#E42527]/30 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-16 -left-10 h-48 w-48 rounded-full bg-emerald-500/10 blur-3xl" />
+
           <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-slate-200 ring-1 ring-white/10">
                 <Sun className="h-3.5 w-3.5 text-amber-300" />
                 {greeting()}
               </div>
-              <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">HR Overview</h1>
+              <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+                HR Overview
+              </h1>
               <p className="mt-1 text-sm text-slate-300">
                 Live headcount, attendance & who is off today
                 {summary?.date ? ` · ${formatDate(summary.date)}` : ""}
               </p>
+              {lastUpdated && (
+                <p className="mt-1 inline-flex items-center gap-1 text-[11px] text-slate-400">
+                  <CircleDot className="h-2.5 w-2.5 text-emerald-400" />
+                  Updated {relativeTime(lastUpdated)}
+                </p>
+              )}
             </div>
-            <button
-              type="button"
-              onClick={loadDashboard}
-              disabled={loading}
-              className="inline-flex items-center gap-2 self-start rounded-xl bg-white/10 px-4 py-2.5 text-sm font-medium text-white ring-1 ring-white/15 hover:bg-white/15 disabled:opacity-50"
-            >
-              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-              Refresh
-            </button>
+            <div className="flex flex-wrap items-center gap-2 self-start">
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-white/10 px-3 py-2.5 text-sm font-medium text-white ring-1 ring-white/15 hover:bg-white/15">
+                <input
+                  type="checkbox"
+                  checked={autoRefresh}
+                  onChange={(e) => setAutoRefresh(e.target.checked)}
+                  className="h-3.5 w-3.5 rounded border-white/40 accent-[#E42527]"
+                />
+                Auto
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  try {
+                    window.print();
+                  } catch {}
+                }}
+                className="inline-flex items-center gap-2 rounded-xl bg-white/10 px-3 py-2.5 text-sm font-medium text-white ring-1 ring-white/15 hover:bg-white/15"
+              >
+                <Printer className="h-4 w-4" />
+                Export
+              </button>
+              <button
+                type="button"
+                onClick={() => loadDashboard()}
+                disabled={loading}
+                className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 hover:bg-slate-100 disabled:opacity-50"
+              >
+                <RefreshCw
+                  className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
+                />
+                Refresh
+              </button>
+            </div>
           </div>
 
           {!loading && summary && (
             <div className="relative mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
               {[
-                { label: "Active staff", value: headcount.active ?? 0 },
-                { label: "Present now", value: att.present ?? 0 },
-                { label: "On leave", value: onLeaveCount },
-                { label: "Absent (no leave)", value: absentNoLeaveCount },
+                { label: "Active staff", value: activeStaff, delta: deltas.active },
+                { label: "Present now", value: att.present ?? 0, delta: deltas.present },
+                { label: "On leave", value: onLeaveCount, delta: deltas.on_leave },
+                { label: "Absent", value: absentNoLeaveCount, delta: deltas.absent },
               ].map((item) => (
                 <div
                   key={item.label}
                   className="rounded-2xl bg-white/5 px-4 py-3 ring-1 ring-white/10"
                 >
-                  <p className="text-[11px] uppercase tracking-wide text-slate-400">{item.label}</p>
-                  <p className="mt-1 text-xl font-semibold tabular-nums">{item.value}</p>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-[11px] uppercase tracking-wide text-slate-400">
+                      {item.label}
+                    </p>
+                    {item.delta != null && item.delta !== 0 && (
+                      <span
+                        className={`inline-flex items-center gap-0.5 text-[10px] font-semibold ${
+                          item.delta > 0 ? "text-emerald-400" : "text-red-400"
+                        }`}
+                      >
+                        {item.delta > 0 ? "▲" : "▼"} {Math.abs(item.delta)}
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-1 text-xl font-semibold tabular-nums">
+                    {item.value}
+                  </p>
                 </div>
               ))}
             </div>
           )}
         </div>
 
+        {/* ERROR */}
         {error && (
-          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {error}
+          <div className="flex items-center justify-between gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span>{error}</span>
+            </div>
+            <button
+              onClick={() => loadDashboard()}
+              className="shrink-0 rounded-md border border-red-300 bg-white px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-100"
+            >
+              Retry
+            </button>
           </div>
         )}
+
+        {/* QUICK ACTIONS */}
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <QuickAction icon={Zap} label="Run Payroll" href="/payroll/run" tone="red" />
+          <QuickAction icon={UserPlus} label="Add Employee" href="/employees/add" tone="green" />
+          <QuickAction icon={ClipboardList} label="Pending Approvals" href="/approvals" tone="amber" />
+          <QuickAction icon={Timer} label="My Attendance" href="/attendance/today" tone="blue" />
+        </div>
+
+        {/* PERSONAL ROW — my day + balance + announcements */}
+        <div className="grid gap-4 lg:grid-cols-3">
+          <MyAttendanceToday data={myToday} tz={tz} loading={loading && !myToday} />
+          <MyLeaveBalance balances={myBalances} loading={loading && !myBalances.length} />
+          <AnnouncementsPanel announcements={announcements} loading={loading && !announcements.length} />
+        </div>
 
         {loading && !summary ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
@@ -307,82 +3015,69 @@ export default function HrmsDashboardPage() {
           </div>
         ) : (
           <>
-            {/* KPI — clickable leave & absent */}
+            {/* KPI CARDS — ROW 1 */}
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
               <StatCard
-                icon={Users}
-                label="Active"
-                value={headcount.active ?? 0}
-                hint={`Total ${headcount.total ?? 0}`}
-                accent="slate"
+                icon={Users} label="Active" value={activeStaff}
+                hint={`Total ${headcount.total ?? 0}`} accent="slate"
+                delta={deltas.active}
               />
               <StatCard
-                icon={UserCheck2}
-                label="Present"
-                value={att.present ?? 0}
-                hint={`Late ${att.late ?? 0}`}
-                accent="green"
+                icon={UserCheck2} label="Present" value={att.present ?? 0}
+                hint={`Late ${att.late ?? 0}`} accent="green"
+                delta={deltas.present}
               />
               <StatCard
-                icon={CalendarDays}
-                label="On leave"
-                value={onLeaveCount}
-                hint="Approved leave today"
-                accent="blue"
+                icon={CalendarDays} label="On leave" value={onLeaveCount}
+                hint="Approved leave today" accent="blue"
                 onClick={() => setListModal("leave")}
+                delta={deltas.on_leave}
               />
               <StatCard
-                icon={UserX}
-                label="Absent (no leave)"
-                value={absentNoLeaveCount}
-                hint="No punch, no approved leave"
-                accent="red"
+                icon={UserX} label="Absent" value={absentNoLeaveCount}
+                hint="No punch, no leave" accent="red"
                 onClick={() => setListModal("absent")}
+                delta={deltas.absent}
               />
               <StatCard
-                icon={ClipboardList}
-                label="Approvals"
-                value={pending.total ?? 0}
-                hint={`Leave ${pending.leaves ?? 0}`}
-                accent="amber"
+                icon={ClipboardList} label="Approvals" value={pending.total ?? 0}
+                hint={`Leave ${pending.leaves ?? 0}`} accent="amber"
+                href="/approvals"
               />
               <StatCard
-                icon={Briefcase}
-                label="New joiners"
-                value={headcount.new_joiners_this_month ?? 0}
-                hint="This month"
-                accent="violet"
+                icon={Briefcase} label="New joiners" value={headcount.new_joiners_this_month ?? 0}
+                hint="This month" accent="violet"
               />
             </div>
 
+            {/* KPI CARDS — ROW 2 */}
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <StatCard icon={Clock} label="WFH today" value={att.wfh ?? 0} accent="blue" />
               <StatCard
-                icon={AlertTriangle}
-                label="Alerts"
-                value={summary?.unread_alerts ?? 0}
-                accent={(summary?.unread_alerts || 0) > 0 ? "amber" : "slate"}
+                icon={Clock} label="WFH today" value={att.wfh ?? 0}
+                accent="blue"
               />
               <StatCard
-                icon={Building2}
-                label="Notice period"
-                value={headcount.notice_period ?? 0}
+                icon={AlertTriangle} label="Alerts" value={summary?.unread_alerts ?? 0}
+                accent={(summary?.unread_alerts || 0) > 0 ? "amber" : "slate"}
+                href="/attendance/alerts"
+              />
+              <StatCard
+                icon={Building2} label="Notice period" value={headcount.notice_period ?? 0}
                 accent="slate"
               />
               <StatCard
-                icon={TrendingUp}
-                label="Onboarding"
-                value={summary?.onboarding_candidates ?? 0}
+                icon={TrendingUp} label="Onboarding" value={summary?.onboarding_candidates ?? 0}
                 hint={presentRate != null ? `Present ${presentRate}%` : "Pipeline"}
                 accent="violet"
+                href="/onboarding"
               />
             </div>
 
-            {/* Charts */}
-            <div className="grid gap-4 lg:grid-cols-5">
-              <Panel className="lg:col-span-3" title="Attendance trend" subtitle="Last 7 days">
+            {/* CHARTS ROW */}
+            <div className="grid gap-4 lg:grid-cols-12">
+              <Panel className="lg:col-span-6" title="Attendance trend" subtitle="Last 7 days">
                 {trendData.length === 0 ? (
-                  <Empty text="No trend data yet" />
+                  <Empty text="No trend data yet" icon={TrendingUp} />
                 ) : (
                   <div className="h-72">
                     <ResponsiveContainer width="100%" height="100%">
@@ -400,13 +3095,7 @@ export default function HrmsDashboardPage() {
                         <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                         <XAxis dataKey="day" tick={{ fontSize: 11, fill: "#94a3b8" }} />
                         <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "#94a3b8" }} />
-                        <Tooltip
-                          contentStyle={{
-                            borderRadius: 12,
-                            border: "1px solid #e2e8f0",
-                            fontSize: 12,
-                          }}
-                        />
+                        <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid #e2e8f0", fontSize: 12 }} />
                         <Area type="monotone" dataKey="present" name="Present" stroke="#10b981" fill="url(#gPresent)" strokeWidth={2.5} />
                         <Area type="monotone" dataKey="absent" name="Absent" stroke="#E42527" fill="url(#gAbsent)" strokeWidth={2} />
                         <Area type="monotone" dataKey="leave" name="On leave" stroke="#6366f1" fill="transparent" strokeWidth={2} strokeDasharray="4 4" />
@@ -416,11 +3105,26 @@ export default function HrmsDashboardPage() {
                 )}
               </Panel>
 
-              <Panel className="lg:col-span-2" title="Dept presence" subtitle="In office today">
+              <Panel className="lg:col-span-3" title="Today's rate" subtitle="Present + WFH + OD">
+                <AttendanceRing
+                  percent={attendancePercent}
+                  present={presentTotal}
+                  total={activeStaff}
+                />
+              </Panel>
+
+              <UpcomingEventsPanel events={events} loading={loading && !events.length} />
+            </div>
+
+            {/* DEPT CHARTS ROW */}
+            <div className="grid gap-4 lg:grid-cols-2">
+              <DepartmentHeadcountPie data={deptHeadcount} loading={loading && !deptHeadcount.length} />
+
+              <Panel title="Department presence" subtitle="In office today">
                 {deptPresent.length === 0 ? (
-                  <Empty text="No department data" />
+                  <Empty text="No department data" icon={Building2} />
                 ) : (
-                  <div className="h-72">
+                  <div className="h-[240px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={deptPresent} layout="vertical" margin={{ left: 4, right: 8 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
@@ -435,7 +3139,212 @@ export default function HrmsDashboardPage() {
               </Panel>
             </div>
 
-            {/* Quick lists preview + pending */}
+            {/* PRODUCTION CARDS ROW */}
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <PayrollStatusCard data={payroll} loading={loading && !payroll} />
+              <RecruitmentPipelineCard data={recruitment} loading={loading && !recruitment} />
+              <DocumentExpiryCard docs={docExpiries} loading={loading && !docExpiries.length} />
+              <WorkingHoursCard data={workingHours} loading={loading && !workingHours} />
+            </div>
+
+            {/* ATTRITION + ACTION REQUIRED */}
+            <div className="grid gap-4 lg:grid-cols-3">
+              <AttritionCard data={attrition} loading={loading && !attrition} />
+
+              <Panel
+                className="lg:col-span-2"
+                title="Action required"
+                subtitle="Needs your attention"
+                right={
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-600 ring-1 ring-amber-100">
+                    <Sparkles className="h-4 w-4" />
+                  </div>
+                }
+              >
+                {actionItems.length === 0 ? (
+                  <Empty text="You're all caught up" icon={Award} />
+                ) : (
+                  <ul className="divide-y divide-slate-100">
+                    {actionItems.slice(0, 5).map((it, i) => (
+                      <li key={it.id || i} className="flex items-start gap-3 py-2.5">
+                        <span
+                          className={`mt-0.5 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
+                            it.priority === "high"
+                              ? "bg-red-100 text-red-700"
+                              : it.priority === "medium"
+                              ? "bg-amber-100 text-amber-700"
+                              : "bg-slate-100 text-slate-600"
+                          }`}
+                        >
+                          {it.priority || "low"}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium text-slate-900">
+                            {it.title}
+                          </p>
+                          {it.description && (
+                            <p className="text-xs text-slate-500">{it.description}</p>
+                          )}
+                        </div>
+                        {it.href && (
+                          <Link
+                            href={it.href}
+                            className="shrink-0 text-xs font-medium text-[#E42527] hover:underline"
+                          >
+                            Open →
+                          </Link>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </Panel>
+            </div>
+
+            {/* RECENT HIRES + MY TEAM */}
+            <div className="grid gap-4 lg:grid-cols-2">
+              <Panel
+                title="Recent hires"
+                subtitle="Last 30 days"
+                right={
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100">
+                    <UserPlus className="h-4 w-4" />
+                  </div>
+                }
+              >
+                {recentHires.length === 0 ? (
+                  <Empty text="No new hires recently" icon={UserPlus} />
+                ) : (
+                  <ul className="divide-y divide-slate-100">
+                    {recentHires.slice(0, 5).map((h, i) => (
+                      <li key={h.employee_id || i} className="flex items-center gap-3 py-2.5">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-sm font-bold text-emerald-700">
+                          {(h.name || "E")[0]?.toUpperCase()}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium text-slate-900">
+                            {h.name || h.employee_id}
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            {h.designation || "—"}
+                            {h.joining_date ? ` · Joined ${formatDate(h.joining_date)}` : ""}
+                          </p>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </Panel>
+
+              {myTeam ? (
+                <Panel
+                  title="My team today"
+                  subtitle={
+                    myTeam.total
+                      ? `${myTeam.present || 0} of ${myTeam.total} present`
+                      : "Team attendance"
+                  }
+                  right={
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600 ring-1 ring-blue-100">
+                      <Users className="h-4 w-4" />
+                    </div>
+                  }
+                >
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    <div className="rounded-xl bg-emerald-50 px-4 py-3 text-emerald-900">
+                      <p className="text-[11px] font-medium uppercase tracking-wide opacity-70">
+                        Present
+                      </p>
+                      <p className="mt-0.5 text-2xl font-bold">
+                        {myTeam.present ?? 0}
+                      </p>
+                    </div>
+                    <div className="rounded-xl bg-red-50 px-4 py-3 text-red-900">
+                      <p className="text-[11px] font-medium uppercase tracking-wide opacity-70">
+                        Absent
+                      </p>
+                      <p className="mt-0.5 text-2xl font-bold">
+                        {myTeam.absent ?? 0}
+                      </p>
+                    </div>
+                    <div className="rounded-xl bg-sky-50 px-4 py-3 text-sky-900">
+                      <p className="text-[11px] font-medium uppercase tracking-wide opacity-70">
+                        On Leave
+                      </p>
+                      <p className="mt-0.5 text-2xl font-bold">
+                        {myTeam.on_leave ?? 0}
+                      </p>
+                    </div>
+                    <div className="rounded-xl bg-amber-50 px-4 py-3 text-amber-900">
+                      <p className="text-[11px] font-medium uppercase tracking-wide opacity-70">
+                        Late
+                      </p>
+                      <p className="mt-0.5 text-2xl font-bold">
+                        {myTeam.late ?? 0}
+                      </p>
+                    </div>
+                  </div>
+                  {Array.isArray(myTeam.members) && myTeam.members.length > 0 && (
+                    <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                      {myTeam.members.slice(0, 6).map((m, i) => (
+                        <div
+                          key={m.employee_id || i}
+                          className="flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2"
+                        >
+                          <div
+                            className={`h-2 w-2 rounded-full ${
+                              m.status === "present"
+                                ? "bg-emerald-500"
+                                : m.status === "absent"
+                                ? "bg-red-500"
+                                : m.status === "on_leave"
+                                ? "bg-sky-500"
+                                : "bg-slate-400"
+                            }`}
+                          />
+                          <p className="truncate text-xs text-slate-700">
+                            {m.name || m.employee_id}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Panel>
+              ) : (
+                <Panel title="Pending approvals" subtitle="Needs action">
+                  {pendingItems.length === 0 ? (
+                    <Empty text="All clear" icon={Award} />
+                  ) : (
+                    <div className="divide-y divide-slate-100">
+                      {pendingItems.slice(0, 5).map((item, i) => (
+                        <div
+                          key={`${item.type}-${item.id || i}`}
+                          className="flex items-center justify-between gap-2 py-2.5"
+                        >
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-medium text-slate-900">
+                              {item.title || "Request"}
+                            </p>
+                            <p className="text-xs text-slate-500">
+                              {item.employee_id}
+                            </p>
+                          </div>
+                          <span
+                            className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize ring-1 ${typeStyle(
+                              item.type
+                            )}`}
+                          >
+                            {(item.type || "").replace(/_/g, " ")}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </Panel>
+              )}
+            </div>
+
+            {/* ON LEAVE / ABSENT / APPROVALS */}
             <div className="grid gap-4 lg:grid-cols-3">
               <Panel
                 title="On leave today"
@@ -451,7 +3360,7 @@ export default function HrmsDashboardPage() {
                 }
               >
                 {onLeaveList.length === 0 ? (
-                  <Empty text="No one on leave today" />
+                  <Empty text="No one on leave today" icon={CalendarDays} />
                 ) : (
                   <div className="space-y-2">
                     {onLeaveList.slice(0, 4).map((row, i) => (
@@ -489,7 +3398,7 @@ export default function HrmsDashboardPage() {
                 }
               >
                 {absentList.length === 0 ? (
-                  <Empty text="No unexplained absents" />
+                  <Empty text="No unexplained absents" icon={UserX} />
                 ) : (
                   <div className="space-y-2">
                     {absentList.slice(0, 4).map((row, i) => (
@@ -501,7 +3410,9 @@ export default function HrmsDashboardPage() {
                           <p className="truncate text-sm font-medium text-slate-900">
                             {row.name || row.employee_id}
                           </p>
-                          <p className="text-xs text-slate-500">{row.reason || "Absent"}</p>
+                          <p className="text-xs text-slate-500">
+                            {row.reason || "Absent"}
+                          </p>
                         </div>
                       </div>
                     ))}
@@ -511,18 +3422,27 @@ export default function HrmsDashboardPage() {
 
               <Panel title="Pending approvals" subtitle="Needs action">
                 {pendingItems.length === 0 ? (
-                  <Empty text="All clear" />
+                  <Empty text="All clear" icon={Award} />
                 ) : (
                   <div className="divide-y divide-slate-100">
                     {pendingItems.slice(0, 5).map((item, i) => (
-                      <div key={`${item.type}-${item.id || i}`} className="flex items-center justify-between gap-2 py-2.5">
+                      <div
+                        key={`${item.type}-${item.id || i}`}
+                        className="flex items-center justify-between gap-2 py-2.5"
+                      >
                         <div className="min-w-0">
                           <p className="truncate text-sm font-medium text-slate-900">
                             {item.title || "Request"}
                           </p>
-                          <p className="text-xs text-slate-500">{item.employee_id}</p>
+                          <p className="text-xs text-slate-500">
+                            {item.employee_id}
+                          </p>
                         </div>
-                        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize ring-1 ${typeStyle(item.type)}`}>
+                        <span
+                          className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize ring-1 ${typeStyle(
+                            item.type
+                          )}`}
+                        >
                           {(item.type || "").replace(/_/g, " ")}
                         </span>
                       </div>
@@ -532,48 +3452,48 @@ export default function HrmsDashboardPage() {
               </Panel>
             </div>
 
-            {/* Holidays + Birthdays */}
+            {/* HOLIDAYS + BIRTHDAYS */}
             <div className="grid gap-4 lg:grid-cols-2">
               <Panel
                 title="Upcoming holidays"
                 subtitle="Next 30 days"
                 right={
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-600 ring-1 ring-amber-100">
-                    <CalendarDays className="h-4.5 w-4.5" />
+                    <CalendarDays className="h-4 w-4" />
                   </div>
                 }
-                className="overflow-hidden"
               >
                 {holidays.length === 0 ? (
-                  <div className="flex items-center gap-3 rounded-xl border border-dashed border-slate-200 bg-slate-50/70 px-4 py-5">
-                    <Sun className="h-5 w-5 text-amber-500" />
-                    <p className="text-sm text-slate-500">No holidays upcoming</p>
-                  </div>
+                  <Empty text="No holidays upcoming" icon={Sun} />
                 ) : (
                   <div className="space-y-2.5">
-                    {holidays.map((h, i) => (
-                      <div
-                        key={h.holiday_id || i}
-                        className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/70 px-3 py-2.5 transition hover:border-amber-200 hover:bg-amber-50/40"
-                      >
-                        {(() => {
-                          const date = calendarParts(h.date);
-                          return (
-                            <div className="flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-lg bg-white text-amber-700 shadow-sm ring-1 ring-amber-100">
-                              <span className="text-[10px] font-bold uppercase">{date.month}</span>
-                              <span className="text-lg font-bold leading-4">{date.day}</span>
-                            </div>
-                          );
-                        })()}
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-semibold text-slate-900">
-                            {h.name || h.holiday_name}
-                          </p>
-                          <p className="mt-0.5 text-xs text-slate-500">{formatDate(h.date)}</p>
+                    {holidays.map((h, i) => {
+                      const date = calendarParts(h.date);
+                      return (
+                        <div
+                          key={h.holiday_id || i}
+                          className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/70 px-3 py-2.5 transition hover:border-amber-200 hover:bg-amber-50/40"
+                        >
+                          <div className="flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-lg bg-white text-amber-700 shadow-sm ring-1 ring-amber-100">
+                            <span className="text-[10px] font-bold uppercase">
+                              {date.month}
+                            </span>
+                            <span className="text-lg font-bold leading-4">
+                              {date.day}
+                            </span>
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-semibold text-slate-900">
+                              {h.name || h.holiday_name}
+                            </p>
+                            <p className="mt-0.5 text-xs text-slate-500">
+                              {formatDate(h.date)}
+                            </p>
+                          </div>
+                          <Sun className="h-4 w-4 shrink-0 text-amber-400" />
                         </div>
-                        <Sun className="h-4 w-4 shrink-0 text-amber-400" />
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </Panel>
@@ -583,16 +3503,12 @@ export default function HrmsDashboardPage() {
                 subtitle="Next 7 days"
                 right={
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-50 text-rose-600 ring-1 ring-rose-100">
-                    <Cake className="h-4.5 w-4.5" />
+                    <Cake className="h-4 w-4" />
                   </div>
                 }
-                className="overflow-hidden"
               >
                 {birthdays.length === 0 ? (
-                  <div className="flex items-center gap-3 rounded-xl border border-dashed border-slate-200 bg-slate-50/70 px-4 py-5">
-                    <Cake className="h-5 w-5 text-rose-400" />
-                    <p className="text-sm text-slate-500">No birthdays this week</p>
-                  </div>
+                  <Empty text="No birthdays this week" icon={Cake} />
                 ) : (
                   <div className="space-y-2.5">
                     {birthdays.map((b, i) => (
@@ -601,13 +3517,15 @@ export default function HrmsDashboardPage() {
                         className="flex items-center gap-3 rounded-xl border border-rose-100/80 bg-rose-50/50 px-3 py-2.5 transition hover:border-rose-200 hover:bg-rose-50"
                       >
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#E42527] text-xs font-bold text-white shadow-sm shadow-red-200">
-                            {(b.name || "E")[0]?.toUpperCase()}
+                          {(b.name || "E")[0]?.toUpperCase()}
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-semibold text-slate-900">
                             {b.name || b.employee_id}
                           </p>
-                          <p className="mt-0.5 text-xs text-slate-500">{formatDate(b.birthday_on || b.dob)}</p>
+                          <p className="mt-0.5 text-xs text-slate-500">
+                            {formatDate(b.birthday_on || b.dob)}
+                          </p>
                         </div>
                         <Cake className="h-4 w-4 shrink-0 text-[#E42527]" />
                       </div>
@@ -620,15 +3538,18 @@ export default function HrmsDashboardPage() {
         )}
       </div>
 
-      {/* List modal — On leave / Absent */}
+      {/* MODAL */}
       {listModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
               <div>
-                <h3 className="text-lg font-semibold text-slate-900">{modalTitle}</h3>
+                <h3 className="text-lg font-semibold text-slate-900">
+                  {modalTitle}
+                </h3>
                 <p className="text-xs text-slate-500">
-                  {formatDate(peopleStatus?.date || summary?.date)} · {modalList.length} people
+                  {formatDate(peopleStatus?.date || summary?.date)} ·{" "}
+                  {modalList.length} people
                 </p>
               </div>
               <button
