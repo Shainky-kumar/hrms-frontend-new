@@ -1,79 +1,1682 @@
 
+// // // "use client";
+
+// // // import { useEffect, useState } from "react";
+// // // import { api } from "@/lib/api";
+
+// // // const initialForm = {
+// // //   Shift_name: "",
+// // //   shift_timing: "",
+// // //   early_checkin_margin: 30,
+// // //   late_checkout_margin: 45,
+// // // };
+
+// // // const formatApiError = (err) => {
+// // //   const detail = err?.response?.data?.detail;
+
+// // //   if (Array.isArray(detail)) {
+// // //     return detail
+// // //       .map((item) => {
+// // //         if (Array.isArray(item.loc)) {
+// // //           return `${item.loc.slice(1).join(".")}: ${item.msg}`;
+// // //         }
+
+// // //         return item.msg;
+// // //       })
+// // //       .join(" • ");
+// // //   }
+
+// // //   if (typeof detail === "string") {
+// // //     return detail;
+// // //   }
+
+// // //   return err?.response?.data?.message || err?.message || "Something went wrong";
+// // // };
+
+// // // const getShiftId = (item) => {
+// // //   return item?.shift_id || item?.id || item?._id;
+// // // };
+
+// // // const getTimingId = (timing) => {
+// // //   return (
+// // //     timing?.company_timing_id ||
+// // //     timing?.timing_id ||
+// // //     timing?.id ||
+// // //     timing?._id
+// // //   );
+// // // };
+
+// // // const formatTime = (time) => {
+// // //   if (!time) return "";
+
+// // //   const parts = String(time).split(":");
+// // //   const hour = Number(parts[0]);
+// // //   const minute = Number(parts[1] || 0);
+
+// // //   if (Number.isNaN(hour)) {
+// // //     return String(time);
+// // //   }
+
+// // //   const date = new Date();
+// // //   date.setHours(hour, minute, 0, 0);
+
+// // //   return date.toLocaleTimeString([], {
+// // //     hour: "2-digit",
+// // //     minute: "2-digit",
+// // //   });
+// // // };
+
+// // // const getTimingName = (timing) => {
+// // //   const startTime = timing?.start_time || timing?.startTime;
+// // //   const endTime = timing?.end_time || timing?.endTime;
+
+// // //   if (startTime && endTime) {
+// // //     return `${formatTime(startTime)} - ${formatTime(endTime)}`;
+// // //   }
+
+// // //   return (
+// // //     timing?.name ||
+// // //     timing?.timing_name ||
+// // //     timing?.title ||
+// // //     getTimingId(timing) ||
+// // //     "Unknown timing"
+// // //   );
+// // // };
+
+// // // const getShiftsFromResponse = (res) => {
+// // //   const data = res?.data;
+
+// // //   if (Array.isArray(data)) return data;
+// // //   if (Array.isArray(data?.shifts)) return data.shifts;
+// // //   if (Array.isArray(data?.items)) return data.items;
+// // //   if (Array.isArray(data?.results)) return data.results;
+// // //   if (Array.isArray(data?.data)) return data.data;
+
+// // //   return [];
+// // // };
+
+// // // const getTimingsFromResponse = (res) => {
+// // //   const data = res?.data;
+
+// // //   if (Array.isArray(data)) return data;
+// // //   if (Array.isArray(data?.timings)) return data.timings;
+// // //   if (Array.isArray(data?.company_timings)) return data.company_timings;
+// // //   if (Array.isArray(data?.items)) return data.items;
+// // //   if (Array.isArray(data?.results)) return data.results;
+// // //   if (Array.isArray(data?.data)) return data.data;
+
+// // //   return [];
+// // // };
+
+// // // export default function AddShiftPage() {
+// // //   const [list, setList] = useState([]);
+// // //   const [timings, setTimings] = useState([]);
+
+// // //   const [formData, setFormData] = useState(initialForm);
+
+// // //   const [loading, setLoading] = useState(true);
+// // //   const [timingsLoading, setTimingsLoading] = useState(false);
+// // //   const [saving, setSaving] = useState(false);
+
+// // //   const [error, setError] = useState("");
+// // //   const [timingError, setTimingError] = useState("");
+
+// // //   const [showForm, setShowForm] = useState(false);
+// // //   const [editId, setEditId] = useState(null);
+
+// // //   useEffect(() => {
+// // //     fetchData();
+// // //   }, []);
+
+// // //   const fetchData = async () => {
+// // //     setLoading(true);
+// // //     setError("");
+
+// // //     try {
+// // //       const res = await api.get("/api/v1/get/all/shifts", {
+// // //         params: {
+// // //           page: 1,
+// // //           page_size: 100,
+// // //         },
+// // //       });
+
+// // //       const shifts = getShiftsFromResponse(res);
+// // //       setList(shifts);
+// // //     } catch (err) {
+// // //       setError(formatApiError(err));
+// // //     } finally {
+// // //       setLoading(false);
+// // //     }
+// // //   };
+
+// // //   const fetchTimings = async () => {
+// // //     setTimingsLoading(true);
+// // //     setTimingError("");
+
+// // //     try {
+// // //       const res = await api.get("/api/v1/get/all/company-timings");
+
+// // //       const timingList = getTimingsFromResponse(res);
+// // //       setTimings(timingList);
+// // //     } catch (err) {
+// // //       setTimings([]);
+// // //       setTimingError(formatApiError(err));
+// // //     } finally {
+// // //       setTimingsLoading(false);
+// // //     }
+// // //   };
+
+// // //   const handleChange = (field, value) => {
+// // //     setFormData((previous) => ({
+// // //       ...previous,
+// // //       [field]: value,
+// // //     }));
+// // //   };
+
+// // //   const openAdd = async () => {
+// // //     setEditId(null);
+// // //     setFormData(initialForm);
+// // //     setError("");
+// // //     setTimingError("");
+// // //     setShowForm(true);
+
+// // //     await fetchTimings();
+// // //   };
+
+// // //   const openEdit = async (item) => {
+// // //     const shiftId = getShiftId(item);
+
+// // //     setEditId(shiftId);
+
+// // //     setFormData({
+// // //       Shift_name: item?.Shift_name || "",
+// // //       shift_timing: item?.shift_timing || "",
+// // //       early_checkin_margin: item?.early_checkin_margin ?? 30,
+// // //       late_checkout_margin: item?.late_checkout_margin ?? 45,
+// // //     });
+
+// // //     setError("");
+// // //     setTimingError("");
+// // //     setShowForm(true);
+
+// // //     await fetchTimings();
+// // //   };
+
+// // //   const closeForm = () => {
+// // //     if (saving) return;
+
+// // //     setShowForm(false);
+// // //     setEditId(null);
+// // //     setFormData(initialForm);
+// // //     setError("");
+// // //     setTimingError("");
+// // //   };
+
+// // //   const handleSubmit = async (event) => {
+// // //     event.preventDefault();
+
+// // //     const shiftName = formData.Shift_name.trim();
+
+// // //     if (!shiftName) {
+// // //       setError("Shift name required");
+// // //       return;
+// // //     }
+
+// // //     if (!formData.shift_timing) {
+// // //       setError("Please select shift timing");
+// // //       return;
+// // //     }
+
+// // //     setSaving(true);
+// // //     setError("");
+
+// // //     const payload = {
+// // //       Shift_name: shiftName,
+// // //       shift_timing: formData.shift_timing,
+// // //       early_checkin_margin: Number(formData.early_checkin_margin || 0),
+// // //       late_checkout_margin: Number(formData.late_checkout_margin || 0),
+// // //     };
+
+// // //     try {
+// // //       if (editId) {
+// // //         await api.put(`/api/v1/update/shifts/${editId}`, payload);
+// // //       } else {
+// // //         await api.post("/api/v1/create/shifts", payload);
+// // //       }
+
+// // //       closeForm();
+// // //       await fetchData();
+// // //     } catch (err) {
+// // //       setError(formatApiError(err));
+// // //     } finally {
+// // //       setSaving(false);
+// // //     }
+// // //   };
+
+// // //   const handleDelete = async (id) => {
+// // //     if (!id) {
+// // //       setError("Shift ID nahi mila");
+// // //       return;
+// // //     }
+
+// // //     const confirmDelete = window.confirm(
+// // //       "Are you sure you want to delete this shift?"
+// // //     );
+
+// // //     if (!confirmDelete) return;
+
+// // //     setError("");
+
+// // //     try {
+// // //       await api.delete(`/api/v1/delete/shifts/${id}`);
+// // //       await fetchData();
+// // //     } catch (err) {
+// // //       setError(formatApiError(err));
+// // //     }
+// // //   };
+
+// // //   const getTimingLabelById = (timingId) => {
+// // //     const timing = timings.find(
+// // //       (item) => String(getTimingId(item)) === String(timingId)
+// // //     );
+
+// // //     return timing ? getTimingName(timing) : timingId || "—";
+// // //   };
+
+// // //   return (
+// // //     <div className="min-h-screen bg-slate-50 p-4 sm:p-6">
+// // //       <div className="mx-auto max-w-6xl">
+// // //         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+// // //           <div>
+// // //             <h1 className="text-2xl font-bold text-slate-800">
+// // //               Employee Shifts
+// // //             </h1>
+
+// // //             <p className="mt-1 text-sm text-slate-500">
+// // //               Create and manage employee shifts
+// // //             </p>
+// // //           </div>
+
+// // //           <button
+// // //             type="button"
+// // //             onClick={openAdd}
+// // //             className="rounded-lg bg-[#E42527] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#c91f21]"
+// // //           >
+// // //             + Add Shift
+// // //           </button>
+// // //         </div>
+
+// // //         {error && !showForm && (
+// // //           <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+// // //             {error}
+// // //           </div>
+// // //         )}
+
+// // //         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+// // //           {loading ? (
+// // //             <div className="py-24 text-center text-sm text-slate-500">
+// // //               Loading shifts...
+// // //             </div>
+// // //           ) : list.length === 0 ? (
+// // //             <div className="py-24 text-center">
+// // //               <div className="text-4xl">🕒</div>
+
+// // //               <p className="mt-3 text-sm font-medium text-slate-700">
+// // //                 No shifts found
+// // //               </p>
+
+// // //               <p className="mt-1 text-sm text-slate-500">
+// // //                 Add your first shift to get started.
+// // //               </p>
+// // //             </div>
+// // //           ) : (
+// // //             <div className="overflow-x-auto">
+// // //               <table className="w-full min-w-[650px] text-left text-sm">
+// // //                 <thead>
+// // //                   <tr className="border-b border-slate-200 bg-slate-50">
+// // //                     <th className="px-5 py-4 font-semibold text-slate-500">
+// // //                       #
+// // //                     </th>
+
+// // //                     <th className="px-5 py-4 font-semibold text-slate-500">
+// // //                       Shift Name
+// // //                     </th>
+
+// // //                     <th className="px-5 py-4 font-semibold text-slate-500">
+// // //                       Timing
+// // //                     </th>
+
+// // //                     <th className="px-5 py-4 text-right font-semibold text-slate-500">
+// // //                       Actions
+// // //                     </th>
+// // //                   </tr>
+// // //                 </thead>
+
+// // //                 <tbody className="divide-y divide-slate-100">
+// // //                   {list.map((item, index) => {
+// // //                     const shiftId = getShiftId(item);
+
+// // //                     return (
+// // //                       <tr
+// // //                         key={shiftId || index}
+// // //                         className="transition hover:bg-slate-50"
+// // //                       >
+// // //                         <td className="px-5 py-4 text-slate-500">
+// // //                           {index + 1}
+// // //                         </td>
+
+// // //                         <td className="px-5 py-4">
+// // //                           <div className="font-semibold text-slate-800">
+// // //                             {item?.Shift_name || "—"}
+// // //                           </div>
+// // //                         </td>
+
+// // //                         <td className="px-5 py-4">
+// // //                           <span className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700">
+// // //                             <span>🕒</span>
+// // //                             {getTimingLabelById(item?.shift_timing)}
+// // //                           </span>
+// // //                         </td>
+
+// // //                         <td className="px-5 py-4 text-right">
+// // //                           <button
+// // //                             type="button"
+// // //                             onClick={() => openEdit(item)}
+// // //                             className="rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-100"
+// // //                           >
+// // //                             Edit
+// // //                           </button>
+
+// // //                           <button
+// // //                             type="button"
+// // //                             onClick={() => handleDelete(shiftId)}
+// // //                             className="ml-2 rounded-lg px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-50"
+// // //                           >
+// // //                             Delete
+// // //                           </button>
+// // //                         </td>
+// // //                       </tr>
+// // //                     );
+// // //                   })}
+// // //                 </tbody>
+// // //               </table>
+// // //             </div>
+// // //           )}
+// // //         </div>
+// // //       </div>
+
+// // //       {showForm && (
+// // //         <div
+// // //           className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-900/60 p-4 pt-8 sm:pt-14"
+// // //           onMouseDown={(event) => {
+// // //             if (event.target === event.currentTarget) {
+// // //               closeForm();
+// // //             }
+// // //           }}
+// // //         >
+// // //           <div
+// // //             className="mb-8 w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl"
+// // //             role="dialog"
+// // //             aria-modal="true"
+// // //             aria-labelledby="shift-form-title"
+// // //           >
+// // //             <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4 sm:px-6">
+// // //               <div>
+// // //                 <h2
+// // //                   id="shift-form-title"
+// // //                   className="text-lg font-bold text-slate-800"
+// // //                 >
+// // //                   {editId ? "Edit Shift" : "Add Shift"}
+// // //                 </h2>
+
+// // //                 <p className="mt-1 text-xs text-slate-500">
+// // //                   Fill the shift details below
+// // //                 </p>
+// // //               </div>
+
+// // //               <button
+// // //                 type="button"
+// // //                 onClick={closeForm}
+// // //                 className="rounded-lg px-3 py-2 text-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+// // //                 aria-label="Close form"
+// // //               >
+// // //                 ×
+// // //               </button>
+// // //             </div>
+
+// // //             <form onSubmit={handleSubmit}>
+// // //               <div className="max-h-[72vh] space-y-6 overflow-y-auto px-5 py-5 sm:px-6">
+// // //                 {error && (
+// // //                   <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+// // //                     {error}
+// // //                   </div>
+// // //                 )}
+
+// // //                 <div>
+// // //                   <label
+// // //                     htmlFor="shift-name"
+// // //                     className="mb-2 block text-sm font-semibold text-slate-700"
+// // //                   >
+// // //                     Shift Name *
+// // //                   </label>
+
+// // //                   <input
+// // //                     id="shift-name"
+// // //                     type="text"
+// // //                     value={formData.Shift_name}
+// // //                     onChange={(event) =>
+// // //                       handleChange("Shift_name", event.target.value)
+// // //                     }
+// // //                     placeholder="Example: Morning Shift"
+// // //                     maxLength={100}
+// // //                     required
+// // //                     className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none transition placeholder:text-slate-400 focus:border-[#E42527] focus:ring-2 focus:ring-red-100"
+// // //                   />
+// // //                 </div>
+
+// // //                 <div>
+// // //                   <div className="mb-2 flex items-center justify-between">
+// // //                     <label className="block text-sm font-semibold text-slate-700">
+// // //                       Shift Timing *
+// // //                     </label>
+
+// // //                     <span className="text-xs text-slate-400">
+// // //                       Select one
+// // //                     </span>
+// // //                   </div>
+
+// // //                   {timingError && (
+// // //                     <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+// // //                       {timingError}
+// // //                     </div>
+// // //                   )}
+
+// // //                   {timingsLoading ? (
+// // //                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+// // //                       <div className="h-20 animate-pulse rounded-xl bg-slate-100" />
+// // //                       <div className="h-20 animate-pulse rounded-xl bg-slate-100" />
+// // //                     </div>
+// // //                   ) : timings.length === 0 ? (
+// // //                     <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-center">
+// // //                       <div className="text-3xl">🕒</div>
+
+// // //                       <p className="mt-2 text-sm font-semibold text-slate-700">
+// // //                         No timings available
+// // //                       </p>
+
+// // //                       <p className="mt-1 text-xs text-slate-500">
+// // //                         Pehle company timing create karo.
+// // //                       </p>
+// // //                     </div>
+// // //                   ) : (
+// // //                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+// // //                       {timings.map((timing) => {
+// // //                         const timingId = String(getTimingId(timing));
+
+// // //                         const selected =
+// // //                           String(formData.shift_timing) === timingId;
+
+// // //                         return (
+// // //                           <button
+// // //                             key={timingId}
+// // //                             type="button"
+// // //                             onClick={() =>
+// // //                               handleChange("shift_timing", timingId)
+// // //                             }
+// // //                             className={`rounded-xl border p-4 text-left transition ${
+// // //                               selected
+// // //                                 ? "border-red-500 bg-red-50 ring-2 ring-red-100"
+// // //                                 : "border-slate-200 bg-white hover:border-red-300 hover:bg-red-50/40"
+// // //                             }`}
+// // //                           >
+// // //                             <div className="flex items-center justify-between gap-3">
+// // //                               <div>
+// // //                                 <p className="font-semibold text-slate-800">
+// // //                                   🕒 {getTimingName(timing)}
+// // //                                 </p>
+
+// // //                                 <p className="mt-1 text-xs text-slate-500">
+// // //                                   {selected
+// // //                                     ? "Timing selected"
+// // //                                     : "Click to select"}
+// // //                                 </p>
+// // //                               </div>
+
+// // //                               <div
+// // //                                 className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs ${
+// // //                                   selected
+// // //                                     ? "bg-red-500 font-bold text-white"
+// // //                                     : "border border-slate-300 text-transparent"
+// // //                                 }`}
+// // //                               >
+// // //                                 ✓
+// // //                               </div>
+// // //                             </div>
+// // //                           </button>
+// // //                         );
+// // //                       })}
+// // //                     </div>
+// // //                   )}
+// // //                 </div>
+
+// // //                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+// // //                   <div>
+// // //                     <label
+// // //                       htmlFor="early-checkin"
+// // //                       className="mb-2 block text-sm font-semibold text-slate-700"
+// // //                     >
+// // //                       Early Check-in
+// // //                     </label>
+
+// // //                     <div className="relative">
+// // //                       <input
+// // //                         id="early-checkin"
+// // //                         type="number"
+// // //                         min="0"
+// // //                         max="1440"
+// // //                         value={formData.early_checkin_margin}
+// // //                         onChange={(event) =>
+// // //                           handleChange(
+// // //                             "early_checkin_margin",
+// // //                             event.target.value
+// // //                           )
+// // //                         }
+// // //                         className="w-full rounded-lg border border-slate-200 px-3 py-2.5 pr-20 text-sm outline-none transition focus:border-[#E42527] focus:ring-2 focus:ring-red-100"
+// // //                       />
+
+// // //                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">
+// // //                         minutes
+// // //                       </span>
+// // //                     </div>
+
+// // //                     <p className="mt-1 text-xs text-slate-400">
+// // //                       Shift se pehle punch-in.
+// // //                     </p>
+// // //                   </div>
+
+// // //                   <div>
+// // //                     <label
+// // //                       htmlFor="late-checkout"
+// // //                       className="mb-2 block text-sm font-semibold text-slate-700"
+// // //                     >
+// // //                       Late Checkout
+// // //                     </label>
+
+// // //                     <div className="relative">
+// // //                       <input
+// // //                         id="late-checkout"
+// // //                         type="number"
+// // //                         min="0"
+// // //                         max="1440"
+// // //                         value={formData.late_checkout_margin}
+// // //                         onChange={(event) =>
+// // //                           handleChange(
+// // //                             "late_checkout_margin",
+// // //                             event.target.value
+// // //                           )
+// // //                         }
+// // //                         className="w-full rounded-lg border border-slate-200 px-3 py-2.5 pr-20 text-sm outline-none transition focus:border-[#E42527] focus:ring-2 focus:ring-red-100"
+// // //                       />
+
+// // //                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">
+// // //                         minutes
+// // //                       </span>
+// // //                     </div>
+
+// // //                     <p className="mt-1 text-xs text-slate-400">
+// // //                       Shift ke baad punch-out.
+// // //                     </p>
+// // //                   </div>
+// // //                 </div>
+// // //               </div>
+
+// // //               <div className="flex justify-end gap-3 border-t border-slate-100 px-5 py-4 sm:px-6">
+// // //                 <button
+// // //                   type="button"
+// // //                   onClick={closeForm}
+// // //                   disabled={saving}
+// // //                   className="rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+// // //                 >
+// // //                   Cancel
+// // //                 </button>
+
+// // //                 <button
+// // //                   type="submit"
+// // //                   disabled={saving || timings.length === 0}
+// // //                   className="rounded-lg bg-[#E42527] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#c91f21] disabled:cursor-not-allowed disabled:opacity-60"
+// // //                 >
+// // //                   {saving
+// // //                     ? "Saving..."
+// // //                     : editId
+// // //                     ? "Update Shift"
+// // //                     : "Save Shift"}
+// // //                 </button>
+// // //               </div>
+// // //             </form>
+// // //           </div>
+// // //         </div>
+// // //       )}
+// // //     </div>
+// // //   );
+// // // }
+
+// // "use client";
+
+// // import { useEffect, useMemo, useState } from "react";
+// // import { api } from "@/app/lib/api";
+
+// // // ---------------------------------------------------------------------------
+// // // API endpoints — adjust these if your actual routes differ.
+// // // The employee-list and assignment routes were not visible in what you
+// // // shared, so these are best guesses following your existing naming pattern.
+// // // ---------------------------------------------------------------------------
+// // const ENDPOINTS = {
+// //   shiftsList: "/api/v1/get/all/shifts",
+// //   shiftCreate: "/api/v1/create/shifts",
+// //   shiftUpdate: (id) => `/api/v1/update/shifts/${id}`,
+// //   shiftDelete: (id) => `/api/v1/delete/shifts/${id}`,
+
+// //   timingsList: "/api/v1/get/all/company-timings",
+
+// //   employeesList: "/api/v1/get/employees",
+
+// //   assignmentCreate: "/api/v1/assign-shift",
+// //   assignmentBulkCreate: "/api/v1/bulk-assign-shift",
+// //   assignmentsList: "/api/v1/get/all/assign-shifts",
+// //   assignmentGet: (id) => `/api/v1/get/assign-shift/${id}`,
+// //   assignmentUpdate: (id) => `/api/v1/update/assign-shift/${id}`,
+// //   assignmentDelete: (id) => `/api/v1/delete/assign-shift/${id}`,
+// // };
+
+// // const initialShiftForm = {
+// //   Shift_name: "",
+// //   shift_timing: "",
+// //   early_checkin_margin: 30,
+// //   late_checkout_margin: 45,
+// // };
+
+// // const initialAssignForm = {
+// //   employee_ids: [],
+// //   start_date: "",
+// //   end_date: "",
+// //   remarks: "",
+// // };
+
+// // // ---------------------------------------------------------------------------
+// // // Helpers
+// // // ---------------------------------------------------------------------------
+// // const formatApiError = (err) => {
+// //   const detail = err?.response?.data?.detail;
+
+// //   if (Array.isArray(detail)) {
+// //     return detail
+// //       .map((item) => {
+// //         if (Array.isArray(item.loc)) {
+// //           return `${item.loc.slice(1).join(".")}: ${item.msg}`;
+// //         }
+// //         return item.msg;
+// //       })
+// //       .join(" • ");
+// //   }
+
+// //   if (typeof detail === "string") return detail;
+
+// //   return err?.response?.data?.message || err?.message || "Something went wrong";
+// // };
+
+// // const getShiftId = (item) => item?.shift_id || item?.id || item?._id;
+// // const getTimingId = (t) => t?.company_timing_id || t?.timing_id || t?.id || t?._id;
+// // const getEmployeeId = (e) => e?.employee_id || e?.id || e?._id;
+// // const getAssignmentId = (a) => a?.assignment_id || a?.id || a?._id;
+
+// // const formatTime = (time) => {
+// //   if (!time) return "";
+// //   const parts = String(time).split(":");
+// //   const hour = Number(parts[0]);
+// //   const minute = Number(parts[1] || 0);
+// //   if (Number.isNaN(hour)) return String(time);
+
+// //   const date = new Date();
+// //   date.setHours(hour, minute, 0, 0);
+// //   return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+// // };
+
+// // const formatDate = (value) => {
+// //   if (!value) return "—";
+// //   const d = new Date(value);
+// //   if (Number.isNaN(d.getTime())) return String(value);
+// //   return d.toLocaleDateString([], { day: "2-digit", month: "short", year: "numeric" });
+// // };
+
+// // const getTimingName = (timing) => {
+// //   const startTime = timing?.start_time || timing?.startTime;
+// //   const endTime = timing?.end_time || timing?.endTime;
+// //   if (startTime && endTime) return `${formatTime(startTime)} - ${formatTime(endTime)}`;
+// //   return timing?.name || timing?.timing_name || timing?.title || getTimingId(timing) || "Unknown timing";
+// // };
+
+// // const getEmployeeName = (emp) => {
+// //   return (
+// //     emp?.name ||
+// //     [emp?.first_name, emp?.last_name].filter(Boolean).join(" ") ||
+// //     emp?.company_email ||
+// //     getEmployeeId(emp) ||
+// //     "Unknown employee"
+// //   );
+// // };
+
+// // const getEmployeeSubtitle = (emp) => {
+// //   const parts = [emp?.designation_name, emp?.department_name].filter((v) => v && v !== "—");
+// //   return parts.join(" • ");
+// // };
+
+// // const extractArray = (res, keys) => {
+// //   const data = res?.data;
+// //   if (Array.isArray(data)) return data;
+// //   for (const key of keys) {
+// //     if (Array.isArray(data?.[key])) return data[key];
+// //   }
+// //   return [];
+// // };
+
+// // const getShiftsFromResponse = (res) => extractArray(res, ["shifts", "items", "results", "data"]);
+// // const getTimingsFromResponse = (res) => extractArray(res, ["timings", "company_timings", "items", "results", "data"]);
+// // const getEmployeesFromResponse = (res) => extractArray(res, ["employees", "items", "results", "data"]);
+// // const getAssignmentsFromResponse = (res) => extractArray(res, ["assignments", "items", "results", "data"]);
+
+// // // ---------------------------------------------------------------------------
+// // // Small presentational bits
+// // // ---------------------------------------------------------------------------
+// // const Badge = ({ children, tone = "slate" }) => {
+// //   const tones = {
+// //     slate: "bg-slate-100 text-slate-600",
+// //     blue: "bg-blue-50 text-blue-700",
+// //     green: "bg-emerald-50 text-emerald-700",
+// //     red: "bg-red-50 text-red-600",
+// //   };
+// //   return (
+// //     <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${tones[tone]}`}>
+// //       {children}
+// //     </span>
+// //   );
+// // };
+
+// // const IconButton = ({ label, onClick, tone = "slate" }) => {
+// //   const tones = {
+// //     slate: "text-slate-500 hover:bg-slate-100",
+// //     red: "text-red-600 hover:bg-red-50",
+// //   };
+// //   return (
+// //     <button
+// //       type="button"
+// //       onClick={onClick}
+// //       className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold transition ${tones[tone]}`}
+// //     >
+// //       {label}
+// //     </button>
+// //   );
+// // };
+
+// // const ModalShell = ({ title, subtitle, onClose, children, footer, wide }) => (
+// //   <div
+// //     className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-900/60 p-4 pt-8 sm:pt-14"
+// //     onMouseDown={(event) => {
+// //       if (event.target === event.currentTarget) onClose();
+// //     }}
+// //   >
+// //     <div
+// //       className={`mb-8 w-full ${wide ? "max-w-3xl" : "max-w-2xl"} overflow-hidden rounded-2xl bg-white shadow-2xl`}
+// //       role="dialog"
+// //       aria-modal="true"
+// //     >
+// //       <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4 sm:px-6">
+// //         <div>
+// //           <h2 className="text-lg font-bold text-slate-800">{title}</h2>
+// //           {subtitle && <p className="mt-1 text-xs text-slate-500">{subtitle}</p>}
+// //         </div>
+// //         <button
+// //           type="button"
+// //           onClick={onClose}
+// //           className="rounded-lg px-3 py-2 text-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+// //           aria-label="Close"
+// //         >
+// //           ×
+// //         </button>
+// //       </div>
+
+// //       <div className="max-h-[72vh] space-y-5 overflow-y-auto px-5 py-5 sm:px-6">{children}</div>
+
+// //       {footer && <div className="flex justify-end gap-3 border-t border-slate-100 px-5 py-4 sm:px-6">{footer}</div>}
+// //     </div>
+// //   </div>
+// // );
+
+// // // ---------------------------------------------------------------------------
+// // // Shift card
+// // // ---------------------------------------------------------------------------
+// // const ShiftCard = ({ shift, timingLabel, onOpenDetails, onEdit, onDelete, onAssign }) => {
+// //   const active = shift?.is_active !== false;
+
+// //   return (
+// //     <div
+// //       onClick={() => onOpenDetails(shift)}
+// //       className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-red-200 hover:shadow-md"
+// //     >
+// //       <div className="flex items-start justify-between gap-3">
+// //         <div>
+// //           <h3 className="text-base font-bold text-slate-800">{shift?.Shift_name || "—"}</h3>
+// //           <div className="mt-2">
+// //             <Badge tone="blue">🕒 {timingLabel}</Badge>
+// //           </div>
+// //         </div>
+// //         <Badge tone={active ? "green" : "red"}>{active ? "Active" : "Inactive"}</Badge>
+// //       </div>
+
+// //       <div className="mt-4 grid grid-cols-2 gap-3">
+// //         <div className="rounded-xl bg-slate-50 px-3 py-2">
+// //           <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Early check-in</p>
+// //           <p className="mt-0.5 text-sm font-semibold text-slate-700">{shift?.early_checkin_margin ?? 0} min</p>
+// //         </div>
+// //         <div className="rounded-xl bg-slate-50 px-3 py-2">
+// //           <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Late checkout</p>
+// //           <p className="mt-0.5 text-sm font-semibold text-slate-700">{shift?.late_checkout_margin ?? 0} min</p>
+// //         </div>
+// //       </div>
+
+// //       <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
+// //         <div className="flex gap-1">
+// //           <IconButton label="Edit" onClick={(e) => { e.stopPropagation(); onEdit(shift); }} />
+// //           <IconButton label="Delete" tone="red" onClick={(e) => { e.stopPropagation(); onDelete(shift); }} />
+// //         </div>
+
+// //         <button
+// //           type="button"
+// //           onClick={(e) => { e.stopPropagation(); onAssign(shift); }}
+// //           className="rounded-lg bg-[#E42527] px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-[#c91f21]"
+// //         >
+// //           + Assign
+// //         </button>
+// //       </div>
+// //     </div>
+// //   );
+// // };
+
+// // // ---------------------------------------------------------------------------
+// // // Assignment history table (reusable — used globally and inside details modal)
+// // // ---------------------------------------------------------------------------
+// // const AssignmentHistoryTable = ({ assignments, loading, getShiftName, getEmployeeLabel, onDelete, emptyHint }) => {
+// //   if (loading) {
+// //     return <div className="py-10 text-center text-sm text-slate-500">Loading history...</div>;
+// //   }
+
+// //   if (!assignments || assignments.length === 0) {
+// //     return (
+// //       <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 py-10 text-center">
+// //         <div className="text-3xl">📋</div>
+// //         <p className="mt-2 text-sm font-medium text-slate-700">No assignments yet</p>
+// //         <p className="mt-1 text-xs text-slate-500">{emptyHint || "Assign employees to a shift to see history here."}</p>
+// //       </div>
+// //     );
+// //   }
+
+// //   return (
+// //     <div className="overflow-x-auto rounded-xl border border-slate-200">
+// //       <table className="w-full min-w-[560px] text-left text-sm">
+// //         <thead>
+// //           <tr className="border-b border-slate-200 bg-slate-50">
+// //             <th className="px-4 py-3 font-semibold text-slate-500">Employee</th>
+// //             {getShiftName && <th className="px-4 py-3 font-semibold text-slate-500">Shift</th>}
+// //             <th className="px-4 py-3 font-semibold text-slate-500">Start</th>
+// //             <th className="px-4 py-3 font-semibold text-slate-500">End</th>
+// //             <th className="px-4 py-3 font-semibold text-slate-500">Remarks</th>
+// //             <th className="px-4 py-3 text-right font-semibold text-slate-500">Actions</th>
+// //           </tr>
+// //         </thead>
+// //         <tbody className="divide-y divide-slate-100">
+// //           {assignments.map((a) => {
+// //             const id = getAssignmentId(a);
+// //             return (
+// //               <tr key={id} className="hover:bg-slate-50">
+// //                 <td className="px-4 py-3 font-medium text-slate-700">{getEmployeeLabel(a?.employee_id)}</td>
+// //                 {getShiftName && <td className="px-4 py-3 text-slate-600">{getShiftName(a?.shift_id)}</td>}
+// //                 <td className="px-4 py-3 text-slate-600">{formatDate(a?.start_date)}</td>
+// //                 <td className="px-4 py-3 text-slate-600">{formatDate(a?.end_date)}</td>
+// //                 <td className="px-4 py-3 text-slate-500">{a?.remarks || "—"}</td>
+// //                 <td className="px-4 py-3 text-right">
+// //                   <IconButton label="Remove" tone="red" onClick={() => onDelete(id)} />
+// //                 </td>
+// //               </tr>
+// //             );
+// //           })}
+// //         </tbody>
+// //       </table>
+// //     </div>
+// //   );
+// // };
+
+// // // ---------------------------------------------------------------------------
+// // // Main page
+// // // ---------------------------------------------------------------------------
+// // export default function ShiftsPage() {
+// //   const [shifts, setShifts] = useState([]);
+// //   const [timings, setTimings] = useState([]);
+// //   const [employees, setEmployees] = useState([]);
+// //   const [assignments, setAssignments] = useState([]);
+
+// //   const [loadingShifts, setLoadingShifts] = useState(true);
+// //   const [loadingAssignments, setLoadingAssignments] = useState(true);
+// //   const [loadingEmployees, setLoadingEmployees] = useState(false);
+// //   const [saving, setSaving] = useState(false);
+// //   const [assigning, setAssigning] = useState(false);
+
+// //   const [pageError, setPageError] = useState("");
+
+// //   // Shift form modal
+// //   const [showShiftForm, setShowShiftForm] = useState(false);
+// //   const [editShiftId, setEditShiftId] = useState(null);
+// //   const [shiftForm, setShiftForm] = useState(initialShiftForm);
+// //   const [shiftFormError, setShiftFormError] = useState("");
+
+// //   // Details modal
+// //   const [detailsShift, setDetailsShift] = useState(null);
+
+// //   // Assign modal
+// //   const [assignShift, setAssignShift] = useState(null);
+// //   const [assignForm, setAssignForm] = useState(initialAssignForm);
+// //   const [assignError, setAssignError] = useState("");
+// //   const [employeeSearch, setEmployeeSearch] = useState("");
+
+// //   useEffect(() => {
+// //     fetchShifts();
+// //     fetchTimings();
+// //     fetchAssignments();
+// //   }, []);
+
+// //   const fetchShifts = async () => {
+// //     setLoadingShifts(true);
+// //     setPageError("");
+// //     try {
+// //       const res = await api.get(ENDPOINTS.shiftsList, { params: { page: 1, page_size: 100 } });
+// //       setShifts(getShiftsFromResponse(res));
+// //     } catch (err) {
+// //       setPageError(formatApiError(err));
+// //     } finally {
+// //       setLoadingShifts(false);
+// //     }
+// //   };
+
+// //   const fetchTimings = async () => {
+// //     try {
+// //       const res = await api.get(ENDPOINTS.timingsList);
+// //       setTimings(getTimingsFromResponse(res));
+// //     } catch (err) {
+// //       setTimings([]);
+// //     }
+// //   };
+
+// //   const fetchEmployees = async () => {
+// //     setLoadingEmployees(true);
+// //     try {
+// //       const res = await api.get(ENDPOINTS.employeesList);
+// //       setEmployees(getEmployeesFromResponse(res));
+// //     } catch (err) {
+// //       setEmployees([]);
+// //       setAssignError(formatApiError(err));
+// //     } finally {
+// //       setLoadingEmployees(false);
+// //     }
+// //   };
+
+// //   const fetchAssignments = async (filters = {}) => {
+// //     setLoadingAssignments(true);
+// //     try {
+// //       const res = await api.get(ENDPOINTS.assignmentsList, {
+// //         params: { page: 1, page_size: 100, ...filters },
+// //       });
+// //       setAssignments(getAssignmentsFromResponse(res));
+// //     } catch (err) {
+// //       setAssignments([]);
+// //     } finally {
+// //       setLoadingAssignments(false);
+// //     }
+// //   };
+
+// //   // ---- lookups ----
+// //   const getTimingLabelById = (timingId) => {
+// //     const timing = timings.find((t) => String(getTimingId(t)) === String(timingId));
+// //     return timing ? getTimingName(timing) : timingId || "—";
+// //   };
+
+// //   const getShiftNameById = (shiftId) => {
+// //     const shift = shifts.find((s) => String(getShiftId(s)) === String(shiftId));
+// //     return shift?.Shift_name || shiftId || "—";
+// //   };
+
+// //   const getEmployeeLabelById = (employeeId) => {
+// //     const emp = employees.find((e) => String(getEmployeeId(e)) === String(employeeId));
+// //     return emp ? getEmployeeName(emp) : employeeId || "—";
+// //   };
+
+// //   // ---- shift form ----
+// //   const openAddShift = () => {
+// //     setEditShiftId(null);
+// //     setShiftForm(initialShiftForm);
+// //     setShiftFormError("");
+// //     setShowShiftForm(true);
+// //   };
+
+// //   const openEditShift = (shift) => {
+// //     setEditShiftId(getShiftId(shift));
+// //     setShiftForm({
+// //       Shift_name: shift?.Shift_name || "",
+// //       shift_timing: shift?.shift_timing || "",
+// //       early_checkin_margin: shift?.early_checkin_margin ?? 30,
+// //       late_checkout_margin: shift?.late_checkout_margin ?? 45,
+// //     });
+// //     setShiftFormError("");
+// //     setShowShiftForm(true);
+// //   };
+
+// //   const closeShiftForm = () => {
+// //     if (saving) return;
+// //     setShowShiftForm(false);
+// //     setEditShiftId(null);
+// //     setShiftForm(initialShiftForm);
+// //     setShiftFormError("");
+// //   };
+
+// //   const handleShiftSubmit = async (event) => {
+// //     event.preventDefault();
+// //     const name = shiftForm.Shift_name.trim();
+
+// //     if (!name) return setShiftFormError("Shift name required");
+// //     if (!shiftForm.shift_timing) return setShiftFormError("Please select shift timing");
+
+// //     setSaving(true);
+// //     setShiftFormError("");
+
+// //     const payload = {
+// //       Shift_name: name,
+// //       shift_timing: shiftForm.shift_timing,
+// //       early_checkin_margin: Number(shiftForm.early_checkin_margin || 0),
+// //       late_checkout_margin: Number(shiftForm.late_checkout_margin || 0),
+// //     };
+
+// //     try {
+// //       if (editShiftId) {
+// //         await api.put(ENDPOINTS.shiftUpdate(editShiftId), payload);
+// //       } else {
+// //         await api.post(ENDPOINTS.shiftCreate, payload);
+// //       }
+// //       closeShiftForm();
+// //       await fetchShifts();
+// //     } catch (err) {
+// //       setShiftFormError(formatApiError(err));
+// //     } finally {
+// //       setSaving(false);
+// //     }
+// //   };
+
+// //   const handleDeleteShift = async (shift) => {
+// //     const id = getShiftId(shift);
+// //     if (!id) return;
+// //     if (!window.confirm(`Delete "${shift?.Shift_name}"? This can't be undone.`)) return;
+
+// //     try {
+// //       await api.delete(ENDPOINTS.shiftDelete(id));
+// //       await fetchShifts();
+// //       if (detailsShift && getShiftId(detailsShift) === id) setDetailsShift(null);
+// //     } catch (err) {
+// //       setPageError(formatApiError(err));
+// //     }
+// //   };
+
+// //   // ---- assign flow ----
+// //   const openAssign = async (shift) => {
+// //     setAssignShift(shift);
+// //     setAssignForm(initialAssignForm);
+// //     setAssignError("");
+// //     setEmployeeSearch("");
+// //     if (employees.length === 0) await fetchEmployees();
+// //   };
+
+// //   const closeAssign = () => {
+// //     if (assigning) return;
+// //     setAssignShift(null);
+// //     setAssignForm(initialAssignForm);
+// //     setAssignError("");
+// //   };
+
+// //   const toggleEmployee = (employeeId) => {
+// //     setAssignForm((prev) => {
+// //       const exists = prev.employee_ids.includes(employeeId);
+// //       return {
+// //         ...prev,
+// //         employee_ids: exists
+// //           ? prev.employee_ids.filter((id) => id !== employeeId)
+// //           : [...prev.employee_ids, employeeId],
+// //       };
+// //     });
+// //   };
+
+// //   const filteredEmployees = useMemo(() => {
+// //     const q = employeeSearch.trim().toLowerCase();
+// //     if (!q) return employees;
+// //     return employees.filter((e) => {
+// //       const haystack = `${getEmployeeName(e)} ${getEmployeeSubtitle(e)}`.toLowerCase();
+// //       return haystack.includes(q);
+// //     });
+// //   }, [employees, employeeSearch]);
+
+// //   const handleAssignSubmit = async (event) => {
+// //     event.preventDefault();
+
+// //     if (assignForm.employee_ids.length === 0) return setAssignError("Select at least one employee");
+// //     if (!assignForm.start_date) return setAssignError("Start date required");
+// //     if (!assignForm.end_date) return setAssignError("End date required");
+// //     if (assignForm.start_date > assignForm.end_date) return setAssignError("Start date cannot be after end date");
+
+// //     setAssigning(true);
+// //     setAssignError("");
+
+// //     const payload = {
+// //       employee_ids: assignForm.employee_ids,
+// //       shift_id: getShiftId(assignShift),
+// //       start_date: assignForm.start_date,
+// //       end_date: assignForm.end_date,
+// //       remarks: assignForm.remarks || undefined,
+// //     };
+
+// //     try {
+// //       await api.post(ENDPOINTS.assignmentBulkCreate, payload);
+// //       closeAssign();
+// //       await fetchAssignments();
+// //     } catch (err) {
+// //       setAssignError(formatApiError(err));
+// //     } finally {
+// //       setAssigning(false);
+// //     }
+// //   };
+
+// //   const handleDeleteAssignment = async (assignmentId) => {
+// //     if (!assignmentId) return;
+// //     if (!window.confirm("Remove this assignment?")) return;
+// //     try {
+// //       await api.delete(ENDPOINTS.assignmentDelete(assignmentId));
+// //       await fetchAssignments();
+// //     } catch (err) {
+// //       setPageError(formatApiError(err));
+// //     }
+// //   };
+
+// //   const detailsAssignments = useMemo(() => {
+// //     if (!detailsShift) return [];
+// //     const id = getShiftId(detailsShift);
+// //     return assignments.filter((a) => String(a?.shift_id) === String(id));
+// //   }, [assignments, detailsShift]);
+
+// //   return (
+// //     <div className="min-h-screen bg-slate-50 p-4 sm:p-6">
+// //       <div className="mx-auto max-w-6xl">
+// //         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+// //           <div>
+// //             <h1 className="text-2xl font-bold text-slate-800">Employee Shifts</h1>
+// //             <p className="mt-1 text-sm text-slate-500">Create shifts and assign employees to them</p>
+// //           </div>
+// //           <button
+// //             type="button"
+// //             onClick={openAddShift}
+// //             className="rounded-lg bg-[#E42527] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#c91f21]"
+// //           >
+// //             + Add Shift
+// //           </button>
+// //         </div>
+
+// //         {pageError && (
+// //           <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+// //             {pageError}
+// //           </div>
+// //         )}
+
+// //         {/* Shift cards */}
+// //         {loadingShifts ? (
+// //           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+// //             {[1, 2, 3].map((i) => (
+// //               <div key={i} className="h-44 animate-pulse rounded-2xl bg-white shadow-sm" />
+// //             ))}
+// //           </div>
+// //         ) : shifts.length === 0 ? (
+// //           <div className="rounded-2xl border border-slate-200 bg-white py-24 text-center shadow-sm">
+// //             <div className="text-4xl">🕒</div>
+// //             <p className="mt-3 text-sm font-medium text-slate-700">No shifts found</p>
+// //             <p className="mt-1 text-sm text-slate-500">Add your first shift to get started.</p>
+// //           </div>
+// //         ) : (
+// //           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+// //             {shifts.map((shift) => (
+// //               <ShiftCard
+// //                 key={getShiftId(shift)}
+// //                 shift={shift}
+// //                 timingLabel={getTimingLabelById(shift?.shift_timing)}
+// //                 onOpenDetails={setDetailsShift}
+// //                 onEdit={openEditShift}
+// //                 onDelete={handleDeleteShift}
+// //                 onAssign={openAssign}
+// //               />
+// //             ))}
+// //           </div>
+// //         )}
+
+// //         {/* Assignment history */}
+// //         <div className="mt-10">
+// //           <h2 className="text-lg font-bold text-slate-800">Assignment History</h2>
+// //           <p className="mt-1 text-sm text-slate-500">All employees assigned across shifts</p>
+
+// //           <div className="mt-4">
+// //             <AssignmentHistoryTable
+// //               assignments={assignments}
+// //               loading={loadingAssignments}
+// //               getShiftName={getShiftNameById}
+// //               getEmployeeLabel={getEmployeeLabelById}
+// //               onDelete={handleDeleteAssignment}
+// //             />
+// //           </div>
+// //         </div>
+// //       </div>
+
+// //       {/* Add / Edit shift modal */}
+// //       {showShiftForm && (
+// //         <ModalShell
+// //           title={editShiftId ? "Edit Shift" : "Add Shift"}
+// //           subtitle="Fill the shift details below"
+// //           onClose={closeShiftForm}
+// //           footer={
+// //             <>
+// //               <button
+// //                 type="button"
+// //                 onClick={closeShiftForm}
+// //                 disabled={saving}
+// //                 className="rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+// //               >
+// //                 Cancel
+// //               </button>
+// //               <button
+// //                 type="submit"
+// //                 form="shift-form"
+// //                 disabled={saving || timings.length === 0}
+// //                 className="rounded-lg bg-[#E42527] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#c91f21] disabled:cursor-not-allowed disabled:opacity-60"
+// //               >
+// //                 {saving ? "Saving..." : editShiftId ? "Update Shift" : "Save Shift"}
+// //               </button>
+// //             </>
+// //           }
+// //         >
+// //           <form id="shift-form" onSubmit={handleShiftSubmit} className="space-y-6">
+// //             {shiftFormError && (
+// //               <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+// //                 {shiftFormError}
+// //               </div>
+// //             )}
+
+// //             <div>
+// //               <label className="mb-2 block text-sm font-semibold text-slate-700">Shift Name *</label>
+// //               <input
+// //                 type="text"
+// //                 value={shiftForm.Shift_name}
+// //                 onChange={(e) => setShiftForm((p) => ({ ...p, Shift_name: e.target.value }))}
+// //                 placeholder="Example: Morning Shift"
+// //                 maxLength={100}
+// //                 required
+// //                 className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none transition placeholder:text-slate-400 focus:border-[#E42527] focus:ring-2 focus:ring-red-100"
+// //               />
+// //             </div>
+
+// //             <div>
+// //               <label className="mb-2 block text-sm font-semibold text-slate-700">Shift Timing *</label>
+// //               {timings.length === 0 ? (
+// //                 <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-center text-sm text-slate-500">
+// //                   No timings available. Create a company timing first.
+// //                 </div>
+// //               ) : (
+// //                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+// //                   {timings.map((timing) => {
+// //                     const timingId = String(getTimingId(timing));
+// //                     const selected = String(shiftForm.shift_timing) === timingId;
+// //                     return (
+// //                       <button
+// //                         key={timingId}
+// //                         type="button"
+// //                         onClick={() => setShiftForm((p) => ({ ...p, shift_timing: timingId }))}
+// //                         className={`rounded-xl border p-4 text-left transition ${
+// //                           selected
+// //                             ? "border-red-500 bg-red-50 ring-2 ring-red-100"
+// //                             : "border-slate-200 bg-white hover:border-red-300 hover:bg-red-50/40"
+// //                         }`}
+// //                       >
+// //                         <p className="font-semibold text-slate-800">🕒 {getTimingName(timing)}</p>
+// //                       </button>
+// //                     );
+// //                   })}
+// //                 </div>
+// //               )}
+// //             </div>
+
+// //             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+// //               <div>
+// //                 <label className="mb-2 block text-sm font-semibold text-slate-700">Early Check-in</label>
+// //                 <input
+// //                   type="number"
+// //                   min="0"
+// //                   max="1440"
+// //                   value={shiftForm.early_checkin_margin}
+// //                   onChange={(e) => setShiftForm((p) => ({ ...p, early_checkin_margin: e.target.value }))}
+// //                   className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-[#E42527] focus:ring-2 focus:ring-red-100"
+// //                 />
+// //               </div>
+// //               <div>
+// //                 <label className="mb-2 block text-sm font-semibold text-slate-700">Late Checkout</label>
+// //                 <input
+// //                   type="number"
+// //                   min="0"
+// //                   max="1440"
+// //                   value={shiftForm.late_checkout_margin}
+// //                   onChange={(e) => setShiftForm((p) => ({ ...p, late_checkout_margin: e.target.value }))}
+// //                   className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-[#E42527] focus:ring-2 focus:ring-red-100"
+// //                 />
+// //               </div>
+// //             </div>
+// //           </form>
+// //         </ModalShell>
+// //       )}
+
+// //       {/* Assign modal */}
+// //       {assignShift && (
+// //         <ModalShell
+// //           title={`Assign Employees`}
+// //           subtitle={`Shift: ${assignShift?.Shift_name || ""}`}
+// //           onClose={closeAssign}
+// //           wide
+// //           footer={
+// //             <>
+// //               <button
+// //                 type="button"
+// //                 onClick={closeAssign}
+// //                 disabled={assigning}
+// //                 className="rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+// //               >
+// //                 Cancel
+// //               </button>
+// //               <button
+// //                 type="submit"
+// //                 form="assign-form"
+// //                 disabled={assigning}
+// //                 className="rounded-lg bg-[#E42527] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#c91f21] disabled:cursor-not-allowed disabled:opacity-60"
+// //               >
+// //                 {assigning
+// //                   ? "Assigning..."
+// //                   : `Assign ${assignForm.employee_ids.length > 0 ? `(${assignForm.employee_ids.length})` : ""}`}
+// //               </button>
+// //             </>
+// //           }
+// //         >
+// //           <form id="assign-form" onSubmit={handleAssignSubmit} className="space-y-5">
+// //             {assignError && (
+// //               <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+// //                 {assignError}
+// //               </div>
+// //             )}
+
+// //             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+// //               <div>
+// //                 <label className="mb-2 block text-sm font-semibold text-slate-700">Start Date *</label>
+// //                 <input
+// //                   type="date"
+// //                   value={assignForm.start_date}
+// //                   onChange={(e) => setAssignForm((p) => ({ ...p, start_date: e.target.value }))}
+// //                   required
+// //                   className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-[#E42527] focus:ring-2 focus:ring-red-100"
+// //                 />
+// //               </div>
+// //               <div>
+// //                 <label className="mb-2 block text-sm font-semibold text-slate-700">End Date *</label>
+// //                 <input
+// //                   type="date"
+// //                   value={assignForm.end_date}
+// //                   onChange={(e) => setAssignForm((p) => ({ ...p, end_date: e.target.value }))}
+// //                   required
+// //                   className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-[#E42527] focus:ring-2 focus:ring-red-100"
+// //                 />
+// //               </div>
+// //             </div>
+
+// //             <div>
+// //               <label className="mb-2 block text-sm font-semibold text-slate-700">Remarks</label>
+// //               <textarea
+// //                 value={assignForm.remarks}
+// //                 onChange={(e) => setAssignForm((p) => ({ ...p, remarks: e.target.value }))}
+// //                 rows={2}
+// //                 placeholder="Optional note"
+// //                 className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none transition placeholder:text-slate-400 focus:border-[#E42527] focus:ring-2 focus:ring-red-100"
+// //               />
+// //             </div>
+
+// //             <div>
+// //               <div className="mb-2 flex items-center justify-between">
+// //                 <label className="block text-sm font-semibold text-slate-700">
+// //                   Employees * <span className="font-normal text-slate-400">(select one or many)</span>
+// //                 </label>
+// //                 {assignForm.employee_ids.length > 0 && (
+// //                   <button
+// //                     type="button"
+// //                     onClick={() => setAssignForm((p) => ({ ...p, employee_ids: [] }))}
+// //                     className="text-xs font-medium text-slate-400 hover:text-slate-600"
+// //                   >
+// //                     Clear selection
+// //                   </button>
+// //                 )}
+// //               </div>
+
+// //               <input
+// //                 type="text"
+// //                 value={employeeSearch}
+// //                 onChange={(e) => setEmployeeSearch(e.target.value)}
+// //                 placeholder="Search employees by name, code, department..."
+// //                 className="mb-3 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none transition placeholder:text-slate-400 focus:border-[#E42527] focus:ring-2 focus:ring-red-100"
+// //               />
+
+// //               {loadingEmployees ? (
+// //                 <div className="space-y-2">
+// //                   {[1, 2, 3].map((i) => (
+// //                     <div key={i} className="h-14 animate-pulse rounded-xl bg-slate-100" />
+// //                   ))}
+// //                 </div>
+// //               ) : filteredEmployees.length === 0 ? (
+// //                 <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 py-8 text-center text-sm text-slate-500">
+// //                   No employees found
+// //                 </div>
+// //               ) : (
+// //                 <div className="max-h-72 space-y-2 overflow-y-auto rounded-xl border border-slate-200 p-2">
+// //                   {filteredEmployees.map((emp) => {
+// //                     const id = String(getEmployeeId(emp));
+// //                     const selected = assignForm.employee_ids.includes(id);
+// //                     return (
+// //                       <label
+// //                         key={id}
+// //                         className={`flex cursor-pointer items-center justify-between gap-3 rounded-lg border p-3 transition ${
+// //                           selected ? "border-red-500 bg-red-50" : "border-slate-100 hover:bg-slate-50"
+// //                         }`}
+// //                       >
+// //                         <div className="flex items-center gap-3">
+// //                           <input
+// //                             type="checkbox"
+// //                             checked={selected}
+// //                             onChange={() => toggleEmployee(id)}
+// //                             className="h-4 w-4 rounded border-slate-300 text-[#E42527] focus:ring-red-200"
+// //                           />
+// //                           <div>
+// //                             <p className="text-sm font-semibold text-slate-800">{getEmployeeName(emp)}</p>
+// //                             {getEmployeeSubtitle(emp) && (
+// //                               <p className="text-xs text-slate-400">{getEmployeeSubtitle(emp)}</p>
+// //                             )}
+// //                           </div>
+// //                         </div>
+// //                       </label>
+// //                     );
+// //                   })}
+// //                 </div>
+// //               )}
+// //             </div>
+// //           </form>
+// //         </ModalShell>
+// //       )}
+
+// //       {/* Shift details modal */}
+// //       {detailsShift && (
+// //         <ModalShell
+// //           title={detailsShift?.Shift_name}
+// //           subtitle="Shift details"
+// //           onClose={() => setDetailsShift(null)}
+// //           wide
+// //           footer={
+// //             <>
+// //               <IconButton label="Edit Shift" onClick={() => { setDetailsShift(null); openEditShift(detailsShift); }} />
+// //               <button
+// //                 type="button"
+// //                 onClick={() => { setDetailsShift(null); openAssign(detailsShift); }}
+// //                 className="rounded-lg bg-[#E42527] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#c91f21]"
+// //               >
+// //                 + Assign Employees
+// //               </button>
+// //             </>
+// //           }
+// //         >
+// //           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+// //             <div className="rounded-xl bg-slate-50 px-3 py-3">
+// //               <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Status</p>
+// //               <p className="mt-1 text-sm font-semibold text-slate-700">
+// //                 {detailsShift?.is_active !== false ? "Active" : "Inactive"}
+// //               </p>
+// //             </div>
+// //             <div className="rounded-xl bg-slate-50 px-3 py-3">
+// //               <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Timing</p>
+// //               <p className="mt-1 text-sm font-semibold text-slate-700">
+// //                 {getTimingLabelById(detailsShift?.shift_timing)}
+// //               </p>
+// //             </div>
+// //             <div className="rounded-xl bg-slate-50 px-3 py-3">
+// //               <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Early Check-in</p>
+// //               <p className="mt-1 text-sm font-semibold text-slate-700">{detailsShift?.early_checkin_margin ?? 0} min</p>
+// //             </div>
+// //             <div className="rounded-xl bg-slate-50 px-3 py-3">
+// //               <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Late Checkout</p>
+// //               <p className="mt-1 text-sm font-semibold text-slate-700">{detailsShift?.late_checkout_margin ?? 0} min</p>
+// //             </div>
+// //           </div>
+
+// //           <div>
+// //             <h3 className="mb-3 text-sm font-bold text-slate-800">Assigned Employees</h3>
+// //             <AssignmentHistoryTable
+// //               assignments={detailsAssignments}
+// //               loading={loadingAssignments}
+// //               getEmployeeLabel={getEmployeeLabelById}
+// //               onDelete={handleDeleteAssignment}
+// //               emptyHint="No employees assigned to this shift yet."
+// //             />
+// //           </div>
+// //         </ModalShell>
+// //       )}
+// //     </div>
+// //   );
+// // }
+
 // "use client";
 
-// import { useEffect, useState } from "react";
-// import { api } from "@/lib/api";
+// import { useEffect, useMemo, useState } from "react";
+// import { api } from "@/app/lib/api";
 
-// const initialForm = {
+// // ---------------------------------------------------------------------------
+// // ENDPOINTS
+// // ---------------------------------------------------------------------------
+// const ENDPOINTS = {
+//   shiftsList: "/api/v1/get/all/shifts",
+//   shiftCreate: "/api/v1/create/shifts",
+//   shiftUpdate: (id) => `/api/v1/update/shifts/${id}`,
+//   shiftDelete: (id) => `/api/v1/delete/shifts/${id}`,
+//   timingsList: "/api/v1/get/all/company-timings",
+//   employeesList: "/api/v1/get/employees",
+//   assignmentCreate: "/api/v1/assign-shift",
+//   assignmentBulkCreate: "/api/v1/bulk-assign-shift",
+//   assignmentsList: "/api/v1/get/all/assign-shifts",
+//   assignmentGet: (id) => `/api/v1/get/assign-shift/${id}`,
+//   assignmentUpdate: (id) => `/api/v1/update/assign-shift/${id}`,
+//   assignmentDelete: (id) => `/api/v1/delete/assign-shift/${id}`,
+// };
+
+// const initialShiftForm = {
 //   Shift_name: "",
 //   shift_timing: "",
 //   early_checkin_margin: 30,
 //   late_checkout_margin: 45,
 // };
 
+// const initialAssignForm = {
+//   employee_ids: [],
+//   start_date: "",
+//   end_date: "",
+//   remarks: "",
+// };
+
+// // ---------------------------------------------------------------------------
+// // HELPERS
+// // ---------------------------------------------------------------------------
 // const formatApiError = (err) => {
 //   const detail = err?.response?.data?.detail;
-
 //   if (Array.isArray(detail)) {
 //     return detail
-//       .map((item) => {
-//         if (Array.isArray(item.loc)) {
-//           return `${item.loc.slice(1).join(".")}: ${item.msg}`;
-//         }
-
-//         return item.msg;
-//       })
+//       .map((item) =>
+//         Array.isArray(item.loc)
+//           ? `${item.loc.slice(1).join(".")}: ${item.msg}`
+//           : item.msg
+//       )
 //       .join(" • ");
 //   }
-
-//   if (typeof detail === "string") {
-//     return detail;
-//   }
-
+//   if (typeof detail === "string") return detail;
 //   return err?.response?.data?.message || err?.message || "Something went wrong";
 // };
 
-// const getShiftId = (item) => {
-//   return item?.shift_id || item?.id || item?._id;
-// };
-
-// const getTimingId = (timing) => {
-//   return (
-//     timing?.company_timing_id ||
-//     timing?.timing_id ||
-//     timing?.id ||
-//     timing?._id
-//   );
-// };
+// const getShiftId = (item) => item?.shift_id || item?.id || item?._id;
+// const getTimingId = (t) =>
+//   t?.company_timing_id || t?.timing_id || t?.id || t?._id;
+// const getEmployeeId = (e) => e?.employee_id || e?.id || e?._id;
+// const getAssignmentId = (a) => a?.assignment_id || a?.id || a?._id;
 
 // const formatTime = (time) => {
 //   if (!time) return "";
-
 //   const parts = String(time).split(":");
 //   const hour = Number(parts[0]);
 //   const minute = Number(parts[1] || 0);
-
-//   if (Number.isNaN(hour)) {
-//     return String(time);
-//   }
-
+//   if (Number.isNaN(hour)) return String(time);
 //   const date = new Date();
 //   date.setHours(hour, minute, 0, 0);
+//   return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+// };
 
-//   return date.toLocaleTimeString([], {
-//     hour: "2-digit",
-//     minute: "2-digit",
+// const formatDate = (value) => {
+//   if (!value) return "—";
+//   const d = new Date(value);
+//   if (Number.isNaN(d.getTime())) return String(value);
+//   return d.toLocaleDateString([], {
+//     day: "2-digit",
+//     month: "short",
+//     year: "numeric",
 //   });
 // };
 
 // const getTimingName = (timing) => {
 //   const startTime = timing?.start_time || timing?.startTime;
 //   const endTime = timing?.end_time || timing?.endTime;
-
-//   if (startTime && endTime) {
+//   if (startTime && endTime)
 //     return `${formatTime(startTime)} - ${formatTime(endTime)}`;
-//   }
-
 //   return (
 //     timing?.name ||
 //     timing?.timing_name ||
@@ -83,582 +1686,1342 @@
 //   );
 // };
 
-// const getShiftsFromResponse = (res) => {
+// const getEmployeeName = (emp) =>
+//   emp?.name ||
+//   [emp?.first_name, emp?.last_name].filter(Boolean).join(" ") ||
+//   emp?.company_email ||
+//   getEmployeeId(emp) ||
+//   "Unknown employee";
+
+// const getEmployeeSubtitle = (emp) => {
+//   const parts = [emp?.designation_name, emp?.department_name].filter(
+//     (v) => v && v !== "—"
+//   );
+//   return parts.join(" • ");
+// };
+
+// const extractArray = (res, keys) => {
 //   const data = res?.data;
-
 //   if (Array.isArray(data)) return data;
-//   if (Array.isArray(data?.shifts)) return data.shifts;
-//   if (Array.isArray(data?.items)) return data.items;
-//   if (Array.isArray(data?.results)) return data.results;
-//   if (Array.isArray(data?.data)) return data.data;
-
+//   for (const key of keys) {
+//     if (Array.isArray(data?.[key])) return data[key];
+//   }
 //   return [];
 // };
 
-// const getTimingsFromResponse = (res) => {
-//   const data = res?.data;
+// const getShiftsFromResponse = (res) =>
+//   extractArray(res, ["shifts", "items", "results", "data"]);
+// const getTimingsFromResponse = (res) =>
+//   extractArray(res, ["timings", "company_timings", "items", "results", "data"]);
+// const getEmployeesFromResponse = (res) =>
+//   extractArray(res, ["employees", "items", "results", "data"]);
+// const getAssignmentsFromResponse = (res) =>
+//   extractArray(res, ["assignments", "items", "results", "data"]);
 
-//   if (Array.isArray(data)) return data;
-//   if (Array.isArray(data?.timings)) return data.timings;
-//   if (Array.isArray(data?.company_timings)) return data.company_timings;
-//   if (Array.isArray(data?.items)) return data.items;
-//   if (Array.isArray(data?.results)) return data.results;
-//   if (Array.isArray(data?.data)) return data.data;
-
-//   return [];
+// // ---------------------------------------------------------------------------
+// // ICONS
+// // ---------------------------------------------------------------------------
+// const Icons = {
+//   Plus: () => (
+//     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+//       <path d="M12 5v14M5 12h14" />
+//     </svg>
+//   ),
+//   Search: () => (
+//     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+//       <circle cx="11" cy="11" r="7" />
+//       <path d="m21 21-4.3-4.3" />
+//     </svg>
+//   ),
+//   Close: () => (
+//     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+//       <path d="M18 6 6 18M6 6l12 12" />
+//     </svg>
+//   ),
+//   Clock: () => (
+//     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+//       <circle cx="12" cy="12" r="9" />
+//       <path d="M12 7v5l3 2" />
+//     </svg>
+//   ),
+//   Users: () => (
+//     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+//       <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+//       <circle cx="9" cy="7" r="4" />
+//       <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+//     </svg>
+//   ),
+//   Edit: () => (
+//     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+//       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+//       <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z" />
+//     </svg>
+//   ),
+//   Trash: () => (
+//     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+//       <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+//     </svg>
+//   ),
+//   Check: () => (
+//     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+//       <path d="M20 6 9 17l-5-5" />
+//     </svg>
+//   ),
+//   Chevron: () => (
+//     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+//       <path d="m9 18 6-6-6-6" />
+//     </svg>
+//   ),
 // };
 
-// export default function AddShiftPage() {
-//   const [list, setList] = useState([]);
+// // ---------------------------------------------------------------------------
+// // PRIMITIVES
+// // ---------------------------------------------------------------------------
+// const Badge = ({ children, tone = "slate", dot = false }) => {
+//   const tones = {
+//     slate: "bg-slate-100 text-slate-700 border-slate-200",
+//     blue: "bg-blue-50 text-blue-700 border-blue-100",
+//     green: "bg-emerald-50 text-emerald-700 border-emerald-100",
+//     red: "bg-red-50 text-red-700 border-red-100",
+//     amber: "bg-amber-50 text-amber-700 border-amber-100",
+//   };
+//   const dots = {
+//     slate: "bg-slate-400",
+//     blue: "bg-blue-500",
+//     green: "bg-emerald-500",
+//     red: "bg-red-500",
+//     amber: "bg-amber-500",
+//   };
+//   return (
+//     <span
+//       className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[11px] font-medium ${tones[tone]}`}
+//     >
+//       {dot && <span className={`h-1.5 w-1.5 rounded-full ${dots[tone]}`} />}
+//       {children}
+//     </span>
+//   );
+// };
+
+// const Btn = ({ children, variant = "primary", size = "md", icon, ...props }) => {
+//   const sizes = {
+//     sm: "px-2.5 py-1.5 text-xs",
+//     md: "px-3.5 py-2 text-sm",
+//     lg: "px-4 py-2.5 text-sm",
+//   };
+//   const variants = {
+//     primary:
+//       "bg-[#E42527] text-white shadow-sm hover:bg-[#c91f21] border border-[#E42527]",
+//     secondary:
+//       "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 shadow-sm",
+//     ghost:
+//       "bg-transparent text-slate-600 hover:bg-slate-100 border border-transparent",
+//     danger:
+//       "bg-white text-red-600 border border-slate-200 hover:bg-red-50 hover:border-red-200 shadow-sm",
+//   };
+//   return (
+//     <button
+//       {...props}
+//       className={`inline-flex items-center justify-center gap-1.5 rounded-md font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${sizes[size]} ${variants[variant]}`}
+//     >
+//       {icon}
+//       {children}
+//     </button>
+//   );
+// };
+
+// const ModalShell = ({ title, subtitle, onClose, children, footer, wide }) => (
+//   <div
+//     className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-900/50 p-4 pt-12 backdrop-blur-[2px]"
+//     onMouseDown={(e) => {
+//       if (e.target === e.currentTarget) onClose();
+//     }}
+//   >
+//     <div
+//       className={`mb-10 w-full ${wide ? "max-w-3xl" : "max-w-xl"} overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl`}
+//       role="dialog"
+//     >
+//       <div className="flex items-start justify-between border-b border-slate-200 bg-slate-50 px-5 py-3.5">
+//         <div>
+//           <h2 className="text-[15px] font-semibold text-slate-800">{title}</h2>
+//           {subtitle && <p className="mt-0.5 text-xs text-slate-500">{subtitle}</p>}
+//         </div>
+//         <button
+//           type="button"
+//           onClick={onClose}
+//           className="rounded p-1 text-slate-400 transition hover:bg-slate-200 hover:text-slate-700"
+//         >
+//           <Icons.Close />
+//         </button>
+//       </div>
+//       <div className="max-h-[70vh] overflow-y-auto px-5 py-5">{children}</div>
+//       {footer && (
+//         <div className="flex justify-end gap-2 border-t border-slate-200 bg-slate-50 px-5 py-3">
+//           {footer}
+//         </div>
+//       )}
+//     </div>
+//   </div>
+// );
+
+// const Field = ({ label, required, hint, children }) => (
+//   <div>
+//     <label className="mb-1.5 block text-xs font-semibold text-slate-700">
+//       {label} {required && <span className="text-red-500">*</span>}
+//     </label>
+//     {children}
+//     {hint && <p className="mt-1 text-[11px] text-slate-400">{hint}</p>}
+//   </div>
+// );
+
+// const inputCls =
+//   "w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#E42527] focus:ring-2 focus:ring-red-100";
+
+// // ---------------------------------------------------------------------------
+// // MAIN PAGE
+// // ---------------------------------------------------------------------------
+// export default function ShiftsPage() {
+//   const [shifts, setShifts] = useState([]);
 //   const [timings, setTimings] = useState([]);
+//   const [employees, setEmployees] = useState([]);
+//   const [assignments, setAssignments] = useState([]);
 
-//   const [formData, setFormData] = useState(initialForm);
-
-//   const [loading, setLoading] = useState(true);
-//   const [timingsLoading, setTimingsLoading] = useState(false);
+//   const [loadingShifts, setLoadingShifts] = useState(true);
+//   const [loadingAssignments, setLoadingAssignments] = useState(true);
+//   const [loadingEmployees, setLoadingEmployees] = useState(false);
 //   const [saving, setSaving] = useState(false);
+//   const [assigning, setAssigning] = useState(false);
 
-//   const [error, setError] = useState("");
-//   const [timingError, setTimingError] = useState("");
+//   const [pageError, setPageError] = useState("");
+//   const [activeTab, setActiveTab] = useState("shifts");
+//   const [searchQuery, setSearchQuery] = useState("");
 
-//   const [showForm, setShowForm] = useState(false);
-//   const [editId, setEditId] = useState(null);
+//   const [showShiftForm, setShowShiftForm] = useState(false);
+//   const [editShiftId, setEditShiftId] = useState(null);
+//   const [shiftForm, setShiftForm] = useState(initialShiftForm);
+//   const [shiftFormError, setShiftFormError] = useState("");
+
+//   const [detailsShift, setDetailsShift] = useState(null);
+
+//   const [assignShift, setAssignShift] = useState(null);
+//   const [assignForm, setAssignForm] = useState(initialAssignForm);
+//   const [assignError, setAssignError] = useState("");
+//   const [employeeSearch, setEmployeeSearch] = useState("");
 
 //   useEffect(() => {
-//     fetchData();
+//     fetchShifts();
+//     fetchTimings();
+//     fetchAssignments();
 //   }, []);
 
-//   const fetchData = async () => {
-//     setLoading(true);
-//     setError("");
-
+//   const fetchShifts = async () => {
+//     setLoadingShifts(true);
+//     setPageError("");
 //     try {
-//       const res = await api.get("/api/v1/get/all/shifts", {
-//         params: {
-//           page: 1,
-//           page_size: 100,
-//         },
+//       const res = await api.get(ENDPOINTS.shiftsList, {
+//         params: { page: 1, page_size: 100 },
 //       });
-
-//       const shifts = getShiftsFromResponse(res);
-//       setList(shifts);
+//       setShifts(getShiftsFromResponse(res));
 //     } catch (err) {
-//       setError(formatApiError(err));
+//       setPageError(formatApiError(err));
 //     } finally {
-//       setLoading(false);
+//       setLoadingShifts(false);
 //     }
 //   };
 
 //   const fetchTimings = async () => {
-//     setTimingsLoading(true);
-//     setTimingError("");
-
 //     try {
-//       const res = await api.get("/api/v1/get/all/company-timings");
-
-//       const timingList = getTimingsFromResponse(res);
-//       setTimings(timingList);
-//     } catch (err) {
+//       const res = await api.get(ENDPOINTS.timingsList);
+//       setTimings(getTimingsFromResponse(res));
+//     } catch {
 //       setTimings([]);
-//       setTimingError(formatApiError(err));
-//     } finally {
-//       setTimingsLoading(false);
 //     }
 //   };
 
-//   const handleChange = (field, value) => {
-//     setFormData((previous) => ({
-//       ...previous,
-//       [field]: value,
-//     }));
-//   };
-
-//   const openAdd = async () => {
-//     setEditId(null);
-//     setFormData(initialForm);
-//     setError("");
-//     setTimingError("");
-//     setShowForm(true);
-
-//     await fetchTimings();
-//   };
-
-//   const openEdit = async (item) => {
-//     const shiftId = getShiftId(item);
-
-//     setEditId(shiftId);
-
-//     setFormData({
-//       Shift_name: item?.Shift_name || "",
-//       shift_timing: item?.shift_timing || "",
-//       early_checkin_margin: item?.early_checkin_margin ?? 30,
-//       late_checkout_margin: item?.late_checkout_margin ?? 45,
-//     });
-
-//     setError("");
-//     setTimingError("");
-//     setShowForm(true);
-
-//     await fetchTimings();
-//   };
-
-//   const closeForm = () => {
-//     if (saving) return;
-
-//     setShowForm(false);
-//     setEditId(null);
-//     setFormData(initialForm);
-//     setError("");
-//     setTimingError("");
-//   };
-
-//   const handleSubmit = async (event) => {
-//     event.preventDefault();
-
-//     const shiftName = formData.Shift_name.trim();
-
-//     if (!shiftName) {
-//       setError("Shift name required");
-//       return;
-//     }
-
-//     if (!formData.shift_timing) {
-//       setError("Please select shift timing");
-//       return;
-//     }
-
-//     setSaving(true);
-//     setError("");
-
-//     const payload = {
-//       Shift_name: shiftName,
-//       shift_timing: formData.shift_timing,
-//       early_checkin_margin: Number(formData.early_checkin_margin || 0),
-//       late_checkout_margin: Number(formData.late_checkout_margin || 0),
-//     };
-
+//   const fetchEmployees = async () => {
+//     setLoadingEmployees(true);
 //     try {
-//       if (editId) {
-//         await api.put(`/api/v1/update/shifts/${editId}`, payload);
-//       } else {
-//         await api.post("/api/v1/create/shifts", payload);
-//       }
-
-//       closeForm();
-//       await fetchData();
+//       const res = await api.get(ENDPOINTS.employeesList);
+//       setEmployees(getEmployeesFromResponse(res));
 //     } catch (err) {
-//       setError(formatApiError(err));
+//       setEmployees([]);
+//       setAssignError(formatApiError(err));
 //     } finally {
-//       setSaving(false);
+//       setLoadingEmployees(false);
 //     }
 //   };
 
-//   const handleDelete = async (id) => {
-//     if (!id) {
-//       setError("Shift ID nahi mila");
-//       return;
-//     }
-
-//     const confirmDelete = window.confirm(
-//       "Are you sure you want to delete this shift?"
-//     );
-
-//     if (!confirmDelete) return;
-
-//     setError("");
-
+//   const fetchAssignments = async (filters = {}) => {
+//     setLoadingAssignments(true);
 //     try {
-//       await api.delete(`/api/v1/delete/shifts/${id}`);
-//       await fetchData();
-//     } catch (err) {
-//       setError(formatApiError(err));
+//       const res = await api.get(ENDPOINTS.assignmentsList, {
+//         params: { page: 1, page_size: 100, ...filters },
+//       });
+//       setAssignments(getAssignmentsFromResponse(res));
+//     } catch {
+//       setAssignments([]);
+//     } finally {
+//       setLoadingAssignments(false);
 //     }
 //   };
 
 //   const getTimingLabelById = (timingId) => {
 //     const timing = timings.find(
-//       (item) => String(getTimingId(item)) === String(timingId)
+//       (t) => String(getTimingId(t)) === String(timingId)
 //     );
-
 //     return timing ? getTimingName(timing) : timingId || "—";
 //   };
 
-//   return (
-//     <div className="min-h-screen bg-slate-50 p-4 sm:p-6">
-//       <div className="mx-auto max-w-6xl">
-//         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-//           <div>
-//             <h1 className="text-2xl font-bold text-slate-800">
-//               Employee Shifts
-//             </h1>
+//   const getShiftNameById = (shiftId) => {
+//     const shift = shifts.find((s) => String(getShiftId(s)) === String(shiftId));
+//     return shift?.Shift_name || shiftId || "—";
+//   };
 
-//             <p className="mt-1 text-sm text-slate-500">
-//               Create and manage employee shifts
-//             </p>
+//   const getEmployeeLabelById = (employeeId) => {
+//     const emp = employees.find(
+//       (e) => String(getEmployeeId(e)) === String(employeeId)
+//     );
+//     return emp ? getEmployeeName(emp) : employeeId || "—";
+//   };
+
+//   const filteredShifts = useMemo(() => {
+//     const q = searchQuery.trim().toLowerCase();
+//     if (!q) return shifts;
+//     return shifts.filter((s) => {
+//       const timing = getTimingLabelById(s?.shift_timing);
+//       return `${s?.Shift_name || ""} ${timing}`.toLowerCase().includes(q);
+//     });
+//   }, [shifts, searchQuery, timings]);
+
+//   const openAddShift = () => {
+//     setEditShiftId(null);
+//     setShiftForm(initialShiftForm);
+//     setShiftFormError("");
+//     setShowShiftForm(true);
+//   };
+
+//   const openEditShift = (shift) => {
+//     setEditShiftId(getShiftId(shift));
+//     setShiftForm({
+//       Shift_name: shift?.Shift_name || "",
+//       shift_timing: shift?.shift_timing || "",
+//       early_checkin_margin: shift?.early_checkin_margin ?? 30,
+//       late_checkout_margin: shift?.late_checkout_margin ?? 45,
+//     });
+//     setShiftFormError("");
+//     setShowShiftForm(true);
+//   };
+
+//   const closeShiftForm = () => {
+//     if (saving) return;
+//     setShowShiftForm(false);
+//     setEditShiftId(null);
+//     setShiftForm(initialShiftForm);
+//     setShiftFormError("");
+//   };
+
+//   const handleShiftSubmit = async (event) => {
+//     event.preventDefault();
+//     const name = shiftForm.Shift_name.trim();
+//     if (!name) return setShiftFormError("Shift name required");
+//     if (!shiftForm.shift_timing)
+//       return setShiftFormError("Please select shift timing");
+
+//     setSaving(true);
+//     setShiftFormError("");
+
+//     const payload = {
+//       Shift_name: name,
+//       shift_timing: shiftForm.shift_timing,
+//       early_checkin_margin: Number(shiftForm.early_checkin_margin || 0),
+//       late_checkout_margin: Number(shiftForm.late_checkout_margin || 0),
+//     };
+
+//     try {
+//       if (editShiftId) {
+//         await api.put(ENDPOINTS.shiftUpdate(editShiftId), payload);
+//       } else {
+//         await api.post(ENDPOINTS.shiftCreate, payload);
+//       }
+//       closeShiftForm();
+//       await fetchShifts();
+//     } catch (err) {
+//       setShiftFormError(formatApiError(err));
+//     } finally {
+//       setSaving(false);
+//     }
+//   };
+
+//   const handleDeleteShift = async (shift) => {
+//     const id = getShiftId(shift);
+//     if (!id) return;
+//     if (
+//       !window.confirm(
+//         `Delete "${shift?.Shift_name}"? This action cannot be undone.`
+//       )
+//     )
+//       return;
+
+//     try {
+//       await api.delete(ENDPOINTS.shiftDelete(id));
+//       await fetchShifts();
+//       if (detailsShift && getShiftId(detailsShift) === id) setDetailsShift(null);
+//     } catch (err) {
+//       setPageError(formatApiError(err));
+//     }
+//   };
+
+//   const openAssign = async (shift) => {
+//     setAssignShift(shift);
+//     setAssignForm(initialAssignForm);
+//     setAssignError("");
+//     setEmployeeSearch("");
+//     if (employees.length === 0) await fetchEmployees();
+//   };
+
+//   const closeAssign = () => {
+//     if (assigning) return;
+//     setAssignShift(null);
+//     setAssignForm(initialAssignForm);
+//     setAssignError("");
+//   };
+
+//   const toggleEmployee = (employeeId) => {
+//     setAssignForm((prev) => {
+//       const exists = prev.employee_ids.includes(employeeId);
+//       return {
+//         ...prev,
+//         employee_ids: exists
+//           ? prev.employee_ids.filter((id) => id !== employeeId)
+//           : [...prev.employee_ids, employeeId],
+//       };
+//     });
+//   };
+
+//   const filteredEmployees = useMemo(() => {
+//     const q = employeeSearch.trim().toLowerCase();
+//     if (!q) return employees;
+//     return employees.filter((e) =>
+//       `${getEmployeeName(e)} ${getEmployeeSubtitle(e)}`
+//         .toLowerCase()
+//         .includes(q)
+//     );
+//   }, [employees, employeeSearch]);
+
+//   const handleAssignSubmit = async (event) => {
+//     event.preventDefault();
+//     if (assignForm.employee_ids.length === 0)
+//       return setAssignError("Select at least one employee");
+//     if (!assignForm.start_date) return setAssignError("Start date required");
+//     if (!assignForm.end_date) return setAssignError("End date required");
+//     if (assignForm.start_date > assignForm.end_date)
+//       return setAssignError("Start date cannot be after end date");
+
+//     setAssigning(true);
+//     setAssignError("");
+
+//     const payload = {
+//       employee_ids: assignForm.employee_ids,
+//       shift_id: getShiftId(assignShift),
+//       start_date: assignForm.start_date,
+//       end_date: assignForm.end_date,
+//       remarks: assignForm.remarks || undefined,
+//     };
+
+//     try {
+//       await api.post(ENDPOINTS.assignmentBulkCreate, payload);
+//       closeAssign();
+//       await fetchAssignments();
+//     } catch (err) {
+//       setAssignError(formatApiError(err));
+//     } finally {
+//       setAssigning(false);
+//     }
+//   };
+
+//   const handleDeleteAssignment = async (assignmentId) => {
+//     if (!assignmentId) return;
+//     if (!window.confirm("Remove this assignment?")) return;
+//     try {
+//       await api.delete(ENDPOINTS.assignmentDelete(assignmentId));
+//       await fetchAssignments();
+//     } catch (err) {
+//       setPageError(formatApiError(err));
+//     }
+//   };
+
+//   const detailsAssignments = useMemo(() => {
+//     if (!detailsShift) return [];
+//     const id = getShiftId(detailsShift);
+//     return assignments.filter((a) => String(a?.shift_id) === String(id));
+//   }, [assignments, detailsShift]);
+
+//   const activeShiftsCount = shifts.filter((s) => s?.is_active !== false).length;
+//   const uniqueAssignedEmployees = new Set(
+//     assignments.map((a) => a?.employee_id)
+//   ).size;
+
+//   // ---------------------------------------------------------------------------
+//   // RENDER — header + content same container me, perfectly aligned
+//   // ---------------------------------------------------------------------------
+//   return (
+//     <div className="min-h-screen bg-[#f7f8fa] p-4 sm:p-6">
+//       <div className="mx-auto max-w-7xl">
+//         {/* ─── PAGE HEADER (same container) ─── */}
+//         <div className="mb-5">
+//           {/* Breadcrumb */}
+//           <div className="mb-2 flex items-center gap-1.5 text-xs text-slate-500">
+//             <span className="cursor-pointer hover:text-slate-700">Home</span>
+//             <Icons.Chevron />
+//             <span className="cursor-pointer hover:text-slate-700">
+//               Attendance
+//             </span>
+//             <Icons.Chevron />
+//             <span className="font-medium text-slate-700">Shifts</span>
 //           </div>
 
-//           <button
-//             type="button"
-//             onClick={openAdd}
-//             className="rounded-lg bg-[#E42527] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#c91f21]"
-//           >
-//             + Add Shift
-//           </button>
+//           {/* Title row */}
+//           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+//             <div>
+//               <h1 className="text-xl font-bold tracking-tight text-slate-900">
+//                 Shift Management
+//               </h1>
+//               <p className="mt-1 text-[13px] text-slate-500">
+//                 Create shifts and assign them to employees across your
+//                 organization
+//               </p>
+//             </div>
+//             <div className="flex items-center gap-2">
+//               <Btn
+//                 variant="primary"
+//                 icon={<Icons.Plus />}
+//                 onClick={openAddShift}
+//               >
+//                 Add Shift
+//               </Btn>
+//             </div>
+//           </div>
 //         </div>
 
-//         {error && !showForm && (
-//           <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-//             {error}
+//         {/* ─── ERROR ─── */}
+//         {pageError && (
+//           <div className="mb-5 flex items-start gap-2 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+//             <span className="font-medium">Error:</span>
+//             <span>{pageError}</span>
 //           </div>
 //         )}
 
-//         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-//           {loading ? (
-//             <div className="py-24 text-center text-sm text-slate-500">
-//               Loading shifts...
+//         {/* ─── STATS ─── */}
+//         <div className="mb-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
+//           <StatCard
+//             label="Total Shifts"
+//             value={shifts.length}
+//             icon="🕒"
+//             tone="blue"
+//           />
+//           <StatCard
+//             label="Active Shifts"
+//             value={activeShiftsCount}
+//             icon="✅"
+//             tone="green"
+//           />
+//           <StatCard
+//             label="Assignments"
+//             value={assignments.length}
+//             icon="📋"
+//             tone="amber"
+//           />
+//           <StatCard
+//             label="Employees Assigned"
+//             value={uniqueAssignedEmployees}
+//             icon="👥"
+//             tone="red"
+//           />
+//         </div>
+
+//         {/* ─── TABS + CONTENT CARD ─── */}
+//         <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+//           <div className="flex flex-col gap-3 border-b border-slate-200 px-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+//             <div className="flex">
+//               <TabBtn
+//                 active={activeTab === "shifts"}
+//                 onClick={() => setActiveTab("shifts")}
+//                 count={shifts.length}
+//               >
+//                 Shifts
+//               </TabBtn>
+//               <TabBtn
+//                 active={activeTab === "assignments"}
+//                 onClick={() => setActiveTab("assignments")}
+//                 count={assignments.length}
+//               >
+//                 Assignment History
+//               </TabBtn>
 //             </div>
-//           ) : list.length === 0 ? (
-//             <div className="py-24 text-center">
-//               <div className="text-4xl">🕒</div>
 
-//               <p className="mt-3 text-sm font-medium text-slate-700">
-//                 No shifts found
-//               </p>
+//             {activeTab === "shifts" && (
+//               <div className="relative mb-3 sm:mb-0 sm:w-72">
+//                 <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+//                   <Icons.Search />
+//                 </span>
+//                 <input
+//                   type="text"
+//                   value={searchQuery}
+//                   onChange={(e) => setSearchQuery(e.target.value)}
+//                   placeholder="Search shifts or timings..."
+//                   className="w-full rounded-md border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-[#E42527] focus:ring-2 focus:ring-red-100"
+//                 />
+//               </div>
+//             )}
+//           </div>
 
-//               <p className="mt-1 text-sm text-slate-500">
-//                 Add your first shift to get started.
-//               </p>
-//             </div>
-//           ) : (
-//             <div className="overflow-x-auto">
-//               <table className="w-full min-w-[650px] text-left text-sm">
-//                 <thead>
-//                   <tr className="border-b border-slate-200 bg-slate-50">
-//                     <th className="px-5 py-4 font-semibold text-slate-500">
-//                       #
-//                     </th>
+//           {activeTab === "shifts" && (
+//             <ShiftsTable
+//               shifts={filteredShifts}
+//               loading={loadingShifts}
+//               searchQuery={searchQuery}
+//               getTimingLabelById={getTimingLabelById}
+//               onOpenDetails={setDetailsShift}
+//               onEdit={openEditShift}
+//               onDelete={handleDeleteShift}
+//               onAssign={openAssign}
+//               onAdd={openAddShift}
+//             />
+//           )}
 
-//                     <th className="px-5 py-4 font-semibold text-slate-500">
-//                       Shift Name
-//                     </th>
-
-//                     <th className="px-5 py-4 font-semibold text-slate-500">
-//                       Timing
-//                     </th>
-
-//                     <th className="px-5 py-4 text-right font-semibold text-slate-500">
-//                       Actions
-//                     </th>
-//                   </tr>
-//                 </thead>
-
-//                 <tbody className="divide-y divide-slate-100">
-//                   {list.map((item, index) => {
-//                     const shiftId = getShiftId(item);
-
-//                     return (
-//                       <tr
-//                         key={shiftId || index}
-//                         className="transition hover:bg-slate-50"
-//                       >
-//                         <td className="px-5 py-4 text-slate-500">
-//                           {index + 1}
-//                         </td>
-
-//                         <td className="px-5 py-4">
-//                           <div className="font-semibold text-slate-800">
-//                             {item?.Shift_name || "—"}
-//                           </div>
-//                         </td>
-
-//                         <td className="px-5 py-4">
-//                           <span className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700">
-//                             <span>🕒</span>
-//                             {getTimingLabelById(item?.shift_timing)}
-//                           </span>
-//                         </td>
-
-//                         <td className="px-5 py-4 text-right">
-//                           <button
-//                             type="button"
-//                             onClick={() => openEdit(item)}
-//                             className="rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-100"
-//                           >
-//                             Edit
-//                           </button>
-
-//                           <button
-//                             type="button"
-//                             onClick={() => handleDelete(shiftId)}
-//                             className="ml-2 rounded-lg px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-50"
-//                           >
-//                             Delete
-//                           </button>
-//                         </td>
-//                       </tr>
-//                     );
-//                   })}
-//                 </tbody>
-//               </table>
-//             </div>
+//           {activeTab === "assignments" && (
+//             <AssignmentHistoryTable
+//               assignments={assignments}
+//               loading={loadingAssignments}
+//               getShiftName={getShiftNameById}
+//               getEmployeeLabel={getEmployeeLabelById}
+//               onDelete={handleDeleteAssignment}
+//             />
 //           )}
 //         </div>
 //       </div>
 
-//       {showForm && (
-//         <div
-//           className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-900/60 p-4 pt-8 sm:pt-14"
-//           onMouseDown={(event) => {
-//             if (event.target === event.currentTarget) {
-//               closeForm();
-//             }
-//           }}
-//         >
-//           <div
-//             className="mb-8 w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl"
-//             role="dialog"
-//             aria-modal="true"
-//             aria-labelledby="shift-form-title"
-//           >
-//             <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4 sm:px-6">
-//               <div>
-//                 <h2
-//                   id="shift-form-title"
-//                   className="text-lg font-bold text-slate-800"
-//                 >
-//                   {editId ? "Edit Shift" : "Add Shift"}
-//                 </h2>
-
-//                 <p className="mt-1 text-xs text-slate-500">
-//                   Fill the shift details below
-//                 </p>
-//               </div>
-
-//               <button
-//                 type="button"
-//                 onClick={closeForm}
-//                 className="rounded-lg px-3 py-2 text-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
-//                 aria-label="Close form"
+//       {/* ─── ADD/EDIT SHIFT MODAL ─── */}
+//       {showShiftForm && (
+//         <ModalShell
+//           title={editShiftId ? "Edit Shift" : "Add New Shift"}
+//           subtitle={
+//             editShiftId
+//               ? "Update shift details"
+//               : "Create a shift and link it to a company timing"
+//           }
+//           onClose={closeShiftForm}
+//           footer={
+//             <>
+//               <Btn
+//                 variant="secondary"
+//                 onClick={closeShiftForm}
+//                 disabled={saving}
 //               >
-//                 ×
-//               </button>
-//             </div>
+//                 Cancel
+//               </Btn>
+//               <Btn
+//                 type="submit"
+//                 form="shift-form"
+//                 disabled={saving || timings.length === 0}
+//               >
+//                 {saving
+//                   ? "Saving..."
+//                   : editShiftId
+//                     ? "Update Shift"
+//                     : "Create Shift"}
+//               </Btn>
+//             </>
+//           }
+//         >
+//           <form
+//             id="shift-form"
+//             onSubmit={handleShiftSubmit}
+//             className="space-y-5"
+//           >
+//             {shiftFormError && (
+//               <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
+//                 {shiftFormError}
+//               </div>
+//             )}
 
-//             <form onSubmit={handleSubmit}>
-//               <div className="max-h-[72vh] space-y-6 overflow-y-auto px-5 py-5 sm:px-6">
-//                 {error && (
-//                   <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-//                     {error}
-//                   </div>
-//                 )}
+//             <Field label="Shift Name" required>
+//               <input
+//                 type="text"
+//                 value={shiftForm.Shift_name}
+//                 onChange={(e) =>
+//                   setShiftForm((p) => ({ ...p, Shift_name: e.target.value }))
+//                 }
+//                 placeholder="e.g. Morning Shift, Night Shift"
+//                 maxLength={100}
+//                 required
+//                 className={inputCls}
+//               />
+//             </Field>
 
-//                 <div>
-//                   <label
-//                     htmlFor="shift-name"
-//                     className="mb-2 block text-sm font-semibold text-slate-700"
-//                   >
-//                     Shift Name *
-//                   </label>
-
-//                   <input
-//                     id="shift-name"
-//                     type="text"
-//                     value={formData.Shift_name}
-//                     onChange={(event) =>
-//                       handleChange("Shift_name", event.target.value)
-//                     }
-//                     placeholder="Example: Morning Shift"
-//                     maxLength={100}
-//                     required
-//                     className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none transition placeholder:text-slate-400 focus:border-[#E42527] focus:ring-2 focus:ring-red-100"
-//                   />
+//             <Field
+//               label="Shift Timing"
+//               required
+//               hint="Select the working hours for this shift"
+//             >
+//               {timings.length === 0 ? (
+//                 <div className="rounded-md border border-dashed border-slate-300 bg-slate-50 p-4 text-center text-sm text-slate-500">
+//                   No company timings available. Please create a company timing
+//                   first.
 //                 </div>
-
-//                 <div>
-//                   <div className="mb-2 flex items-center justify-between">
-//                     <label className="block text-sm font-semibold text-slate-700">
-//                       Shift Timing *
-//                     </label>
-
-//                     <span className="text-xs text-slate-400">
-//                       Select one
-//                     </span>
-//                   </div>
-
-//                   {timingError && (
-//                     <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-//                       {timingError}
-//                     </div>
-//                   )}
-
-//                   {timingsLoading ? (
-//                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-//                       <div className="h-20 animate-pulse rounded-xl bg-slate-100" />
-//                       <div className="h-20 animate-pulse rounded-xl bg-slate-100" />
-//                     </div>
-//                   ) : timings.length === 0 ? (
-//                     <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-center">
-//                       <div className="text-3xl">🕒</div>
-
-//                       <p className="mt-2 text-sm font-semibold text-slate-700">
-//                         No timings available
-//                       </p>
-
-//                       <p className="mt-1 text-xs text-slate-500">
-//                         Pehle company timing create karo.
-//                       </p>
-//                     </div>
-//                   ) : (
-//                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-//                       {timings.map((timing) => {
-//                         const timingId = String(getTimingId(timing));
-
-//                         const selected =
-//                           String(formData.shift_timing) === timingId;
-
-//                         return (
-//                           <button
-//                             key={timingId}
-//                             type="button"
-//                             onClick={() =>
-//                               handleChange("shift_timing", timingId)
-//                             }
-//                             className={`rounded-xl border p-4 text-left transition ${
+//               ) : (
+//                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+//                   {timings.map((timing) => {
+//                     const timingId = String(getTimingId(timing));
+//                     const selected =
+//                       String(shiftForm.shift_timing) === timingId;
+//                     return (
+//                       <button
+//                         key={timingId}
+//                         type="button"
+//                         onClick={() =>
+//                           setShiftForm((p) => ({
+//                             ...p,
+//                             shift_timing: timingId,
+//                           }))
+//                         }
+//                         className={`flex items-center justify-between gap-3 rounded-md border px-3 py-2.5 text-left transition ${
+//                           selected
+//                             ? "border-[#E42527] bg-red-50 ring-1 ring-[#E42527]"
+//                             : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
+//                         }`}
+//                       >
+//                         <div className="flex items-center gap-2">
+//                           <span
+//                             className={`flex h-6 w-6 items-center justify-center rounded ${
 //                               selected
-//                                 ? "border-red-500 bg-red-50 ring-2 ring-red-100"
-//                                 : "border-slate-200 bg-white hover:border-red-300 hover:bg-red-50/40"
+//                                 ? "bg-[#E42527] text-white"
+//                                 : "bg-slate-100 text-slate-500"
 //                             }`}
 //                           >
-//                             <div className="flex items-center justify-between gap-3">
-//                               <div>
-//                                 <p className="font-semibold text-slate-800">
-//                                   🕒 {getTimingName(timing)}
-//                                 </p>
+//                             <Icons.Clock />
+//                           </span>
+//                           <span className="text-sm font-medium text-slate-800">
+//                             {getTimingName(timing)}
+//                           </span>
+//                         </div>
+//                         {selected && (
+//                           <span className="text-[#E42527]">
+//                             <Icons.Check />
+//                           </span>
+//                         )}
+//                       </button>
+//                     );
+//                   })}
+//                 </div>
+//               )}
+//             </Field>
 
-//                                 <p className="mt-1 text-xs text-slate-500">
-//                                   {selected
-//                                     ? "Timing selected"
-//                                     : "Click to select"}
-//                                 </p>
-//                               </div>
+//             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+//               <Field
+//                 label="Early Check-in Margin"
+//                 hint="Minutes before shift start"
+//               >
+//                 <div className="relative">
+//                   <input
+//                     type="number"
+//                     min="0"
+//                     max="1440"
+//                     value={shiftForm.early_checkin_margin}
+//                     onChange={(e) =>
+//                       setShiftForm((p) => ({
+//                         ...p,
+//                         early_checkin_margin: e.target.value,
+//                       }))
+//                     }
+//                     className={`${inputCls} pr-16`}
+//                   />
+//                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">
+//                     min
+//                   </span>
+//                 </div>
+//               </Field>
+//               <Field
+//                 label="Late Checkout Margin"
+//                 hint="Minutes after shift end"
+//               >
+//                 <div className="relative">
+//                   <input
+//                     type="number"
+//                     min="0"
+//                     max="1440"
+//                     value={shiftForm.late_checkout_margin}
+//                     onChange={(e) =>
+//                       setShiftForm((p) => ({
+//                         ...p,
+//                         late_checkout_margin: e.target.value,
+//                       }))
+//                     }
+//                     className={`${inputCls} pr-16`}
+//                   />
+//                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">
+//                     min
+//                   </span>
+//                 </div>
+//               </Field>
+//             </div>
+//           </form>
+//         </ModalShell>
+//       )}
 
-//                               <div
-//                                 className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs ${
-//                                   selected
-//                                     ? "bg-red-500 font-bold text-white"
-//                                     : "border border-slate-300 text-transparent"
-//                                 }`}
-//                               >
-//                                 ✓
-//                               </div>
-//                             </div>
-//                           </button>
-//                         );
-//                       })}
-//                     </div>
+//       {/* ─── ASSIGN MODAL ─── */}
+//       {assignShift && (
+//         <ModalShell
+//           title="Assign Employees to Shift"
+//           subtitle={`Shift: ${assignShift?.Shift_name || ""}`}
+//           onClose={closeAssign}
+//           wide
+//           footer={
+//             <>
+//               <Btn
+//                 variant="secondary"
+//                 onClick={closeAssign}
+//                 disabled={assigning}
+//               >
+//                 Cancel
+//               </Btn>
+//               <Btn
+//                 type="submit"
+//                 form="assign-form"
+//                 disabled={assigning || assignForm.employee_ids.length === 0}
+//               >
+//                 {assigning
+//                   ? "Assigning..."
+//                   : `Assign${
+//                       assignForm.employee_ids.length > 0
+//                         ? ` (${assignForm.employee_ids.length})`
+//                         : ""
+//                     }`}
+//               </Btn>
+//             </>
+//           }
+//         >
+//           <form
+//             id="assign-form"
+//             onSubmit={handleAssignSubmit}
+//             className="space-y-5"
+//           >
+//             {assignError && (
+//               <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
+//                 {assignError}
+//               </div>
+//             )}
+
+//             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+//               <Field label="Start Date" required>
+//                 <input
+//                   type="date"
+//                   value={assignForm.start_date}
+//                   onChange={(e) =>
+//                     setAssignForm((p) => ({
+//                       ...p,
+//                       start_date: e.target.value,
+//                     }))
+//                   }
+//                   required
+//                   className={inputCls}
+//                 />
+//               </Field>
+//               <Field label="End Date" required>
+//                 <input
+//                   type="date"
+//                   value={assignForm.end_date}
+//                   onChange={(e) =>
+//                     setAssignForm((p) => ({ ...p, end_date: e.target.value }))
+//                   }
+//                   required
+//                   className={inputCls}
+//                 />
+//               </Field>
+//             </div>
+
+//             <Field label="Remarks">
+//               <textarea
+//                 value={assignForm.remarks}
+//                 onChange={(e) =>
+//                   setAssignForm((p) => ({ ...p, remarks: e.target.value }))
+//                 }
+//                 rows={2}
+//                 placeholder="Optional note (e.g. reason for assignment)"
+//                 className={inputCls}
+//               />
+//             </Field>
+
+//             <div>
+//               <div className="mb-2 flex items-center justify-between">
+//                 <label className="text-xs font-semibold text-slate-700">
+//                   Select Employees <span className="text-red-500">*</span>
+//                 </label>
+//                 <div className="flex items-center gap-3">
+//                   {assignForm.employee_ids.length > 0 && (
+//                     <span className="text-[11px] font-medium text-[#E42527]">
+//                       {assignForm.employee_ids.length} selected
+//                     </span>
+//                   )}
+//                   {assignForm.employee_ids.length > 0 && (
+//                     <button
+//                       type="button"
+//                       onClick={() =>
+//                         setAssignForm((p) => ({ ...p, employee_ids: [] }))
+//                       }
+//                       className="text-[11px] font-medium text-slate-500 hover:text-slate-700"
+//                     >
+//                       Clear
+//                     </button>
 //                   )}
 //                 </div>
+//               </div>
 
-//                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-//                   <div>
-//                     <label
-//                       htmlFor="early-checkin"
-//                       className="mb-2 block text-sm font-semibold text-slate-700"
-//                     >
-//                       Early Check-in
-//                     </label>
+//               <div className="relative mb-2">
+//                 <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+//                   <Icons.Search />
+//                 </span>
+//                 <input
+//                   type="text"
+//                   value={employeeSearch}
+//                   onChange={(e) => setEmployeeSearch(e.target.value)}
+//                   placeholder="Search by name, department, designation..."
+//                   className={`${inputCls} pl-9`}
+//                 />
+//               </div>
 
-//                     <div className="relative">
-//                       <input
-//                         id="early-checkin"
-//                         type="number"
-//                         min="0"
-//                         max="1440"
-//                         value={formData.early_checkin_margin}
-//                         onChange={(event) =>
-//                           handleChange(
-//                             "early_checkin_margin",
-//                             event.target.value
-//                           )
-//                         }
-//                         className="w-full rounded-lg border border-slate-200 px-3 py-2.5 pr-20 text-sm outline-none transition focus:border-[#E42527] focus:ring-2 focus:ring-red-100"
-//                       />
-
-//                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">
-//                         minutes
-//                       </span>
-//                     </div>
-
-//                     <p className="mt-1 text-xs text-slate-400">
-//                       Shift se pehle punch-in.
-//                     </p>
-//                   </div>
-
-//                   <div>
-//                     <label
-//                       htmlFor="late-checkout"
-//                       className="mb-2 block text-sm font-semibold text-slate-700"
-//                     >
-//                       Late Checkout
-//                     </label>
-
-//                     <div className="relative">
-//                       <input
-//                         id="late-checkout"
-//                         type="number"
-//                         min="0"
-//                         max="1440"
-//                         value={formData.late_checkout_margin}
-//                         onChange={(event) =>
-//                           handleChange(
-//                             "late_checkout_margin",
-//                             event.target.value
-//                           )
-//                         }
-//                         className="w-full rounded-lg border border-slate-200 px-3 py-2.5 pr-20 text-sm outline-none transition focus:border-[#E42527] focus:ring-2 focus:ring-red-100"
-//                       />
-
-//                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">
-//                         minutes
-//                       </span>
-//                     </div>
-
-//                     <p className="mt-1 text-xs text-slate-400">
-//                       Shift ke baad punch-out.
-//                     </p>
-//                   </div>
+//               {loadingEmployees ? (
+//                 <div className="space-y-2">
+//                   {[1, 2, 3].map((i) => (
+//                     <div
+//                       key={i}
+//                       className="h-14 animate-pulse rounded-md bg-slate-100"
+//                     />
+//                   ))}
 //                 </div>
-//               </div>
+//               ) : filteredEmployees.length === 0 ? (
+//                 <div className="rounded-md border border-dashed border-slate-300 bg-slate-50 py-8 text-center text-sm text-slate-500">
+//                   No employees found
+//                 </div>
+//               ) : (
+//                 <div className="max-h-72 space-y-1.5 overflow-y-auto rounded-md border border-slate-200 bg-slate-50/50 p-2">
+//                   {filteredEmployees.map((emp) => {
+//                     const id = String(getEmployeeId(emp));
+//                     const selected = assignForm.employee_ids.includes(id);
+//                     return (
+//                       <label
+//                         key={id}
+//                         className={`flex cursor-pointer items-center gap-3 rounded-md border bg-white px-3 py-2.5 transition ${
+//                           selected
+//                             ? "border-[#E42527] bg-red-50"
+//                             : "border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+//                         }`}
+//                       >
+//                         <input
+//                           type="checkbox"
+//                           checked={selected}
+//                           onChange={() => toggleEmployee(id)}
+//                           className="h-4 w-4 rounded border-slate-300 text-[#E42527] focus:ring-red-200"
+//                         />
+//                         <div className="min-w-0 flex-1">
+//                           <p className="truncate text-sm font-medium text-slate-800">
+//                             {getEmployeeName(emp)}
+//                           </p>
+//                           {getEmployeeSubtitle(emp) && (
+//                             <p className="truncate text-[11px] text-slate-500">
+//                               {getEmployeeSubtitle(emp)}
+//                             </p>
+//                           )}
+//                         </div>
+//                       </label>
+//                     );
+//                   })}
+//                 </div>
+//               )}
+//             </div>
+//           </form>
+//         </ModalShell>
+//       )}
 
-//               <div className="flex justify-end gap-3 border-t border-slate-100 px-5 py-4 sm:px-6">
-//                 <button
-//                   type="button"
-//                   onClick={closeForm}
-//                   disabled={saving}
-//                   className="rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-//                 >
-//                   Cancel
-//                 </button>
-
-//                 <button
-//                   type="submit"
-//                   disabled={saving || timings.length === 0}
-//                   className="rounded-lg bg-[#E42527] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#c91f21] disabled:cursor-not-allowed disabled:opacity-60"
-//                 >
-//                   {saving
-//                     ? "Saving..."
-//                     : editId
-//                     ? "Update Shift"
-//                     : "Save Shift"}
-//                 </button>
-//               </div>
-//             </form>
+//       {/* ─── DETAILS MODAL ─── */}
+//       {detailsShift && (
+//         <ModalShell
+//           title={detailsShift?.Shift_name}
+//           subtitle="Shift details and assigned employees"
+//           onClose={() => setDetailsShift(null)}
+//           wide
+//           footer={
+//             <>
+//               <Btn
+//                 variant="secondary"
+//                 icon={<Icons.Edit />}
+//                 onClick={() => {
+//                   setDetailsShift(null);
+//                   openEditShift(detailsShift);
+//                 }}
+//               >
+//                 Edit
+//               </Btn>
+//               <Btn
+//                 variant="primary"
+//                 icon={<Icons.Plus />}
+//                 onClick={() => {
+//                   setDetailsShift(null);
+//                   openAssign(detailsShift);
+//                 }}
+//               >
+//                 Assign Employees
+//               </Btn>
+//             </>
+//           }
+//         >
+//           <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+//             <DetailTile
+//               label="Status"
+//               value={detailsShift?.is_active !== false ? "Active" : "Inactive"}
+//               tone={detailsShift?.is_active !== false ? "green" : "red"}
+//             />
+//             <DetailTile
+//               label="Timing"
+//               value={getTimingLabelById(detailsShift?.shift_timing)}
+//             />
+//             <DetailTile
+//               label="Early Check-in"
+//               value={`${detailsShift?.early_checkin_margin ?? 0} min`}
+//             />
+//             <DetailTile
+//               label="Late Checkout"
+//               value={`${detailsShift?.late_checkout_margin ?? 0} min`}
+//             />
 //           </div>
-//         </div>
+
+//           <div>
+//             <div className="mb-2 flex items-center gap-2">
+//               <Icons.Users />
+//               <h3 className="text-sm font-semibold text-slate-800">
+//                 Assigned Employees
+//               </h3>
+//               <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium text-slate-600">
+//                 {detailsAssignments.length}
+//               </span>
+//             </div>
+//             <AssignmentHistoryTable
+//               assignments={detailsAssignments}
+//               loading={loadingAssignments}
+//               getEmployeeLabel={getEmployeeLabelById}
+//               onDelete={handleDeleteAssignment}
+//               compact
+//             />
+//           </div>
+//         </ModalShell>
 //       )}
 //     </div>
 //   );
 // }
+
+// // ---------------------------------------------------------------------------
+// // SUB-COMPONENTS
+// // ---------------------------------------------------------------------------
+// const StatCard = ({ label, value, icon, tone = "blue" }) => {
+//   const tones = {
+//     blue: "bg-blue-50 text-blue-600",
+//     green: "bg-emerald-50 text-emerald-600",
+//     amber: "bg-amber-50 text-amber-600",
+//     red: "bg-red-50 text-red-600",
+//   };
+//   return (
+//     <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+//       <div className="flex items-center justify-between">
+//         <div>
+//           <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
+//             {label}
+//           </p>
+//           <p className="mt-1.5 text-2xl font-bold tracking-tight text-slate-900">
+//             {value}
+//           </p>
+//         </div>
+//         <div
+//           className={`flex h-10 w-10 items-center justify-center rounded-lg text-lg ${tones[tone]}`}
+//         >
+//           {icon}
+//         </div>
+//       </div>
+//     </div>
+//   );
+// };
+
+// const TabBtn = ({ active, onClick, count, children }) => (
+//   <button
+//     type="button"
+//     onClick={onClick}
+//     className={`relative flex items-center gap-2 py-3.5 text-sm font-medium transition ${
+//       active ? "text-[#E42527]" : "text-slate-500 hover:text-slate-700"
+//     }`}
+//     style={{ marginRight: 24 }}
+//   >
+//     {children}
+//     {typeof count === "number" && (
+//       <span
+//         className={`rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${
+//           active ? "bg-red-50 text-[#E42527]" : "bg-slate-100 text-slate-500"
+//         }`}
+//       >
+//         {count}
+//       </span>
+//     )}
+//     {active && (
+//       <span className="absolute inset-x-0 bottom-0 h-0.5 bg-[#E42527]" />
+//     )}
+//   </button>
+// );
+
+// const DetailTile = ({ label, value, tone }) => (
+//   <div className="rounded-md border border-slate-200 bg-slate-50/50 px-3 py-2.5">
+//     <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+//       {label}
+//     </p>
+//     <p
+//       className={`mt-1 text-sm font-semibold ${
+//         tone === "green"
+//           ? "text-emerald-600"
+//           : tone === "red"
+//             ? "text-red-600"
+//             : "text-slate-800"
+//       }`}
+//     >
+//       {value}
+//     </p>
+//   </div>
+// );
+
+// const ShiftsTable = ({
+//   shifts,
+//   loading,
+//   searchQuery,
+//   getTimingLabelById,
+//   onOpenDetails,
+//   onEdit,
+//   onDelete,
+//   onAssign,
+//   onAdd,
+// }) => {
+//   if (loading) {
+//     return (
+//       <div className="space-y-2 p-5">
+//         {[1, 2, 3].map((i) => (
+//           <div key={i} className="h-14 animate-pulse rounded-md bg-slate-100" />
+//         ))}
+//       </div>
+//     );
+//   }
+
+//   if (shifts.length === 0) {
+//     return (
+//       <div className="py-16 text-center">
+//         <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-2xl">
+//           🕒
+//         </div>
+//         <p className="text-sm font-semibold text-slate-700">
+//           {searchQuery ? "No shifts match your search" : "No shifts yet"}
+//         </p>
+//         <p className="mt-1 text-xs text-slate-500">
+//           {searchQuery
+//             ? "Try a different keyword."
+//             : "Create your first shift to get started."}
+//         </p>
+//         {!searchQuery && (
+//           <div className="mt-4 flex justify-center">
+//             <Btn icon={<Icons.Plus />} onClick={onAdd}>
+//               Add Shift
+//             </Btn>
+//           </div>
+//         )}
+//       </div>
+//     );
+//   }
+
+//   return (
+//     <div className="overflow-x-auto">
+//       <table className="w-full min-w-[820px] text-left text-sm">
+//         <thead>
+//           <tr className="border-b border-slate-200 bg-slate-50/70 text-[11px] uppercase tracking-wide text-slate-500">
+//             <th className="px-5 py-3 font-semibold">Shift Name</th>
+//             <th className="px-5 py-3 font-semibold">Timing</th>
+//             <th className="px-5 py-3 font-semibold">Early Check-in</th>
+//             <th className="px-5 py-3 font-semibold">Late Checkout</th>
+//             <th className="px-5 py-3 font-semibold">Status</th>
+//             <th className="px-5 py-3 text-right font-semibold">Actions</th>
+//           </tr>
+//         </thead>
+//         <tbody className="divide-y divide-slate-100">
+//           {shifts.map((shift) => {
+//             const id = getShiftId(shift);
+//             const active = shift?.is_active !== false;
+//             return (
+//               <tr
+//                 key={id}
+//                 className="cursor-pointer transition hover:bg-slate-50"
+//                 onClick={() => onOpenDetails(shift)}
+//               >
+//                 <td className="px-5 py-3.5">
+//                   <div className="font-semibold text-slate-800">
+//                     {shift?.Shift_name || "—"}
+//                   </div>
+//                 </td>
+//                 <td className="px-5 py-3.5">
+//                   <span className="inline-flex items-center gap-1.5 text-slate-600">
+//                     <Icons.Clock />
+//                     {getTimingLabelById(shift?.shift_timing)}
+//                   </span>
+//                 </td>
+//                 <td className="px-5 py-3.5 text-slate-600">
+//                   {shift?.early_checkin_margin ?? 0} min
+//                 </td>
+//                 <td className="px-5 py-3.5 text-slate-600">
+//                   {shift?.late_checkout_margin ?? 0} min
+//                 </td>
+//                 <td className="px-5 py-3.5">
+//                   <Badge tone={active ? "green" : "red"} dot>
+//                     {active ? "Active" : "Inactive"}
+//                   </Badge>
+//                 </td>
+//                 <td className="px-5 py-3.5">
+//                   <div
+//                     className="flex items-center justify-end gap-1"
+//                     onClick={(e) => e.stopPropagation()}
+//                   >
+//                     <button
+//                       type="button"
+//                       onClick={() => onAssign(shift)}
+//                       className="rounded-md bg-[#E42527] px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-[#c91f21]"
+//                     >
+//                       Assign
+//                     </button>
+//                     <IconBtn
+//                       title="Edit"
+//                       icon={<Icons.Edit />}
+//                       onClick={() => onEdit(shift)}
+//                     />
+//                     <IconBtn
+//                       title="Delete"
+//                       icon={<Icons.Trash />}
+//                       onClick={() => onDelete(shift)}
+//                       danger
+//                     />
+//                   </div>
+//                 </td>
+//               </tr>
+//             );
+//           })}
+//         </tbody>
+//       </table>
+//     </div>
+//   );
+// };
+
+// const IconBtn = ({ icon, title, onClick, danger }) => (
+//   <button
+//     type="button"
+//     title={title}
+//     onClick={onClick}
+//     className={`rounded-md border border-transparent p-1.5 transition ${
+//       danger
+//         ? "text-slate-500 hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+//         : "text-slate-500 hover:border-slate-200 hover:bg-slate-100 hover:text-slate-700"
+//     }`}
+//   >
+//     {icon}
+//   </button>
+// );
+
+// const AssignmentHistoryTable = ({
+//   assignments,
+//   loading,
+//   getShiftName,
+//   getEmployeeLabel,
+//   onDelete,
+//   compact,
+// }) => {
+//   if (loading) {
+//     return (
+//       <div className="space-y-2 p-5">
+//         {[1, 2, 3].map((i) => (
+//           <div key={i} className="h-12 animate-pulse rounded-md bg-slate-100" />
+//         ))}
+//       </div>
+//     );
+//   }
+
+//   if (!assignments || assignments.length === 0) {
+//     return (
+//       <div className="py-14 text-center">
+//         <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-xl">
+//           📋
+//         </div>
+//         <p className="text-sm font-semibold text-slate-700">No assignments yet</p>
+//         <p className="mt-1 text-xs text-slate-500">
+//           Assign employees to a shift to see history here.
+//         </p>
+//       </div>
+//     );
+//   }
+
+//   return (
+//     <div className={compact ? "p-0" : "p-4 sm:p-5"}>
+//       <div className="overflow-x-auto rounded-md border border-slate-200">
+//         <table className="w-full min-w-[600px] text-left text-sm">
+//           <thead>
+//             <tr className="border-b border-slate-200 bg-slate-50/70 text-[11px] uppercase tracking-wide text-slate-500">
+//               <th className="px-4 py-2.5 font-semibold">Employee</th>
+//               {getShiftName && (
+//                 <th className="px-4 py-2.5 font-semibold">Shift</th>
+//               )}
+//               <th className="px-4 py-2.5 font-semibold">Start Date</th>
+//               <th className="px-4 py-2.5 font-semibold">End Date</th>
+//               <th className="px-4 py-2.5 font-semibold">Remarks</th>
+//               <th className="px-4 py-2.5 text-right font-semibold">Actions</th>
+//             </tr>
+//           </thead>
+//           <tbody className="divide-y divide-slate-100">
+//             {assignments.map((a) => {
+//               const id = getAssignmentId(a);
+//               return (
+//                 <tr key={id} className="transition hover:bg-slate-50">
+//                   <td className="px-4 py-3 font-medium text-slate-800">
+//                     {getEmployeeLabel(a?.employee_id)}
+//                   </td>
+//                   {getShiftName && (
+//                     <td className="px-4 py-3 text-slate-600">
+//                       {getShiftName(a?.shift_id)}
+//                     </td>
+//                   )}
+//                   <td className="px-4 py-3 text-slate-600">
+//                     {formatDate(a?.start_date)}
+//                   </td>
+//                   <td className="px-4 py-3 text-slate-600">
+//                     {formatDate(a?.end_date)}
+//                   </td>
+//                   <td className="px-4 py-3 text-slate-500">
+//                     {a?.remarks || "—"}
+//                   </td>
+//                   <td className="px-4 py-3 text-right">
+//                     <button
+//                       type="button"
+//                       onClick={() => onDelete(id)}
+//                       className="rounded-md px-2.5 py-1 text-xs font-semibold text-red-600 transition hover:bg-red-50"
+//                     >
+//                       Remove
+//                     </button>
+//                   </td>
+//                 </tr>
+//               );
+//             })}
+//           </tbody>
+//         </table>
+//       </div>
+//     </div>
+//   );
+// };
+
 
 "use client";
 
@@ -666,20 +3029,15 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "@/app/lib/api";
 
 // ---------------------------------------------------------------------------
-// API endpoints — adjust these if your actual routes differ.
-// The employee-list and assignment routes were not visible in what you
-// shared, so these are best guesses following your existing naming pattern.
+// ENDPOINTS
 // ---------------------------------------------------------------------------
 const ENDPOINTS = {
   shiftsList: "/api/v1/get/all/shifts",
   shiftCreate: "/api/v1/create/shifts",
   shiftUpdate: (id) => `/api/v1/update/shifts/${id}`,
   shiftDelete: (id) => `/api/v1/delete/shifts/${id}`,
-
   timingsList: "/api/v1/get/all/company-timings",
-
   employeesList: "/api/v1/get/employees",
-
   assignmentCreate: "/api/v1/assign-shift",
   assignmentBulkCreate: "/api/v1/bulk-assign-shift",
   assignmentsList: "/api/v1/get/all/assign-shifts",
@@ -703,29 +3061,26 @@ const initialAssignForm = {
 };
 
 // ---------------------------------------------------------------------------
-// Helpers
+// HELPERS
 // ---------------------------------------------------------------------------
 const formatApiError = (err) => {
   const detail = err?.response?.data?.detail;
-
   if (Array.isArray(detail)) {
     return detail
-      .map((item) => {
-        if (Array.isArray(item.loc)) {
-          return `${item.loc.slice(1).join(".")}: ${item.msg}`;
-        }
-        return item.msg;
-      })
+      .map((item) =>
+        Array.isArray(item.loc)
+          ? `${item.loc.slice(1).join(".")}: ${item.msg}`
+          : item.msg
+      )
       .join(" • ");
   }
-
   if (typeof detail === "string") return detail;
-
   return err?.response?.data?.message || err?.message || "Something went wrong";
 };
 
 const getShiftId = (item) => item?.shift_id || item?.id || item?._id;
-const getTimingId = (t) => t?.company_timing_id || t?.timing_id || t?.id || t?._id;
+const getTimingId = (t) =>
+  t?.company_timing_id || t?.timing_id || t?.id || t?._id;
 const getEmployeeId = (e) => e?.employee_id || e?.id || e?._id;
 const getAssignmentId = (a) => a?.assignment_id || a?.id || a?._id;
 
@@ -735,7 +3090,6 @@ const formatTime = (time) => {
   const hour = Number(parts[0]);
   const minute = Number(parts[1] || 0);
   if (Number.isNaN(hour)) return String(time);
-
   const date = new Date();
   date.setHours(hour, minute, 0, 0);
   return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -745,28 +3099,38 @@ const formatDate = (value) => {
   if (!value) return "—";
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return String(value);
-  return d.toLocaleDateString([], { day: "2-digit", month: "short", year: "numeric" });
+  return d.toLocaleDateString([], {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
 };
 
 const getTimingName = (timing) => {
   const startTime = timing?.start_time || timing?.startTime;
   const endTime = timing?.end_time || timing?.endTime;
-  if (startTime && endTime) return `${formatTime(startTime)} - ${formatTime(endTime)}`;
-  return timing?.name || timing?.timing_name || timing?.title || getTimingId(timing) || "Unknown timing";
-};
-
-const getEmployeeName = (emp) => {
+  if (startTime && endTime)
+    return `${formatTime(startTime)} - ${formatTime(endTime)}`;
   return (
-    emp?.name ||
-    [emp?.first_name, emp?.last_name].filter(Boolean).join(" ") ||
-    emp?.company_email ||
-    getEmployeeId(emp) ||
-    "Unknown employee"
+    timing?.name ||
+    timing?.timing_name ||
+    timing?.title ||
+    getTimingId(timing) ||
+    "Unknown timing"
   );
 };
 
+const getEmployeeName = (emp) =>
+  emp?.name ||
+  [emp?.first_name, emp?.last_name].filter(Boolean).join(" ") ||
+  emp?.company_email ||
+  getEmployeeId(emp) ||
+  "Unknown employee";
+
 const getEmployeeSubtitle = (emp) => {
-  const parts = [emp?.designation_name, emp?.department_name].filter((v) => v && v !== "—");
+  const parts = [emp?.designation_name, emp?.department_name].filter(
+    (v) => v && v !== "—"
+  );
   return parts.join(" • ");
 };
 
@@ -779,183 +3143,255 @@ const extractArray = (res, keys) => {
   return [];
 };
 
-const getShiftsFromResponse = (res) => extractArray(res, ["shifts", "items", "results", "data"]);
-const getTimingsFromResponse = (res) => extractArray(res, ["timings", "company_timings", "items", "results", "data"]);
-const getEmployeesFromResponse = (res) => extractArray(res, ["employees", "items", "results", "data"]);
-const getAssignmentsFromResponse = (res) => extractArray(res, ["assignments", "items", "results", "data"]);
+const getShiftsFromResponse = (res) =>
+  extractArray(res, ["shifts", "items", "results", "data"]);
+const getTimingsFromResponse = (res) =>
+  extractArray(res, ["timings", "company_timings", "items", "results", "data"]);
+const getEmployeesFromResponse = (res) =>
+  extractArray(res, ["employees", "items", "results", "data"]);
+const getAssignmentsFromResponse = (res) =>
+  extractArray(res, ["assignments", "items", "results", "data"]);
 
 // ---------------------------------------------------------------------------
-// Small presentational bits
+// ICONS
 // ---------------------------------------------------------------------------
-const Badge = ({ children, tone = "slate" }) => {
+const Icons = {
+  Plus: () => (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+    >
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  ),
+  Search: () => (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    >
+      <circle cx="11" cy="11" r="7" />
+      <path d="m21 21-4.3-4.3" />
+    </svg>
+  ),
+  Close: () => (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    >
+      <path d="M18 6 6 18M6 6l12 12" />
+    </svg>
+  ),
+  Clock: () => (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
+    </svg>
+  ),
+  Users: () => (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    >
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  ),
+  Edit: () => (
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    >
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z" />
+    </svg>
+  ),
+  Trash: () => (
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    >
+      <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+    </svg>
+  ),
+  Check: () => (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="3"
+      strokeLinecap="round"
+    >
+      <path d="M20 6 9 17l-5-5" />
+    </svg>
+  ),
+  Chevron: () => (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    >
+      <path d="m9 18 6-6-6-6" />
+    </svg>
+  ),
+};
+
+// ---------------------------------------------------------------------------
+// PRIMITIVES
+// ---------------------------------------------------------------------------
+const Badge = ({ children, tone = "slate", dot = false }) => {
   const tones = {
-    slate: "bg-slate-100 text-slate-600",
-    blue: "bg-blue-50 text-blue-700",
-    green: "bg-emerald-50 text-emerald-700",
-    red: "bg-red-50 text-red-600",
+    slate: "bg-slate-100 text-slate-700 border-slate-200",
+    blue: "bg-blue-50 text-blue-700 border-blue-100",
+    green: "bg-emerald-50 text-emerald-700 border-emerald-100",
+    red: "bg-red-50 text-red-700 border-red-100",
+    amber: "bg-amber-50 text-amber-700 border-amber-100",
+  };
+  const dots = {
+    slate: "bg-slate-400",
+    blue: "bg-blue-500",
+    green: "bg-emerald-500",
+    red: "bg-red-500",
+    amber: "bg-amber-500",
   };
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${tones[tone]}`}>
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[11px] font-medium ${tones[tone]}`}
+    >
+      {dot && <span className={`h-1.5 w-1.5 rounded-full ${dots[tone]}`} />}
       {children}
     </span>
   );
 };
 
-const IconButton = ({ label, onClick, tone = "slate" }) => {
-  const tones = {
-    slate: "text-slate-500 hover:bg-slate-100",
-    red: "text-red-600 hover:bg-red-50",
+const Btn = ({
+  children,
+  variant = "primary",
+  size = "md",
+  icon,
+  ...props
+}) => {
+  const sizes = {
+    sm: "px-2.5 py-1.5 text-xs",
+    md: "px-3.5 py-2 text-sm",
+    lg: "px-4 py-2.5 text-sm",
+  };
+  const variants = {
+    primary:
+      "bg-[#E42527] text-white shadow-sm hover:bg-[#c91f21] border border-[#E42527]",
+    secondary:
+      "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 shadow-sm",
+    ghost:
+      "bg-transparent text-slate-600 hover:bg-slate-100 border border-transparent",
+    danger:
+      "bg-white text-red-600 border border-slate-200 hover:bg-red-50 hover:border-red-200 shadow-sm",
   };
   return (
     <button
-      type="button"
-      onClick={onClick}
-      className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold transition ${tones[tone]}`}
+      {...props}
+      className={`inline-flex items-center justify-center gap-1.5 rounded-md font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${sizes[size]} ${variants[variant]}`}
     >
-      {label}
+      {icon}
+      {children}
     </button>
   );
 };
 
 const ModalShell = ({ title, subtitle, onClose, children, footer, wide }) => (
   <div
-    className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-900/60 p-4 pt-8 sm:pt-14"
-    onMouseDown={(event) => {
-      if (event.target === event.currentTarget) onClose();
+    className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-900/50 p-4 pt-12 backdrop-blur-[2px]"
+    onMouseDown={(e) => {
+      if (e.target === e.currentTarget) onClose();
     }}
   >
     <div
-      className={`mb-8 w-full ${wide ? "max-w-3xl" : "max-w-2xl"} overflow-hidden rounded-2xl bg-white shadow-2xl`}
+      className={`mb-10 w-full ${wide ? "max-w-3xl" : "max-w-xl"} overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl`}
       role="dialog"
-      aria-modal="true"
     >
-      <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4 sm:px-6">
+      <div className="flex items-start justify-between border-b border-slate-200 bg-slate-50 px-5 py-3.5">
         <div>
-          <h2 className="text-lg font-bold text-slate-800">{title}</h2>
-          {subtitle && <p className="mt-1 text-xs text-slate-500">{subtitle}</p>}
+          <h2 className="text-[15px] font-semibold text-slate-800">{title}</h2>
+          {subtitle && (
+            <p className="mt-0.5 text-xs text-slate-500">{subtitle}</p>
+          )}
         </div>
         <button
           type="button"
           onClick={onClose}
-          className="rounded-lg px-3 py-2 text-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
-          aria-label="Close"
+          className="rounded p-1 text-slate-400 transition hover:bg-slate-200 hover:text-slate-700"
         >
-          ×
+          <Icons.Close />
         </button>
       </div>
-
-      <div className="max-h-[72vh] space-y-5 overflow-y-auto px-5 py-5 sm:px-6">{children}</div>
-
-      {footer && <div className="flex justify-end gap-3 border-t border-slate-100 px-5 py-4 sm:px-6">{footer}</div>}
+      <div className="max-h-[70vh] overflow-y-auto px-5 py-5">{children}</div>
+      {footer && (
+        <div className="flex justify-end gap-2 border-t border-slate-200 bg-slate-50 px-5 py-3">
+          {footer}
+        </div>
+      )}
     </div>
   </div>
 );
 
-// ---------------------------------------------------------------------------
-// Shift card
-// ---------------------------------------------------------------------------
-const ShiftCard = ({ shift, timingLabel, onOpenDetails, onEdit, onDelete, onAssign }) => {
-  const active = shift?.is_active !== false;
+const Field = ({ label, required, hint, children }) => (
+  <div>
+    <label className="mb-1.5 block text-xs font-semibold text-slate-700">
+      {label} {required && <span className="text-red-500">*</span>}
+    </label>
+    {children}
+    {hint && <p className="mt-1 text-[11px] text-slate-400">{hint}</p>}
+  </div>
+);
 
-  return (
-    <div
-      onClick={() => onOpenDetails(shift)}
-      className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-red-200 hover:shadow-md"
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h3 className="text-base font-bold text-slate-800">{shift?.Shift_name || "—"}</h3>
-          <div className="mt-2">
-            <Badge tone="blue">🕒 {timingLabel}</Badge>
-          </div>
-        </div>
-        <Badge tone={active ? "green" : "red"}>{active ? "Active" : "Inactive"}</Badge>
-      </div>
-
-      <div className="mt-4 grid grid-cols-2 gap-3">
-        <div className="rounded-xl bg-slate-50 px-3 py-2">
-          <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Early check-in</p>
-          <p className="mt-0.5 text-sm font-semibold text-slate-700">{shift?.early_checkin_margin ?? 0} min</p>
-        </div>
-        <div className="rounded-xl bg-slate-50 px-3 py-2">
-          <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Late checkout</p>
-          <p className="mt-0.5 text-sm font-semibold text-slate-700">{shift?.late_checkout_margin ?? 0} min</p>
-        </div>
-      </div>
-
-      <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
-        <div className="flex gap-1">
-          <IconButton label="Edit" onClick={(e) => { e.stopPropagation(); onEdit(shift); }} />
-          <IconButton label="Delete" tone="red" onClick={(e) => { e.stopPropagation(); onDelete(shift); }} />
-        </div>
-
-        <button
-          type="button"
-          onClick={(e) => { e.stopPropagation(); onAssign(shift); }}
-          className="rounded-lg bg-[#E42527] px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-[#c91f21]"
-        >
-          + Assign
-        </button>
-      </div>
-    </div>
-  );
-};
+const inputCls =
+  "w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#E42527] focus:ring-2 focus:ring-red-100";
 
 // ---------------------------------------------------------------------------
-// Assignment history table (reusable — used globally and inside details modal)
-// ---------------------------------------------------------------------------
-const AssignmentHistoryTable = ({ assignments, loading, getShiftName, getEmployeeLabel, onDelete, emptyHint }) => {
-  if (loading) {
-    return <div className="py-10 text-center text-sm text-slate-500">Loading history...</div>;
-  }
-
-  if (!assignments || assignments.length === 0) {
-    return (
-      <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 py-10 text-center">
-        <div className="text-3xl">📋</div>
-        <p className="mt-2 text-sm font-medium text-slate-700">No assignments yet</p>
-        <p className="mt-1 text-xs text-slate-500">{emptyHint || "Assign employees to a shift to see history here."}</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="overflow-x-auto rounded-xl border border-slate-200">
-      <table className="w-full min-w-[560px] text-left text-sm">
-        <thead>
-          <tr className="border-b border-slate-200 bg-slate-50">
-            <th className="px-4 py-3 font-semibold text-slate-500">Employee</th>
-            {getShiftName && <th className="px-4 py-3 font-semibold text-slate-500">Shift</th>}
-            <th className="px-4 py-3 font-semibold text-slate-500">Start</th>
-            <th className="px-4 py-3 font-semibold text-slate-500">End</th>
-            <th className="px-4 py-3 font-semibold text-slate-500">Remarks</th>
-            <th className="px-4 py-3 text-right font-semibold text-slate-500">Actions</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-100">
-          {assignments.map((a) => {
-            const id = getAssignmentId(a);
-            return (
-              <tr key={id} className="hover:bg-slate-50">
-                <td className="px-4 py-3 font-medium text-slate-700">{getEmployeeLabel(a?.employee_id)}</td>
-                {getShiftName && <td className="px-4 py-3 text-slate-600">{getShiftName(a?.shift_id)}</td>}
-                <td className="px-4 py-3 text-slate-600">{formatDate(a?.start_date)}</td>
-                <td className="px-4 py-3 text-slate-600">{formatDate(a?.end_date)}</td>
-                <td className="px-4 py-3 text-slate-500">{a?.remarks || "—"}</td>
-                <td className="px-4 py-3 text-right">
-                  <IconButton label="Remove" tone="red" onClick={() => onDelete(id)} />
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  );
-};
-
-// ---------------------------------------------------------------------------
-// Main page
+// MAIN PAGE
 // ---------------------------------------------------------------------------
 export default function ShiftsPage() {
   const [shifts, setShifts] = useState([]);
@@ -970,17 +3406,16 @@ export default function ShiftsPage() {
   const [assigning, setAssigning] = useState(false);
 
   const [pageError, setPageError] = useState("");
+  const [activeTab, setActiveTab] = useState("shifts");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  // Shift form modal
   const [showShiftForm, setShowShiftForm] = useState(false);
   const [editShiftId, setEditShiftId] = useState(null);
   const [shiftForm, setShiftForm] = useState(initialShiftForm);
   const [shiftFormError, setShiftFormError] = useState("");
 
-  // Details modal
   const [detailsShift, setDetailsShift] = useState(null);
 
-  // Assign modal
   const [assignShift, setAssignShift] = useState(null);
   const [assignForm, setAssignForm] = useState(initialAssignForm);
   const [assignError, setAssignError] = useState("");
@@ -996,7 +3431,9 @@ export default function ShiftsPage() {
     setLoadingShifts(true);
     setPageError("");
     try {
-      const res = await api.get(ENDPOINTS.shiftsList, { params: { page: 1, page_size: 100 } });
+      const res = await api.get(ENDPOINTS.shiftsList, {
+        params: { page: 1, page_size: 100 },
+      });
       setShifts(getShiftsFromResponse(res));
     } catch (err) {
       setPageError(formatApiError(err));
@@ -1009,7 +3446,7 @@ export default function ShiftsPage() {
     try {
       const res = await api.get(ENDPOINTS.timingsList);
       setTimings(getTimingsFromResponse(res));
-    } catch (err) {
+    } catch {
       setTimings([]);
     }
   };
@@ -1034,16 +3471,17 @@ export default function ShiftsPage() {
         params: { page: 1, page_size: 100, ...filters },
       });
       setAssignments(getAssignmentsFromResponse(res));
-    } catch (err) {
+    } catch {
       setAssignments([]);
     } finally {
       setLoadingAssignments(false);
     }
   };
 
-  // ---- lookups ----
   const getTimingLabelById = (timingId) => {
-    const timing = timings.find((t) => String(getTimingId(t)) === String(timingId));
+    const timing = timings.find(
+      (t) => String(getTimingId(t)) === String(timingId)
+    );
     return timing ? getTimingName(timing) : timingId || "—";
   };
 
@@ -1053,11 +3491,21 @@ export default function ShiftsPage() {
   };
 
   const getEmployeeLabelById = (employeeId) => {
-    const emp = employees.find((e) => String(getEmployeeId(e)) === String(employeeId));
+    const emp = employees.find(
+      (e) => String(getEmployeeId(e)) === String(employeeId)
+    );
     return emp ? getEmployeeName(emp) : employeeId || "—";
   };
 
-  // ---- shift form ----
+  const filteredShifts = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return shifts;
+    return shifts.filter((s) => {
+      const timing = getTimingLabelById(s?.shift_timing);
+      return `${s?.Shift_name || ""} ${timing}`.toLowerCase().includes(q);
+    });
+  }, [shifts, searchQuery, timings]);
+
   const openAddShift = () => {
     setEditShiftId(null);
     setShiftForm(initialShiftForm);
@@ -1088,9 +3536,9 @@ export default function ShiftsPage() {
   const handleShiftSubmit = async (event) => {
     event.preventDefault();
     const name = shiftForm.Shift_name.trim();
-
     if (!name) return setShiftFormError("Shift name required");
-    if (!shiftForm.shift_timing) return setShiftFormError("Please select shift timing");
+    if (!shiftForm.shift_timing)
+      return setShiftFormError("Please select shift timing");
 
     setSaving(true);
     setShiftFormError("");
@@ -1120,7 +3568,12 @@ export default function ShiftsPage() {
   const handleDeleteShift = async (shift) => {
     const id = getShiftId(shift);
     if (!id) return;
-    if (!window.confirm(`Delete "${shift?.Shift_name}"? This can't be undone.`)) return;
+    if (
+      !window.confirm(
+        `Delete "${shift?.Shift_name}"? This action cannot be undone.`
+      )
+    )
+      return;
 
     try {
       await api.delete(ENDPOINTS.shiftDelete(id));
@@ -1131,7 +3584,6 @@ export default function ShiftsPage() {
     }
   };
 
-  // ---- assign flow ----
   const openAssign = async (shift) => {
     setAssignShift(shift);
     setAssignForm(initialAssignForm);
@@ -1162,19 +3614,21 @@ export default function ShiftsPage() {
   const filteredEmployees = useMemo(() => {
     const q = employeeSearch.trim().toLowerCase();
     if (!q) return employees;
-    return employees.filter((e) => {
-      const haystack = `${getEmployeeName(e)} ${getEmployeeSubtitle(e)}`.toLowerCase();
-      return haystack.includes(q);
-    });
+    return employees.filter((e) =>
+      `${getEmployeeName(e)} ${getEmployeeSubtitle(e)}`
+        .toLowerCase()
+        .includes(q)
+    );
   }, [employees, employeeSearch]);
 
   const handleAssignSubmit = async (event) => {
     event.preventDefault();
-
-    if (assignForm.employee_ids.length === 0) return setAssignError("Select at least one employee");
+    if (assignForm.employee_ids.length === 0)
+      return setAssignError("Select at least one employee");
     if (!assignForm.start_date) return setAssignError("Start date required");
     if (!assignForm.end_date) return setAssignError("End date required");
-    if (assignForm.start_date > assignForm.end_date) return setAssignError("Start date cannot be after end date");
+    if (assignForm.start_date > assignForm.end_date)
+      return setAssignError("Start date cannot be after end date");
 
     setAssigning(true);
     setAssignError("");
@@ -1215,64 +3669,140 @@ export default function ShiftsPage() {
     return assignments.filter((a) => String(a?.shift_id) === String(id));
   }, [assignments, detailsShift]);
 
+  const activeShiftsCount = shifts.filter((s) => s?.is_active !== false).length;
+  const uniqueAssignedEmployees = new Set(
+    assignments.map((a) => a?.employee_id)
+  ).size;
+
+  // ---------------------------------------------------------------------------
+  // RENDER
+  // ---------------------------------------------------------------------------
   return (
-    <div className="min-h-screen bg-slate-50 p-4 sm:p-6">
-      <div className="mx-auto max-w-6xl">
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-800">Employee Shifts</h1>
-            <p className="mt-1 text-sm text-slate-500">Create shifts and assign employees to them</p>
+    <div className="min-h-screen bg-[#f7f8fa] p-4 sm:p-6">
+      <div className="mx-auto flex max-w-7xl flex-col gap-4">
+        {/* ═══════════ HEADER BOX ═══════════ */}
+        <div className="rounded-lg border border-slate-200 bg-white px-4 py-4 shadow-sm sm:px-5">
+          {/* Breadcrumb */}
+          <div className="mb-3 flex items-center gap-1.5 text-xs text-slate-500">
+            <span className="cursor-pointer hover:text-slate-700">Home</span>
+            <Icons.Chevron />
+            <span className="cursor-pointer hover:text-slate-700">
+              Attendance
+            </span>
+            <Icons.Chevron />
+            <span className="font-medium text-slate-700">Shifts</span>
           </div>
-          <button
-            type="button"
-            onClick={openAddShift}
-            className="rounded-lg bg-[#E42527] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#c91f21]"
-          >
-            + Add Shift
-          </button>
+
+          {/* Title row */}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="text-xl font-bold tracking-tight text-slate-900">
+                Shift Management
+              </h1>
+              <p className="mt-1 text-[13px] text-slate-500">
+                Create shifts and assign them to employees across your
+                organization
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Btn
+                variant="primary"
+                icon={<Icons.Plus />}
+                onClick={openAddShift}
+              >
+                Add Shift
+              </Btn>
+            </div>
+          </div>
         </div>
 
+        {/* ═══════════ ERROR ═══════════ */}
         {pageError && (
-          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {pageError}
+          <div className="flex items-start gap-2 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <span className="font-medium">Error:</span>
+            <span>{pageError}</span>
           </div>
         )}
 
-        {/* Shift cards */}
-        {loadingShifts ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-44 animate-pulse rounded-2xl bg-white shadow-sm" />
-            ))}
-          </div>
-        ) : shifts.length === 0 ? (
-          <div className="rounded-2xl border border-slate-200 bg-white py-24 text-center shadow-sm">
-            <div className="text-4xl">🕒</div>
-            <p className="mt-3 text-sm font-medium text-slate-700">No shifts found</p>
-            <p className="mt-1 text-sm text-slate-500">Add your first shift to get started.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {shifts.map((shift) => (
-              <ShiftCard
-                key={getShiftId(shift)}
-                shift={shift}
-                timingLabel={getTimingLabelById(shift?.shift_timing)}
-                onOpenDetails={setDetailsShift}
-                onEdit={openEditShift}
-                onDelete={handleDeleteShift}
-                onAssign={openAssign}
-              />
-            ))}
-          </div>
-        )}
+        {/* ═══════════ STATS ═══════════ */}
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <StatCard
+            label="Total Shifts"
+            value={shifts.length}
+            icon="🕒"
+            tone="blue"
+          />
+          <StatCard
+            label="Active Shifts"
+            value={activeShiftsCount}
+            icon="✅"
+            tone="green"
+          />
+          <StatCard
+            label="Assignments"
+            value={assignments.length}
+            icon="📋"
+            tone="amber"
+          />
+          <StatCard
+            label="Employees Assigned"
+            value={uniqueAssignedEmployees}
+            icon="👥"
+            tone="red"
+          />
+        </div>
 
-        {/* Assignment history */}
-        <div className="mt-10">
-          <h2 className="text-lg font-bold text-slate-800">Assignment History</h2>
-          <p className="mt-1 text-sm text-slate-500">All employees assigned across shifts</p>
+        {/* ═══════════ TABS + CONTENT BOX ═══════════ */}
+        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+          <div className="flex flex-col gap-3 border-b border-slate-200 px-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+            <div className="flex">
+              <TabBtn
+                active={activeTab === "shifts"}
+                onClick={() => setActiveTab("shifts")}
+                count={shifts.length}
+              >
+                Shifts
+              </TabBtn>
+              <TabBtn
+                active={activeTab === "assignments"}
+                onClick={() => setActiveTab("assignments")}
+                count={assignments.length}
+              >
+                Assignment History
+              </TabBtn>
+            </div>
 
-          <div className="mt-4">
+            {activeTab === "shifts" && (
+              <div className="relative mb-3 sm:mb-0 sm:w-72">
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                  <Icons.Search />
+                </span>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search shifts or timings..."
+                  className="w-full rounded-md border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-[#E42527] focus:ring-2 focus:ring-red-100"
+                />
+              </div>
+            )}
+          </div>
+
+          {activeTab === "shifts" && (
+            <ShiftsTable
+              shifts={filteredShifts}
+              loading={loadingShifts}
+              searchQuery={searchQuery}
+              getTimingLabelById={getTimingLabelById}
+              onOpenDetails={setDetailsShift}
+              onEdit={openEditShift}
+              onDelete={handleDeleteShift}
+              onAssign={openAssign}
+              onAdd={openAddShift}
+            />
+          )}
+
+          {activeTab === "assignments" && (
             <AssignmentHistoryTable
               assignments={assignments}
               loading={loadingAssignments}
@@ -1280,245 +3810,341 @@ export default function ShiftsPage() {
               getEmployeeLabel={getEmployeeLabelById}
               onDelete={handleDeleteAssignment}
             />
-          </div>
+          )}
         </div>
       </div>
 
-      {/* Add / Edit shift modal */}
+      {/* ═══════════ ADD / EDIT SHIFT MODAL ═══════════ */}
       {showShiftForm && (
         <ModalShell
-          title={editShiftId ? "Edit Shift" : "Add Shift"}
-          subtitle="Fill the shift details below"
+          title={editShiftId ? "Edit Shift" : "Add New Shift"}
+          subtitle={
+            editShiftId
+              ? "Update shift details"
+              : "Create a shift and link it to a company timing"
+          }
           onClose={closeShiftForm}
           footer={
             <>
-              <button
-                type="button"
+              <Btn
+                variant="secondary"
                 onClick={closeShiftForm}
                 disabled={saving}
-                className="rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Cancel
-              </button>
-              <button
+              </Btn>
+              <Btn
                 type="submit"
                 form="shift-form"
                 disabled={saving || timings.length === 0}
-                className="rounded-lg bg-[#E42527] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#c91f21] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {saving ? "Saving..." : editShiftId ? "Update Shift" : "Save Shift"}
-              </button>
+                {saving
+                  ? "Saving..."
+                  : editShiftId
+                    ? "Update Shift"
+                    : "Create Shift"}
+              </Btn>
             </>
           }
         >
-          <form id="shift-form" onSubmit={handleShiftSubmit} className="space-y-6">
+          <form
+            id="shift-form"
+            onSubmit={handleShiftSubmit}
+            className="space-y-5"
+          >
             {shiftFormError && (
-              <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
                 {shiftFormError}
               </div>
             )}
 
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-slate-700">Shift Name *</label>
+            <Field label="Shift Name" required>
               <input
                 type="text"
                 value={shiftForm.Shift_name}
-                onChange={(e) => setShiftForm((p) => ({ ...p, Shift_name: e.target.value }))}
-                placeholder="Example: Morning Shift"
+                onChange={(e) =>
+                  setShiftForm((p) => ({ ...p, Shift_name: e.target.value }))
+                }
+                placeholder="e.g. Morning Shift, Night Shift"
                 maxLength={100}
                 required
-                className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none transition placeholder:text-slate-400 focus:border-[#E42527] focus:ring-2 focus:ring-red-100"
+                className={inputCls}
               />
-            </div>
+            </Field>
 
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-slate-700">Shift Timing *</label>
+            <Field
+              label="Shift Timing"
+              required
+              hint="Select the working hours for this shift"
+            >
               {timings.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-center text-sm text-slate-500">
-                  No timings available. Create a company timing first.
+                <div className="rounded-md border border-dashed border-slate-300 bg-slate-50 p-4 text-center text-sm text-slate-500">
+                  No company timings available. Please create a company timing
+                  first.
                 </div>
               ) : (
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   {timings.map((timing) => {
                     const timingId = String(getTimingId(timing));
-                    const selected = String(shiftForm.shift_timing) === timingId;
+                    const selected =
+                      String(shiftForm.shift_timing) === timingId;
                     return (
                       <button
                         key={timingId}
                         type="button"
-                        onClick={() => setShiftForm((p) => ({ ...p, shift_timing: timingId }))}
-                        className={`rounded-xl border p-4 text-left transition ${
+                        onClick={() =>
+                          setShiftForm((p) => ({
+                            ...p,
+                            shift_timing: timingId,
+                          }))
+                        }
+                        className={`flex items-center justify-between gap-3 rounded-md border px-3 py-2.5 text-left transition ${
                           selected
-                            ? "border-red-500 bg-red-50 ring-2 ring-red-100"
-                            : "border-slate-200 bg-white hover:border-red-300 hover:bg-red-50/40"
+                            ? "border-[#E42527] bg-red-50 ring-1 ring-[#E42527]"
+                            : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
                         }`}
                       >
-                        <p className="font-semibold text-slate-800">🕒 {getTimingName(timing)}</p>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`flex h-6 w-6 items-center justify-center rounded ${
+                              selected
+                                ? "bg-[#E42527] text-white"
+                                : "bg-slate-100 text-slate-500"
+                            }`}
+                          >
+                            <Icons.Clock />
+                          </span>
+                          <span className="text-sm font-medium text-slate-800">
+                            {getTimingName(timing)}
+                          </span>
+                        </div>
+                        {selected && (
+                          <span className="text-[#E42527]">
+                            <Icons.Check />
+                          </span>
+                        )}
                       </button>
                     );
                   })}
                 </div>
               )}
-            </div>
+            </Field>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <label className="mb-2 block text-sm font-semibold text-slate-700">Early Check-in</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="1440"
-                  value={shiftForm.early_checkin_margin}
-                  onChange={(e) => setShiftForm((p) => ({ ...p, early_checkin_margin: e.target.value }))}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-[#E42527] focus:ring-2 focus:ring-red-100"
-                />
-              </div>
-              <div>
-                <label className="mb-2 block text-sm font-semibold text-slate-700">Late Checkout</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="1440"
-                  value={shiftForm.late_checkout_margin}
-                  onChange={(e) => setShiftForm((p) => ({ ...p, late_checkout_margin: e.target.value }))}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-[#E42527] focus:ring-2 focus:ring-red-100"
-                />
-              </div>
+              <Field
+                label="Early Check-in Margin"
+                hint="Minutes before shift start"
+              >
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="0"
+                    max="1440"
+                    value={shiftForm.early_checkin_margin}
+                    onChange={(e) =>
+                      setShiftForm((p) => ({
+                        ...p,
+                        early_checkin_margin: e.target.value,
+                      }))
+                    }
+                    className={`${inputCls} pr-16`}
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">
+                    min
+                  </span>
+                </div>
+              </Field>
+              <Field
+                label="Late Checkout Margin"
+                hint="Minutes after shift end"
+              >
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="0"
+                    max="1440"
+                    value={shiftForm.late_checkout_margin}
+                    onChange={(e) =>
+                      setShiftForm((p) => ({
+                        ...p,
+                        late_checkout_margin: e.target.value,
+                      }))
+                    }
+                    className={`${inputCls} pr-16`}
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">
+                    min
+                  </span>
+                </div>
+              </Field>
             </div>
           </form>
         </ModalShell>
       )}
 
-      {/* Assign modal */}
+      {/* ═══════════ ASSIGN MODAL ═══════════ */}
       {assignShift && (
         <ModalShell
-          title={`Assign Employees`}
+          title="Assign Employees to Shift"
           subtitle={`Shift: ${assignShift?.Shift_name || ""}`}
           onClose={closeAssign}
           wide
           footer={
             <>
-              <button
-                type="button"
+              <Btn
+                variant="secondary"
                 onClick={closeAssign}
                 disabled={assigning}
-                className="rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Cancel
-              </button>
-              <button
+              </Btn>
+              <Btn
                 type="submit"
                 form="assign-form"
-                disabled={assigning}
-                className="rounded-lg bg-[#E42527] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#c91f21] disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={assigning || assignForm.employee_ids.length === 0}
               >
                 {assigning
                   ? "Assigning..."
-                  : `Assign ${assignForm.employee_ids.length > 0 ? `(${assignForm.employee_ids.length})` : ""}`}
-              </button>
+                  : `Assign${
+                      assignForm.employee_ids.length > 0
+                        ? ` (${assignForm.employee_ids.length})`
+                        : ""
+                    }`}
+              </Btn>
             </>
           }
         >
-          <form id="assign-form" onSubmit={handleAssignSubmit} className="space-y-5">
+          <form
+            id="assign-form"
+            onSubmit={handleAssignSubmit}
+            className="space-y-5"
+          >
             {assignError && (
-              <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
                 {assignError}
               </div>
             )}
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <label className="mb-2 block text-sm font-semibold text-slate-700">Start Date *</label>
+              <Field label="Start Date" required>
                 <input
                   type="date"
                   value={assignForm.start_date}
-                  onChange={(e) => setAssignForm((p) => ({ ...p, start_date: e.target.value }))}
+                  onChange={(e) =>
+                    setAssignForm((p) => ({
+                      ...p,
+                      start_date: e.target.value,
+                    }))
+                  }
                   required
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-[#E42527] focus:ring-2 focus:ring-red-100"
+                  className={inputCls}
                 />
-              </div>
-              <div>
-                <label className="mb-2 block text-sm font-semibold text-slate-700">End Date *</label>
+              </Field>
+              <Field label="End Date" required>
                 <input
                   type="date"
                   value={assignForm.end_date}
-                  onChange={(e) => setAssignForm((p) => ({ ...p, end_date: e.target.value }))}
+                  onChange={(e) =>
+                    setAssignForm((p) => ({ ...p, end_date: e.target.value }))
+                  }
                   required
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-[#E42527] focus:ring-2 focus:ring-red-100"
+                  className={inputCls}
                 />
-              </div>
+              </Field>
             </div>
 
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-slate-700">Remarks</label>
+            <Field label="Remarks">
               <textarea
                 value={assignForm.remarks}
-                onChange={(e) => setAssignForm((p) => ({ ...p, remarks: e.target.value }))}
+                onChange={(e) =>
+                  setAssignForm((p) => ({ ...p, remarks: e.target.value }))
+                }
                 rows={2}
-                placeholder="Optional note"
-                className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none transition placeholder:text-slate-400 focus:border-[#E42527] focus:ring-2 focus:ring-red-100"
+                placeholder="Optional note (e.g. reason for assignment)"
+                className={inputCls}
               />
-            </div>
+            </Field>
 
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <label className="block text-sm font-semibold text-slate-700">
-                  Employees * <span className="font-normal text-slate-400">(select one or many)</span>
+                <label className="text-xs font-semibold text-slate-700">
+                  Select Employees <span className="text-red-500">*</span>
                 </label>
-                {assignForm.employee_ids.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setAssignForm((p) => ({ ...p, employee_ids: [] }))}
-                    className="text-xs font-medium text-slate-400 hover:text-slate-600"
-                  >
-                    Clear selection
-                  </button>
-                )}
+                <div className="flex items-center gap-3">
+                  {assignForm.employee_ids.length > 0 && (
+                    <span className="text-[11px] font-medium text-[#E42527]">
+                      {assignForm.employee_ids.length} selected
+                    </span>
+                  )}
+                  {assignForm.employee_ids.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setAssignForm((p) => ({ ...p, employee_ids: [] }))
+                      }
+                      className="text-[11px] font-medium text-slate-500 hover:text-slate-700"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
               </div>
 
-              <input
-                type="text"
-                value={employeeSearch}
-                onChange={(e) => setEmployeeSearch(e.target.value)}
-                placeholder="Search employees by name, code, department..."
-                className="mb-3 w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none transition placeholder:text-slate-400 focus:border-[#E42527] focus:ring-2 focus:ring-red-100"
-              />
+              <div className="relative mb-2">
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                  <Icons.Search />
+                </span>
+                <input
+                  type="text"
+                  value={employeeSearch}
+                  onChange={(e) => setEmployeeSearch(e.target.value)}
+                  placeholder="Search by name, department, designation..."
+                  className={`${inputCls} pl-9`}
+                />
+              </div>
 
               {loadingEmployees ? (
                 <div className="space-y-2">
                   {[1, 2, 3].map((i) => (
-                    <div key={i} className="h-14 animate-pulse rounded-xl bg-slate-100" />
+                    <div
+                      key={i}
+                      className="h-14 animate-pulse rounded-md bg-slate-100"
+                    />
                   ))}
                 </div>
               ) : filteredEmployees.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 py-8 text-center text-sm text-slate-500">
+                <div className="rounded-md border border-dashed border-slate-300 bg-slate-50 py-8 text-center text-sm text-slate-500">
                   No employees found
                 </div>
               ) : (
-                <div className="max-h-72 space-y-2 overflow-y-auto rounded-xl border border-slate-200 p-2">
+                <div className="max-h-72 space-y-1.5 overflow-y-auto rounded-md border border-slate-200 bg-slate-50/50 p-2">
                   {filteredEmployees.map((emp) => {
                     const id = String(getEmployeeId(emp));
                     const selected = assignForm.employee_ids.includes(id);
                     return (
                       <label
                         key={id}
-                        className={`flex cursor-pointer items-center justify-between gap-3 rounded-lg border p-3 transition ${
-                          selected ? "border-red-500 bg-red-50" : "border-slate-100 hover:bg-slate-50"
+                        className={`flex cursor-pointer items-center gap-3 rounded-md border bg-white px-3 py-2.5 transition ${
+                          selected
+                            ? "border-[#E42527] bg-red-50"
+                            : "border-slate-200 hover:border-slate-300 hover:bg-slate-50"
                         }`}
                       >
-                        <div className="flex items-center gap-3">
-                          <input
-                            type="checkbox"
-                            checked={selected}
-                            onChange={() => toggleEmployee(id)}
-                            className="h-4 w-4 rounded border-slate-300 text-[#E42527] focus:ring-red-200"
-                          />
-                          <div>
-                            <p className="text-sm font-semibold text-slate-800">{getEmployeeName(emp)}</p>
-                            {getEmployeeSubtitle(emp) && (
-                              <p className="text-xs text-slate-400">{getEmployeeSubtitle(emp)}</p>
-                            )}
-                          </div>
+                        <input
+                          type="checkbox"
+                          checked={selected}
+                          onChange={() => toggleEmployee(id)}
+                          className="h-4 w-4 rounded border-slate-300 text-[#E42527] focus:ring-red-200"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium text-slate-800">
+                            {getEmployeeName(emp)}
+                          </p>
+                          {getEmployeeSubtitle(emp) && (
+                            <p className="truncate text-[11px] text-slate-500">
+                              {getEmployeeSubtitle(emp)}
+                            </p>
+                          )}
                         </div>
                       </label>
                     );
@@ -1530,57 +4156,74 @@ export default function ShiftsPage() {
         </ModalShell>
       )}
 
-      {/* Shift details modal */}
+      {/* ═══════════ DETAILS MODAL ═══════════ */}
       {detailsShift && (
         <ModalShell
           title={detailsShift?.Shift_name}
-          subtitle="Shift details"
+          subtitle="Shift details and assigned employees"
           onClose={() => setDetailsShift(null)}
           wide
           footer={
             <>
-              <IconButton label="Edit Shift" onClick={() => { setDetailsShift(null); openEditShift(detailsShift); }} />
-              <button
-                type="button"
-                onClick={() => { setDetailsShift(null); openAssign(detailsShift); }}
-                className="rounded-lg bg-[#E42527] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#c91f21]"
+              <Btn
+                variant="secondary"
+                icon={<Icons.Edit />}
+                onClick={() => {
+                  setDetailsShift(null);
+                  openEditShift(detailsShift);
+                }}
               >
-                + Assign Employees
-              </button>
+                Edit
+              </Btn>
+              <Btn
+                variant="primary"
+                icon={<Icons.Plus />}
+                onClick={() => {
+                  setDetailsShift(null);
+                  openAssign(detailsShift);
+                }}
+              >
+                Assign Employees
+              </Btn>
             </>
           }
         >
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <div className="rounded-xl bg-slate-50 px-3 py-3">
-              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Status</p>
-              <p className="mt-1 text-sm font-semibold text-slate-700">
-                {detailsShift?.is_active !== false ? "Active" : "Inactive"}
-              </p>
-            </div>
-            <div className="rounded-xl bg-slate-50 px-3 py-3">
-              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Timing</p>
-              <p className="mt-1 text-sm font-semibold text-slate-700">
-                {getTimingLabelById(detailsShift?.shift_timing)}
-              </p>
-            </div>
-            <div className="rounded-xl bg-slate-50 px-3 py-3">
-              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Early Check-in</p>
-              <p className="mt-1 text-sm font-semibold text-slate-700">{detailsShift?.early_checkin_margin ?? 0} min</p>
-            </div>
-            <div className="rounded-xl bg-slate-50 px-3 py-3">
-              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">Late Checkout</p>
-              <p className="mt-1 text-sm font-semibold text-slate-700">{detailsShift?.late_checkout_margin ?? 0} min</p>
-            </div>
+          <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <DetailTile
+              label="Status"
+              value={detailsShift?.is_active !== false ? "Active" : "Inactive"}
+              tone={detailsShift?.is_active !== false ? "green" : "red"}
+            />
+            <DetailTile
+              label="Timing"
+              value={getTimingLabelById(detailsShift?.shift_timing)}
+            />
+            <DetailTile
+              label="Early Check-in"
+              value={`${detailsShift?.early_checkin_margin ?? 0} min`}
+            />
+            <DetailTile
+              label="Late Checkout"
+              value={`${detailsShift?.late_checkout_margin ?? 0} min`}
+            />
           </div>
 
           <div>
-            <h3 className="mb-3 text-sm font-bold text-slate-800">Assigned Employees</h3>
+            <div className="mb-2 flex items-center gap-2">
+              <Icons.Users />
+              <h3 className="text-sm font-semibold text-slate-800">
+                Assigned Employees
+              </h3>
+              <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium text-slate-600">
+                {detailsAssignments.length}
+              </span>
+            </div>
             <AssignmentHistoryTable
               assignments={detailsAssignments}
               loading={loadingAssignments}
               getEmployeeLabel={getEmployeeLabelById}
               onDelete={handleDeleteAssignment}
-              emptyHint="No employees assigned to this shift yet."
+              compact
             />
           </div>
         </ModalShell>
@@ -1588,3 +4231,309 @@ export default function ShiftsPage() {
     </div>
   );
 }
+
+// ---------------------------------------------------------------------------
+// SUB-COMPONENTS
+// ---------------------------------------------------------------------------
+const StatCard = ({ label, value, icon, tone = "blue" }) => {
+  const tones = {
+    blue: "bg-blue-50 text-blue-600",
+    green: "bg-emerald-50 text-emerald-600",
+    amber: "bg-amber-50 text-amber-600",
+    red: "bg-red-50 text-red-600",
+  };
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
+            {label}
+          </p>
+          <p className="mt-1.5 text-2xl font-bold tracking-tight text-slate-900">
+            {value}
+          </p>
+        </div>
+        <div
+          className={`flex h-10 w-10 items-center justify-center rounded-lg text-lg ${tones[tone]}`}
+        >
+          {icon}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const TabBtn = ({ active, onClick, count, children }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className={`relative flex items-center gap-2 py-3.5 text-sm font-medium transition ${
+      active ? "text-[#E42527]" : "text-slate-500 hover:text-slate-700"
+    }`}
+    style={{ marginRight: 24 }}
+  >
+    {children}
+    {typeof count === "number" && (
+      <span
+        className={`rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${
+          active ? "bg-red-50 text-[#E42527]" : "bg-slate-100 text-slate-500"
+        }`}
+      >
+        {count}
+      </span>
+    )}
+    {active && (
+      <span className="absolute inset-x-0 bottom-0 h-0.5 bg-[#E42527]" />
+    )}
+  </button>
+);
+
+const DetailTile = ({ label, value, tone }) => (
+  <div className="rounded-md border border-slate-200 bg-slate-50/50 px-3 py-2.5">
+    <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+      {label}
+    </p>
+    <p
+      className={`mt-1 text-sm font-semibold ${
+        tone === "green"
+          ? "text-emerald-600"
+          : tone === "red"
+            ? "text-red-600"
+            : "text-slate-800"
+      }`}
+    >
+      {value}
+    </p>
+  </div>
+);
+
+const ShiftsTable = ({
+  shifts,
+  loading,
+  searchQuery,
+  getTimingLabelById,
+  onOpenDetails,
+  onEdit,
+  onDelete,
+  onAssign,
+  onAdd,
+}) => {
+  if (loading) {
+    return (
+      <div className="space-y-2 p-5">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="h-14 animate-pulse rounded-md bg-slate-100" />
+        ))}
+      </div>
+    );
+  }
+
+  if (shifts.length === 0) {
+    return (
+      <div className="py-16 text-center">
+        <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-2xl">
+          🕒
+        </div>
+        <p className="text-sm font-semibold text-slate-700">
+          {searchQuery ? "No shifts match your search" : "No shifts yet"}
+        </p>
+        <p className="mt-1 text-xs text-slate-500">
+          {searchQuery
+            ? "Try a different keyword."
+            : "Create your first shift to get started."}
+        </p>
+        {!searchQuery && (
+          <div className="mt-4 flex justify-center">
+            <Btn icon={<Icons.Plus />} onClick={onAdd}>
+              Add Shift
+            </Btn>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[820px] text-left text-sm">
+        <thead>
+          <tr className="border-b border-slate-200 bg-slate-50/70 text-[11px] uppercase tracking-wide text-slate-500">
+            <th className="px-5 py-3 font-semibold">Shift Name</th>
+            <th className="px-5 py-3 font-semibold">Timing</th>
+            <th className="px-5 py-3 font-semibold">Early Check-in</th>
+            <th className="px-5 py-3 font-semibold">Late Checkout</th>
+            <th className="px-5 py-3 font-semibold">Status</th>
+            <th className="px-5 py-3 text-right font-semibold">Actions</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-100">
+          {shifts.map((shift) => {
+            const id = getShiftId(shift);
+            const active = shift?.is_active !== false;
+            return (
+              <tr
+                key={id}
+                className="cursor-pointer transition hover:bg-slate-50"
+                onClick={() => onOpenDetails(shift)}
+              >
+                <td className="px-5 py-3.5">
+                  <div className="font-semibold text-slate-800">
+                    {shift?.Shift_name || "—"}
+                  </div>
+                </td>
+                <td className="px-5 py-3.5">
+                  <span className="inline-flex items-center gap-1.5 text-slate-600">
+                    <Icons.Clock />
+                    {getTimingLabelById(shift?.shift_timing)}
+                  </span>
+                </td>
+                <td className="px-5 py-3.5 text-slate-600">
+                  {shift?.early_checkin_margin ?? 0} min
+                </td>
+                <td className="px-5 py-3.5 text-slate-600">
+                  {shift?.late_checkout_margin ?? 0} min
+                </td>
+                <td className="px-5 py-3.5">
+                  <Badge tone={active ? "green" : "red"} dot>
+                    {active ? "Active" : "Inactive"}
+                  </Badge>
+                </td>
+                <td className="px-5 py-3.5">
+                  <div
+                    className="flex items-center justify-end gap-1"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => onAssign(shift)}
+                      className="rounded-md bg-[#E42527] px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-[#c91f21]"
+                    >
+                      Assign
+                    </button>
+                    <IconBtn
+                      title="Edit"
+                      icon={<Icons.Edit />}
+                      onClick={() => onEdit(shift)}
+                    />
+                    <IconBtn
+                      title="Delete"
+                      icon={<Icons.Trash />}
+                      onClick={() => onDelete(shift)}
+                      danger
+                    />
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+const IconBtn = ({ icon, title, onClick, danger }) => (
+  <button
+    type="button"
+    title={title}
+    onClick={onClick}
+    className={`rounded-md border border-transparent p-1.5 transition ${
+      danger
+        ? "text-slate-500 hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+        : "text-slate-500 hover:border-slate-200 hover:bg-slate-100 hover:text-slate-700"
+    }`}
+  >
+    {icon}
+  </button>
+);
+
+const AssignmentHistoryTable = ({
+  assignments,
+  loading,
+  getShiftName,
+  getEmployeeLabel,
+  onDelete,
+  compact,
+}) => {
+  if (loading) {
+    return (
+      <div className="space-y-2 p-5">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="h-12 animate-pulse rounded-md bg-slate-100" />
+        ))}
+      </div>
+    );
+  }
+
+  if (!assignments || assignments.length === 0) {
+    return (
+      <div className="py-14 text-center">
+        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-xl">
+          📋
+        </div>
+        <p className="text-sm font-semibold text-slate-700">
+          No assignments yet
+        </p>
+        <p className="mt-1 text-xs text-slate-500">
+          Assign employees to a shift to see history here.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className={compact ? "p-0" : "p-4 sm:p-5"}>
+      <div className="overflow-x-auto rounded-md border border-slate-200">
+        <table className="w-full min-w-[600px] text-left text-sm">
+          <thead>
+            <tr className="border-b border-slate-200 bg-slate-50/70 text-[11px] uppercase tracking-wide text-slate-500">
+              <th className="px-4 py-2.5 font-semibold">Employee</th>
+              {getShiftName && (
+                <th className="px-4 py-2.5 font-semibold">Shift</th>
+              )}
+              <th className="px-4 py-2.5 font-semibold">Start Date</th>
+              <th className="px-4 py-2.5 font-semibold">End Date</th>
+              <th className="px-4 py-2.5 font-semibold">Remarks</th>
+              <th className="px-4 py-2.5 text-right font-semibold">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {assignments.map((a) => {
+              const id = getAssignmentId(a);
+              return (
+                <tr key={id} className="transition hover:bg-slate-50">
+                  <td className="px-4 py-3 font-medium text-slate-800">
+                    {getEmployeeLabel(a?.employee_id)}
+                  </td>
+                  {getShiftName && (
+                    <td className="px-4 py-3 text-slate-600">
+                      {getShiftName(a?.shift_id)}
+                    </td>
+                  )}
+                  <td className="px-4 py-3 text-slate-600">
+                    {formatDate(a?.start_date)}
+                  </td>
+                  <td className="px-4 py-3 text-slate-600">
+                    {formatDate(a?.end_date)}
+                  </td>
+                  <td className="px-4 py-3 text-slate-500">
+                    {a?.remarks || "—"}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <button
+                      type="button"
+                      onClick={() => onDelete(id)}
+                      className="rounded-md px-2.5 py-1 text-xs font-semibold text-red-600 transition hover:bg-red-50"
+                    >
+                      Remove
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};

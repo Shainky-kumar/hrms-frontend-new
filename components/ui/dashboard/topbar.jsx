@@ -37,16 +37,16 @@ const shiftTabs = [
 const attendanceTabs = [
   { label: "Today / Punch", href: "/dashboard/attendance/today" },
   { label: "History", href: "/dashboard/attendance/history" },
-  { label: "Breaks", href: "/dashboard/attendance/breaks" },
+  // { label: "Breaks", href: "/dashboard/attendance/breaks" },
   { label: "Regularization", href: "/dashboard/attendance/regularization" },
-  { label: "Overtime", href: "/dashboard/attendance/overtime" },
-  { label: "Comp-off", href: "/dashboard/attendance/comp-off" },
+  // { label: "Overtime", href: "/dashboard/attendance/overtime" },
+  // { label: "Comp-off", href: "/dashboard/attendance/comp-off" },
   { label: "Special Requests", href: "/dashboard/attendance/special_requests" },
   { label: "Policy", href: "/dashboard/attendance/policy" },
   { label: "Locations", href: "/dashboard/attendance/location" },
   { label: "Biometrics", href: "/dashboard/attendance/biometrics" },
   { label: "Employee Config", href: "/dashboard/attendance/employee-config" },
-  { label: "Devices", href: "/dashboard/attendance/devices" },
+  // { label: "Devices", href: "/dashboard/attendance/devices" },
   { label: "Alerts", href: "/dashboard/attendance/alerts" },
 ];
 
