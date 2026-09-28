@@ -1,6 +1,8 @@
+
+
 // "use client";
 
-// import { useCallback, useEffect, useRef, useState } from "react";
+// import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 // import { api } from "@/app/lib/api";
 
 // // ═══════════════════════════════════════════════════════════
@@ -19,8 +21,15 @@
 //   { value: "location", label: "Location" },
 //   { value: "employment_type", label: "Employment Type" },
 //   { value: "gender", label: "Gender" },
-//   { value: "role", label: "Role" },
-//   { value: "employee_id", label: "Employee ID" },
+//   { value: "role", label: "Role / Designation" },
+//   { value: "employee_id", label: "Employee" },
+// ];
+
+// // Static options for gender (not loaded from API)
+// const GENDER_OPTIONS = [
+//   { id: "male", label: "Male" },
+//   { id: "female", label: "Female" },
+//   { id: "other", label: "Other" },
 // ];
 
 // // Which master data source maps to each criteria type
@@ -30,6 +39,7 @@
 //   employment_type: { label: "Employment Type", masterKey: "employment_types" },
 //   role: { label: "Designation", masterKey: "designations" },
 //   employee_id: { label: "Employee", masterKey: "employees" },
+//   // gender is handled separately (static options)
 // };
 
 // const BULK_WARN_THRESHOLD = 50;
@@ -239,6 +249,28 @@
 //   }, [fetchData]);
 
 //   // ═════════════════════════════════════════════════════════
+//   // FILTER RESET HELPERS
+//   // ═════════════════════════════════════════════════════════
+
+//   const handleFilterPolicyChange = (value) => {
+//     setFilterPolicyId(value);
+//     setPage(1);
+//   };
+
+//   const handleSearchChange = (value) => {
+//     setSearch(value);
+//     setPage(1);
+//   };
+
+//   const handleResetFilters = () => {
+//     setFilterPolicyId("");
+//     setSearch("");
+//     setPage(1);
+//   };
+
+//   const hasActiveFilters = Boolean(filterPolicyId || search);
+
+//   // ═════════════════════════════════════════════════════════
 //   // FORM OPEN / CLOSE
 //   // ═════════════════════════════════════════════════════════
 
@@ -326,13 +358,18 @@
 //       if (bulkSelectedValues.length === 0)
 //         return setError("Please select at least one value");
 
-//       if (
+//       // ⭐ Extra warning for exceptions
+//       if (bulkIsException) {
+//         const confirmMsg = `⚠️ You are about to EXCLUDE ${bulkSelectedValues.length} item(s) from this policy.\n\nThese employees will NOT get this leave policy.\n\nContinue?`;
+//         if (!confirm(confirmMsg)) return;
+//       } else if (
 //         bulkSelectedValues.length > BULK_WARN_THRESHOLD &&
 //         !confirm(
-//           `You are about to create ${bulkSelectedValues.length} rules. Continue?`
+//           `You are about to create ${bulkSelectedValues.length} INCLUDE rules. Continue?`
 //         )
-//       )
+//       ) {
 //         return;
+//       }
 
 //       setSaving(true);
 //       try {
@@ -358,8 +395,11 @@
 //         await api.post("/api/v1/leave/applicability/rules/bulk", payload);
 
 //         const skipped = bulkSelectedValues.length - newValues.length;
+//         const kind = bulkIsException ? "exclude" : "include";
 //         showSuccess(
-//           `Created ${newValues.length} rule(s)${skipped ? `, skipped ${skipped} duplicate(s)` : ""}`
+//           `Created ${newValues.length} ${kind} rule(s)${
+//             skipped ? `, skipped ${skipped} duplicate(s)` : ""
+//           }`
 //         );
 
 //         closeForm();
@@ -379,7 +419,6 @@
 
 //       setSaving(true);
 //       try {
-//         // NOTE: leave_policy_id is NOT sent in update (backend schema ignores it)
 //         await api.put(`/api/v1/leave/applicability/rules/${editId}`, {
 //           criteria_type: formData.criteria_type,
 //           criteria_value: String(formData.criteria_value),
@@ -437,7 +476,11 @@
 //   // ═════════════════════════════════════════════════════════
 
 //   const handleDelete = async (item) => {
-//     if (!confirm("Delete this rule? This cannot be undone.")) return;
+//     const policyName = getPolicyNameById(item.leave_policy_id);
+//     const criteriaText = `${getCriteriaLabel(item.criteria_type)} = ${getCriteriaValueLabel(item.criteria_type, item.criteria_value)}`;
+//     const confirmMsg = `Delete this rule?\n\nPolicy: ${policyName}\nRule: ${criteriaText}\n\nThis cannot be undone.`;
+
+//     if (!confirm(confirmMsg)) return;
 //     try {
 //       await api.delete(`/api/v1/leave/applicability/rules/${item.applicability_id}`);
 //       setSelectedRule(null);
@@ -456,15 +499,22 @@
 //   const canPrev = page > 1;
 //   const canNext = page < totalPages;
 
-//   const getPolicyNameById = (id) => {
-//     const p = leavePolicies.find((x) => String(getPolicyId(x)) === String(id));
-//     return p ? getPolicyName(p) : id || "—";
-//   };
+//   const getPolicyNameById = useCallback(
+//     (id) => {
+//       const p = leavePolicies.find((x) => String(getPolicyId(x)) === String(id));
+//       return p ? getPolicyName(p) : id || "—";
+//     },
+//     [leavePolicies]
+//   );
 
 //   const getCriteriaValueLabel = (type, value) => {
 //     if (!value) return "—";
-//     if (type === "gender")
-//       return value.charAt(0).toUpperCase() + value.slice(1);
+
+//     // Gender — static options
+//     if (type === "gender") {
+//       const g = GENDER_OPTIONS.find((x) => x.id === String(value).toLowerCase());
+//       return g ? g.label : String(value).charAt(0).toUpperCase() + String(value).slice(1);
+//     }
 
 //     const config = criteriaValueConfig[type];
 //     if (!config) return value;
@@ -477,11 +527,9 @@
 //   };
 
 //   const getBulkMasterItems = () => {
-//     if (bulkCriteriaType === "gender")
-//       return ["male", "female", "other"].map((g) => ({
-//         id: g,
-//         label: g.charAt(0).toUpperCase() + g.slice(1),
-//       }));
+//     if (bulkCriteriaType === "gender") {
+//       return GENDER_OPTIONS.map((g) => ({ id: g.id, label: g.label }));
+//     }
 
 //     const config = criteriaValueConfig[bulkCriteriaType];
 //     if (!config) return [];
@@ -504,6 +552,16 @@
 //     setBulkSelectedValues(getBulkMasterItems().map((x) => x.id));
 
 //   const clearAllBulk = () => setBulkSelectedValues([]);
+
+//   // Selected chips preview
+//   const bulkChips = useMemo(() => {
+//     const itemsMap = new Map(getBulkMasterItems().map((x) => [x.id, x.label]));
+//     return bulkSelectedValues.map((id) => ({
+//       id,
+//       label: itemsMap.get(id) || id,
+//     }));
+//     // eslint-disable-next-line react-hooks/exhaustive-deps
+//   }, [bulkSelectedValues, bulkCriteriaType, masters]);
 
 //   // ═════════════════════════════════════════════════════════
 //   // RENDER
@@ -571,10 +629,7 @@
 //           <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
 //             <select
 //               value={filterPolicyId}
-//               onChange={(e) => {
-//                 setFilterPolicyId(e.target.value);
-//                 setPage(1);
-//               }}
+//               onChange={(e) => handleFilterPolicyChange(e.target.value)}
 //               className="w-full max-w-xs rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-[#E42527]"
 //             >
 //               <option value="">All Policies</option>
@@ -590,13 +645,20 @@
 
 //             <input
 //               value={search}
-//               onChange={(e) => {
-//                 setSearch(e.target.value);
-//                 setPage(1);
-//               }}
+//               onChange={(e) => handleSearchChange(e.target.value)}
 //               placeholder="Search rules..."
 //               className="w-full max-w-xs rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-[#E42527]"
 //             />
+
+//             {hasActiveFilters && (
+//               <button
+//                 type="button"
+//                 onClick={handleResetFilters}
+//                 className="shrink-0 rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50"
+//               >
+//                 ✕ Reset
+//               </button>
+//             )}
 //           </div>
 //           <span className="text-sm text-slate-500">{total} rules</span>
 //         </div>
@@ -606,16 +668,23 @@
 //         ) : list.length === 0 ? (
 //           <div className="py-20 text-center">
 //             <p className="text-sm text-slate-500">
-//               {search || filterPolicyId
+//               {hasActiveFilters
 //                 ? "No rules match your filters"
 //                 : "No applicability rules yet"}
 //             </p>
-//             {!search && !filterPolicyId && (
+//             {!hasActiveFilters ? (
 //               <button
 //                 onClick={openAdd}
 //                 className="mt-3 rounded-lg bg-[#E42527] px-4 py-2 text-sm font-medium text-white hover:bg-[#c91f21]"
 //               >
 //                 + Create your first rule
+//               </button>
+//             ) : (
+//               <button
+//                 onClick={handleResetFilters}
+//                 className="mt-3 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+//               >
+//                 Reset filters
 //               </button>
 //             )}
 //           </div>
@@ -726,7 +795,20 @@
 //               <div className="max-h-[70vh] space-y-5 overflow-y-auto px-5 py-5">
 //                 {isBulkMode ? (
 //                   <>
-//                     {/* Bulk: Policy */}
+//                     {/* ⭐ Exception warning banner */}
+//                     {bulkIsException && (
+//                       <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5 text-xs text-amber-800">
+//                         <p className="font-semibold">
+//                           ⚠️ Exception Mode ON
+//                         </p>
+//                         <p className="mt-0.5">
+//                           Selected employees will be <strong>excluded</strong> from this policy,
+//                           even if they match other inclusion rules.
+//                         </p>
+//                       </div>
+//                     )}
+
+//                     {/* Bulk: Policy + Criteria Type */}
 //                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
 //                       <div>
 //                         <label className="mb-1.5 block text-sm font-medium text-slate-700">
@@ -824,9 +906,37 @@
 //                           ))
 //                         )}
 //                       </div>
-//                       <p className="mt-1.5 text-xs font-medium text-slate-600">
-//                         Selected: {bulkSelectedValues.length}
-//                       </p>
+
+//                       {/* ⭐ Selected chips preview */}
+//                       {bulkChips.length > 0 && (
+//                         <div className="mt-3 rounded-lg border border-slate-100 bg-slate-50 p-2.5">
+//                           <div className="flex items-center justify-between">
+//                             <p className="text-xs font-semibold text-slate-600">
+//                               Selected ({bulkChips.length})
+//                             </p>
+//                             <button
+//                               type="button"
+//                               onClick={clearAllBulk}
+//                               className="text-[11px] text-red-600 hover:underline"
+//                             >
+//                               Clear all
+//                             </button>
+//                           </div>
+//                           <div className="mt-2 flex max-h-20 flex-wrap gap-1 overflow-y-auto">
+//                             {bulkChips.map((chip) => (
+//                               <button
+//                                 type="button"
+//                                 key={chip.id}
+//                                 onClick={() => toggleBulkValue(chip.id)}
+//                                 className="inline-flex items-center gap-1 rounded-full border border-[#E42527] bg-white px-2 py-0.5 text-[10px] font-medium text-[#E42527] hover:bg-red-50"
+//                               >
+//                                 {chip.label}
+//                                 <span className="opacity-60">✕</span>
+//                               </button>
+//                             ))}
+//                           </div>
+//                         </div>
+//                       )}
 //                     </div>
 
 //                     <div>
@@ -918,9 +1028,11 @@
 //                           className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#E42527]"
 //                         >
 //                           <option value="">Select gender</option>
-//                           <option value="male">Male</option>
-//                           <option value="female">Female</option>
-//                           <option value="other">Other</option>
+//                           {GENDER_OPTIONS.map((g) => (
+//                             <option key={g.id} value={g.id}>
+//                               {g.label}
+//                             </option>
+//                           ))}
 //                         </select>
 //                       ) : criteriaValueConfig[formData.criteria_type] ? (
 //                         <select
@@ -987,6 +1099,11 @@
 //                           Is Exception (Exclude this value)
 //                         </span>
 //                       </label>
+//                       {formData.is_exception && (
+//                         <p className="mt-1.5 text-xs text-amber-700">
+//                           ⚠️ This value will be <strong>excluded</strong> from the policy.
+//                         </p>
+//                       )}
 //                     </div>
 //                   </div>
 //                 )}
@@ -1144,26 +1261,24 @@ const criteriaTypeOptions = [
   { value: "employee_id", label: "Employee" },
 ];
 
-// Static options for gender (not loaded from API)
 const GENDER_OPTIONS = [
   { id: "male", label: "Male" },
   { id: "female", label: "Female" },
   { id: "other", label: "Other" },
 ];
 
-// Which master data source maps to each criteria type
 const criteriaValueConfig = {
   department: { label: "Department", masterKey: "departments" },
   location: { label: "Location", masterKey: "locations" },
   employment_type: { label: "Employment Type", masterKey: "employment_types" },
   role: { label: "Designation", masterKey: "designations" },
   employee_id: { label: "Employee", masterKey: "employees" },
-  // gender is handled separately (static options)
 };
 
 const BULK_WARN_THRESHOLD = 50;
-const SUCCESS_TIMEOUT = 3000;
+const SUCCESS_TIMEOUT = 4000;
 const PAGE_SIZE = 12;
+const SEARCH_DEBOUNCE = 400;
 
 // ═══════════════════════════════════════════════════════════
 // HELPERS
@@ -1181,6 +1296,8 @@ function formatApiError(err) {
   }
   if (typeof detail === "string") return detail;
   if (err?.message === "Network Error") return "Cannot reach server.";
+  if (err?.response?.status === 403)
+    return "Only HR/Admin can manage applicability rules.";
   return err?.response?.data?.message || err?.message || "Something went wrong";
 }
 
@@ -1191,28 +1308,56 @@ const getCriteriaLabel = (type) =>
   criteriaTypeOptions.find((o) => o.value === type)?.label ||
   (type || "").replace(/_/g, " ");
 
-// Master item ID extractor — based on which type
-function getMasterItemId(type, item) {
+/**
+ * ⭐ CRITICAL FIX: Returns the VALUE that should be stored in criteria_value.
+ * This MUST match what backend `_employee_matches_applicability` compares against.
+ *
+ * - department    → department_id      (backend has employee.department_id) ✅
+ * - location      → location_id        (backend has employee.location_id) ✅
+ * - employment_type → employment_type_id ✅
+ * - employee_id   → employee_id        ✅
+ * - role          → job_title          (backend has designation.job_title) ⭐ FIXED
+ * - gender        → "male"|"female"    ✅
+ */
+function getMasterItemValue(type, item) {
   if (!item) return null;
   switch (type) {
-    case "department":      return item.department_id || null;
-    case "location":        return item.location_id || null;
-    case "employment_type": return item.employment_type_id || null;
-    case "role":            return item.designation_id || null;
-    case "employee_id":     return item.employee_id || null;
-    default:                return null;
+    case "department":
+      return item.department_id || null;
+    case "location":
+      return item.location_id || null;
+    case "employment_type":
+      return item.employment_type_id || null;
+    case "role":
+      // ⭐ FIX: send job_title (what backend actually matches), NOT designation_id
+      return item.job_title || item.designation_name || null;
+    case "employee_id":
+      return item.employee_id || null;
+    default:
+      return null;
   }
 }
 
 function getMasterItemLabel(type, item) {
   if (!item) return "—";
   switch (type) {
-    case "department":      return item.department_name || getMasterItemId(type, item);
-    case "location":        return item.location_name || getMasterItemId(type, item);
-    case "employment_type": return item.name || item.employment_type_name || getMasterItemId(type, item);
-    case "role":            return item.job_title || item.designation_name || getMasterItemId(type, item);
-    case "employee_id":     return item.name || [item.first_name, item.last_name].filter(Boolean).join(" ") || item.personal_email || getMasterItemId(type, item);
-    default:                return getMasterItemId(type, item);
+    case "department":
+      return item.department_name || getMasterItemValue(type, item);
+    case "location":
+      return item.location_name || getMasterItemValue(type, item);
+    case "employment_type":
+      return item.name || item.employment_type_name || getMasterItemValue(type, item);
+    case "role":
+      return item.job_title || item.designation_name || getMasterItemValue(type, item);
+    case "employee_id":
+      return (
+        item.name ||
+        [item.first_name, item.last_name].filter(Boolean).join(" ") ||
+        item.personal_email ||
+        getMasterItemValue(type, item)
+      );
+    default:
+      return getMasterItemValue(type, item);
   }
 }
 
@@ -1221,10 +1366,11 @@ function getMasterItemLabel(type, item) {
 // ═══════════════════════════════════════════════════════════
 
 export default function LeaveApplicabilityRulesPage() {
-  // List state
+  // List
   const [list, setList] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [filterPolicyId, setFilterPolicyId] = useState("");
   const [loading, setLoading] = useState(true);
@@ -1232,6 +1378,7 @@ export default function LeaveApplicabilityRulesPage() {
   // Feedback
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [syncInfo, setSyncInfo] = useState(null); // ⭐ show balance sync result
   const successTimerRef = useRef(null);
 
   // Form
@@ -1240,14 +1387,15 @@ export default function LeaveApplicabilityRulesPage() {
   const [formData, setFormData] = useState(initialForm);
   const [saving, setSaving] = useState(false);
 
-  // Bulk form
+  // Bulk
   const [isBulkMode, setIsBulkMode] = useState(false);
   const [bulkPolicyId, setBulkPolicyId] = useState("");
   const [bulkCriteriaType, setBulkCriteriaType] = useState("employee_id");
   const [bulkSelectedValues, setBulkSelectedValues] = useState([]);
   const [bulkIsException, setBulkIsException] = useState(false);
+  const [bulkSearch, setBulkSearch] = useState("");
 
-  // Masters + policies
+  // Masters
   const [leavePolicies, setLeavePolicies] = useState([]);
   const [masters, setMasters] = useState({
     departments: [],
@@ -1258,26 +1406,29 @@ export default function LeaveApplicabilityRulesPage() {
   });
   const [mastersLoading, setMastersLoading] = useState(true);
 
-  // Details modal
+  // Details
   const [selectedRule, setSelectedRule] = useState(null);
 
-  // ═════════════════════════════════════════════════════════
-  // SUCCESS AUTO-CLEAR
-  // ═════════════════════════════════════════════════════════
+  // ═══════════════ SUCCESS HANDLER ═══════════════
 
-  const showSuccess = useCallback((msg) => {
+  const showSuccess = useCallback((msg, sync = null) => {
     setSuccess(msg);
+    setSyncInfo(sync);
     if (successTimerRef.current) clearTimeout(successTimerRef.current);
-    successTimerRef.current = setTimeout(() => setSuccess(""), SUCCESS_TIMEOUT);
+    successTimerRef.current = setTimeout(() => {
+      setSuccess("");
+      setSyncInfo(null);
+    }, SUCCESS_TIMEOUT);
   }, []);
 
-  useEffect(() => () => {
-    if (successTimerRef.current) clearTimeout(successTimerRef.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (successTimerRef.current) clearTimeout(successTimerRef.current);
+    },
+    []
+  );
 
-  // ═════════════════════════════════════════════════════════
-  // LOAD POLICIES
-  // ═════════════════════════════════════════════════════════
+  // ═══════════════ LOAD POLICIES ═══════════════
 
   useEffect(() => {
     (async () => {
@@ -1285,7 +1436,8 @@ export default function LeaveApplicabilityRulesPage() {
         const res = await api.get("/api/v1/leave/policies", {
           params: { page: 1, page_size: 200 },
         });
-        const items = res.data?.policies || [];
+        const items =
+          res.data?.policies || res.data?.data?.policies || res.data?.data || [];
         setLeavePolicies(Array.isArray(items) ? items : []);
       } catch (err) {
         console.error("Failed to load policies:", err);
@@ -1294,9 +1446,7 @@ export default function LeaveApplicabilityRulesPage() {
     })();
   }, []);
 
-  // ═════════════════════════════════════════════════════════
-  // LOAD MASTERS
-  // ═════════════════════════════════════════════════════════
+  // ═══════════════ LOAD MASTERS ═══════════════
 
   useEffect(() => {
     (async () => {
@@ -1320,20 +1470,18 @@ export default function LeaveApplicabilityRulesPage() {
         ]);
 
       setMasters({
-        departments: departmentsRes?.departments || [],
-        locations: locationsRes?.locations || [],
+        departments: departmentsRes?.departments || departmentsRes?.data || [],
+        locations: locationsRes?.locations || locationsRes?.data || [],
         employment_types:
           employmentRes?.data || employmentRes?.employment_types || [],
-        designations: designationsRes?.designations || [],
-        employees: employeesRes?.employees || [],
+        designations: designationsRes?.designations || designationsRes?.data || [],
+        employees: employeesRes?.employees || employeesRes?.data || [],
       });
       setMastersLoading(false);
     })();
   }, []);
 
-  // ═════════════════════════════════════════════════════════
-  // FETCH RULES
-  // ═════════════════════════════════════════════════════════
+  // ═══════════════ FETCH RULES ═══════════════
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -1347,7 +1495,8 @@ export default function LeaveApplicabilityRulesPage() {
       if (filterPolicyId) params.leave_policy_id = filterPolicyId;
 
       const res = await api.get("/api/v1/leave/applicability/rules", { params });
-      const items = res.data?.applicability_rules || [];
+      const items =
+        res.data?.applicability_rules || res.data?.data?.applicability_rules || [];
       setList(Array.isArray(items) ? items : []);
       setTotal(Number(res.data?.total) || items.length);
     } catch (err) {
@@ -1360,38 +1509,36 @@ export default function LeaveApplicabilityRulesPage() {
   }, [filterPolicyId, page, search]);
 
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      fetchData();
-    }, 0);
-
-    return () => clearTimeout(timeoutId);
+    const id = setTimeout(fetchData, 0);
+    return () => clearTimeout(id);
   }, [fetchData]);
 
-  // ═════════════════════════════════════════════════════════
-  // FILTER RESET HELPERS
-  // ═════════════════════════════════════════════════════════
+  // ⭐ debounce search
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setSearch(searchInput.trim());
+      setPage(1);
+    }, SEARCH_DEBOUNCE);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
+  // ═══════════════ FILTERS ═══════════════
 
   const handleFilterPolicyChange = (value) => {
     setFilterPolicyId(value);
     setPage(1);
   };
 
-  const handleSearchChange = (value) => {
-    setSearch(value);
-    setPage(1);
-  };
-
   const handleResetFilters = () => {
     setFilterPolicyId("");
+    setSearchInput("");
     setSearch("");
     setPage(1);
   };
 
   const hasActiveFilters = Boolean(filterPolicyId || search);
 
-  // ═════════════════════════════════════════════════════════
-  // FORM OPEN / CLOSE
-  // ═════════════════════════════════════════════════════════
+  // ═══════════════ FORM OPEN / CLOSE ═══════════════
 
   const resetForm = () => {
     setFormData(initialForm);
@@ -1401,6 +1548,7 @@ export default function LeaveApplicabilityRulesPage() {
     setBulkPolicyId("");
     setBulkCriteriaType("employee_id");
     setBulkIsException(false);
+    setBulkSearch("");
     setError("");
   };
 
@@ -1409,7 +1557,8 @@ export default function LeaveApplicabilityRulesPage() {
     setFormData({
       ...initialForm,
       leave_policy_id:
-        filterPolicyId || (leavePolicies[0] ? String(getPolicyId(leavePolicies[0])) : ""),
+        filterPolicyId ||
+        (leavePolicies[0] ? String(getPolicyId(leavePolicies[0])) : ""),
     });
     setShowForm(true);
   };
@@ -1418,7 +1567,8 @@ export default function LeaveApplicabilityRulesPage() {
     resetForm();
     setIsBulkMode(true);
     setBulkPolicyId(
-      filterPolicyId || (leavePolicies[0] ? String(getPolicyId(leavePolicies[0])) : "")
+      filterPolicyId ||
+        (leavePolicies[0] ? String(getPolicyId(leavePolicies[0])) : "")
     );
     setShowForm(true);
   };
@@ -1442,16 +1592,15 @@ export default function LeaveApplicabilityRulesPage() {
     resetForm();
   };
 
-  // ═════════════════════════════════════════════════════════
-  // DUPLICATE CHECK (fresh fetch — no stale cache)
-  // ═════════════════════════════════════════════════════════
+  // ═══════════════ DUPLICATE CHECK ═══════════════
 
   const filterNewValues = async (policyId, criteriaType, values) => {
     try {
       const res = await api.get("/api/v1/leave/applicability/rules", {
         params: { page: 1, page_size: 1000, leave_policy_id: policyId },
       });
-      const existing = res.data?.applicability_rules || [];
+      const existing =
+        res.data?.applicability_rules || res.data?.data?.applicability_rules || [];
       const existingSet = new Set(
         existing
           .filter((r) => r.criteria_type === criteriaType)
@@ -1459,13 +1608,11 @@ export default function LeaveApplicabilityRulesPage() {
       );
       return values.filter((v) => !existingSet.has(String(v)));
     } catch {
-      return values; // network fail — don't block, backend will error if dup
+      return values;
     }
   };
 
-  // ═════════════════════════════════════════════════════════
-  // SUBMIT
-  // ═════════════════════════════════════════════════════════
+  // ═══════════════ SUBMIT ═══════════════
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -1511,14 +1658,33 @@ export default function LeaveApplicabilityRulesPage() {
           is_exception: !!bulkIsException,
         }));
 
-        await api.post("/api/v1/leave/applicability/rules/bulk", payload);
+        const res = await api.post(
+          "/api/v1/leave/applicability/rules/bulk",
+          payload
+        );
 
         const skipped = bulkSelectedValues.length - newValues.length;
         const kind = bulkIsException ? "exclude" : "include";
+
+        // ⭐ show sync info
+        const syncArr = res?.data?.balance_sync;
+        const syncSummary = Array.isArray(syncArr)
+          ? syncArr.reduce(
+              (acc, s) => ({
+                created: acc.created + (s?.created?.length || 0),
+                updated: acc.updated + (s?.updated?.length || 0),
+                ineligible:
+                  acc.ineligible + (s?.made_ineligible?.length || 0),
+              }),
+              { created: 0, updated: 0, ineligible: 0 }
+            )
+          : null;
+
         showSuccess(
           `Created ${newValues.length} ${kind} rule(s)${
             skipped ? `, skipped ${skipped} duplicate(s)` : ""
-          }`
+          }`,
+          syncSummary
         );
 
         closeForm();
@@ -1538,12 +1704,25 @@ export default function LeaveApplicabilityRulesPage() {
 
       setSaving(true);
       try {
-        await api.put(`/api/v1/leave/applicability/rules/${editId}`, {
-          criteria_type: formData.criteria_type,
-          criteria_value: String(formData.criteria_value),
-          is_exception: !!formData.is_exception,
-        });
-        showSuccess("Rule updated successfully");
+        const res = await api.put(
+          `/api/v1/leave/applicability/rules/${editId}`,
+          {
+            criteria_type: formData.criteria_type,
+            criteria_value: String(formData.criteria_value),
+            is_exception: !!formData.is_exception,
+          }
+        );
+
+        const sync = res?.data?.balance_sync;
+        const syncSummary = sync
+          ? {
+              created: sync.created?.length || 0,
+              updated: sync.updated?.length || 0,
+              ineligible: sync.made_ineligible?.length || 0,
+            }
+          : null;
+
+        showSuccess("Rule updated successfully", syncSummary);
         closeForm();
         await fetchData();
       } catch (err) {
@@ -1574,13 +1753,23 @@ export default function LeaveApplicabilityRulesPage() {
         return;
       }
 
-      await api.post("/api/v1/leave/applicability/rules", {
+      const res = await api.post("/api/v1/leave/applicability/rules", {
         leave_policy_id: formData.leave_policy_id,
         criteria_type: formData.criteria_type,
         criteria_value: String(formData.criteria_value),
         is_exception: !!formData.is_exception,
       });
-      showSuccess("Rule created successfully");
+
+      const sync = res?.data?.balance_sync;
+      const syncSummary = sync
+        ? {
+            created: sync.created?.length || 0,
+            updated: sync.updated?.length || 0,
+            ineligible: sync.made_ineligible?.length || 0,
+          }
+        : null;
+
+      showSuccess("Rule created successfully", syncSummary);
       closeForm();
       await fetchData();
     } catch (err) {
@@ -1590,29 +1779,39 @@ export default function LeaveApplicabilityRulesPage() {
     }
   };
 
-  // ═════════════════════════════════════════════════════════
-  // DELETE
-  // ═════════════════════════════════════════════════════════
+  // ═══════════════ DELETE ═══════════════
 
   const handleDelete = async (item) => {
     const policyName = getPolicyNameById(item.leave_policy_id);
-    const criteriaText = `${getCriteriaLabel(item.criteria_type)} = ${getCriteriaValueLabel(item.criteria_type, item.criteria_value)}`;
+    const criteriaText = `${getCriteriaLabel(
+      item.criteria_type
+    )} = ${getCriteriaValueLabel(item.criteria_type, item.criteria_value)}`;
     const confirmMsg = `Delete this rule?\n\nPolicy: ${policyName}\nRule: ${criteriaText}\n\nThis cannot be undone.`;
 
     if (!confirm(confirmMsg)) return;
     try {
-      await api.delete(`/api/v1/leave/applicability/rules/${item.applicability_id}`);
+      const res = await api.delete(
+        `/api/v1/leave/applicability/rules/${item.applicability_id}`
+      );
       setSelectedRule(null);
-      showSuccess("Rule deleted");
+
+      const sync = res?.data?.balance_sync;
+      const syncSummary = sync
+        ? {
+            created: sync.created?.length || 0,
+            updated: sync.updated?.length || 0,
+            ineligible: sync.made_ineligible?.length || 0,
+          }
+        : null;
+
+      showSuccess("Rule deleted", syncSummary);
       await fetchData();
     } catch (err) {
       setError(formatApiError(err));
     }
   };
 
-  // ═════════════════════════════════════════════════════════
-  // HELPERS
-  // ═════════════════════════════════════════════════════════
+  // ═══════════════ HELPERS ═══════════════
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const canPrev = page > 1;
@@ -1629,18 +1828,20 @@ export default function LeaveApplicabilityRulesPage() {
   const getCriteriaValueLabel = (type, value) => {
     if (!value) return "—";
 
-    // Gender — static options
     if (type === "gender") {
       const g = GENDER_OPTIONS.find((x) => x.id === String(value).toLowerCase());
-      return g ? g.label : String(value).charAt(0).toUpperCase() + String(value).slice(1);
+      return g
+        ? g.label
+        : String(value).charAt(0).toUpperCase() + String(value).slice(1);
     }
 
     const config = criteriaValueConfig[type];
     if (!config) return value;
 
     const items = masters[config.masterKey] || [];
+    // ⭐ Match by VALUE (send-value), not raw ID
     const found = items.find(
-      (item) => String(getMasterItemId(type, item)) === String(value)
+      (item) => String(getMasterItemValue(type, item)) === String(value)
     );
     return found ? getMasterItemLabel(type, found) : value;
   };
@@ -1655,11 +1856,20 @@ export default function LeaveApplicabilityRulesPage() {
 
     return (masters[config.masterKey] || [])
       .map((item) => ({
-        id: String(getMasterItemId(bulkCriteriaType, item) || ""),
+        id: String(getMasterItemValue(bulkCriteriaType, item) || ""),
         label: getMasterItemLabel(bulkCriteriaType, item),
       }))
       .filter((x) => x.id);
   };
+
+  // ⭐ Filter bulk items by search
+  const filteredBulkItems = useMemo(() => {
+    const all = getBulkMasterItems();
+    if (!bulkSearch.trim()) return all.slice(0, 500); // cap rendering
+    const q = bulkSearch.toLowerCase();
+    return all.filter((x) => x.label.toLowerCase().includes(q));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bulkCriteriaType, masters, bulkSearch]);
 
   const toggleBulkValue = (id) => {
     setBulkSelectedValues((prev) =>
@@ -1667,12 +1877,24 @@ export default function LeaveApplicabilityRulesPage() {
     );
   };
 
-  const selectAllBulk = () =>
-    setBulkSelectedValues(getBulkMasterItems().map((x) => x.id));
+  const selectAllBulk = () => {
+    // select all VISIBLE (filtered) items
+    const visibleIds = filteredBulkItems.map((x) => x.id);
+    setBulkSelectedValues((prev) => {
+      const set = new Set([...prev, ...visibleIds]);
+      return Array.from(set);
+    });
+  };
 
   const clearAllBulk = () => setBulkSelectedValues([]);
 
-  // Selected chips preview
+  // ⭐ Reset bulk values when criteria type changes
+  useEffect(() => {
+    setBulkSelectedValues([]);
+    setBulkSearch("");
+  }, [bulkCriteriaType]);
+
+  // Selected chips
   const bulkChips = useMemo(() => {
     const itemsMap = new Map(getBulkMasterItems().map((x) => [x.id, x.label]));
     return bulkSelectedValues.map((id) => ({
@@ -1682,13 +1904,11 @@ export default function LeaveApplicabilityRulesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bulkSelectedValues, bulkCriteriaType, masters]);
 
-  // ═════════════════════════════════════════════════════════
-  // RENDER
-  // ═════════════════════════════════════════════════════════
+  // ═══════════════ RENDER ═══════════════
 
   return (
     <div>
-      {/* ══════════ HEADER ══════════ */}
+      {/* HEADER */}
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-semibold text-slate-800">
@@ -1716,33 +1936,46 @@ export default function LeaveApplicabilityRulesPage() {
         </div>
       </div>
 
-      {/* ══════════ FEEDBACK BANNERS ══════════ */}
+      {/* FEEDBACK */}
       {error && !showForm && (
         <div className="mb-4 flex items-start gap-3 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
           <span className="flex-1">{error}</span>
-          <button
-            onClick={() => setError("")}
-            className="opacity-60 hover:opacity-100"
-            aria-label="Dismiss"
-          >
+          <button onClick={() => setError("")} className="opacity-60 hover:opacity-100">
             ✕
           </button>
         </div>
       )}
       {success && (
-        <div className="mb-4 flex items-start gap-3 rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-          <span className="flex-1">✓ {success}</span>
-          <button
-            onClick={() => setSuccess("")}
-            className="opacity-60 hover:opacity-100"
-            aria-label="Dismiss"
-          >
-            ✕
-          </button>
+        <div className="mb-4 rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          <div className="flex items-start gap-3">
+            <span className="flex-1">✓ {success}</span>
+            <button
+              onClick={() => {
+                setSuccess("");
+                setSyncInfo(null);
+              }}
+              className="opacity-60 hover:opacity-100"
+            >
+              ✕
+            </button>
+          </div>
+          {syncInfo && (
+            <div className="mt-2 flex flex-wrap gap-3 border-t border-emerald-200 pt-2 text-[11px] text-emerald-800">
+              {syncInfo.created > 0 && (
+                <span>➕ Created: {syncInfo.created}</span>
+              )}
+              {syncInfo.updated > 0 && (
+                <span>🔄 Updated: {syncInfo.updated}</span>
+              )}
+              {syncInfo.ineligible > 0 && (
+                <span>❌ Made Ineligible: {syncInfo.ineligible}</span>
+              )}
+            </div>
+          )}
         </div>
       )}
 
-      {/* ══════════ LIST CARD ══════════ */}
+      {/* LIST CARD */}
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <div className="flex flex-col gap-3 border-b border-slate-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
@@ -1763,8 +1996,8 @@ export default function LeaveApplicabilityRulesPage() {
             </select>
 
             <input
-              value={search}
-              onChange={(e) => handleSearchChange(e.target.value)}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               placeholder="Search rules..."
               className="w-full max-w-xs rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-[#E42527]"
             />
@@ -1783,7 +2016,9 @@ export default function LeaveApplicabilityRulesPage() {
         </div>
 
         {loading ? (
-          <div className="py-20 text-center text-sm text-slate-500">Loading...</div>
+          <div className="py-20 text-center text-sm text-slate-500">
+            Loading...
+          </div>
         ) : list.length === 0 ? (
           <div className="py-20 text-center">
             <p className="text-sm text-slate-500">
@@ -1825,7 +2060,10 @@ export default function LeaveApplicabilityRulesPage() {
                       {getCriteriaLabel(item.criteria_type)}
                     </h3>
                     <span className="mt-2 inline-flex items-center rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
-                      {getCriteriaValueLabel(item.criteria_type, item.criteria_value)}
+                      {getCriteriaValueLabel(
+                        item.criteria_type,
+                        item.criteria_value
+                      )}
                     </span>
                   </div>
                   <span
@@ -1883,7 +2121,7 @@ export default function LeaveApplicabilityRulesPage() {
         )}
       </div>
 
-      {/* ══════════ FORM MODAL ══════════ */}
+      {/* FORM MODAL */}
       {showForm && (
         <div
           className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-900/50 p-4 pt-10 backdrop-blur-[2px]"
@@ -1914,20 +2152,16 @@ export default function LeaveApplicabilityRulesPage() {
               <div className="max-h-[70vh] space-y-5 overflow-y-auto px-5 py-5">
                 {isBulkMode ? (
                   <>
-                    {/* ⭐ Exception warning banner */}
                     {bulkIsException && (
                       <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5 text-xs text-amber-800">
-                        <p className="font-semibold">
-                          ⚠️ Exception Mode ON
-                        </p>
+                        <p className="font-semibold">⚠️ Exception Mode ON</p>
                         <p className="mt-0.5">
-                          Selected employees will be <strong>excluded</strong> from this policy,
-                          even if they match other inclusion rules.
+                          Selected values will be <strong>excluded</strong> from
+                          this policy, even if they match other inclusion rules.
                         </p>
                       </div>
                     )}
 
-                    {/* Bulk: Policy + Criteria Type */}
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <div>
                         <label className="mb-1.5 block text-sm font-medium text-slate-700">
@@ -1957,10 +2191,7 @@ export default function LeaveApplicabilityRulesPage() {
                         </label>
                         <select
                           value={bulkCriteriaType}
-                          onChange={(e) => {
-                            setBulkCriteriaType(e.target.value);
-                            setBulkSelectedValues([]);
-                          }}
+                          onChange={(e) => setBulkCriteriaType(e.target.value)}
                           className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#E42527]"
                         >
                           {criteriaTypeOptions.map((opt) => (
@@ -1972,7 +2203,6 @@ export default function LeaveApplicabilityRulesPage() {
                       </div>
                     </div>
 
-                    {/* Bulk: Multi-select */}
                     <div>
                       <div className="mb-2 flex items-center justify-between">
                         <label className="text-sm font-medium text-slate-700">
@@ -1984,7 +2214,7 @@ export default function LeaveApplicabilityRulesPage() {
                             onClick={selectAllBulk}
                             className="text-blue-600 hover:underline"
                           >
-                            Select All
+                            Select All{bulkSearch ? " (visible)" : ""}
                           </button>
                           <button
                             type="button"
@@ -1995,8 +2225,20 @@ export default function LeaveApplicabilityRulesPage() {
                           </button>
                         </div>
                       </div>
+
+                      {/* ⭐ Search inside bulk options */}
+                      {getBulkMasterItems().length > 10 && (
+                        <input
+                          value={bulkSearch}
+                          onChange={(e) => setBulkSearch(e.target.value)}
+                          placeholder="Search..."
+                          className="mb-2 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#E42527]"
+                        />
+                      )}
+
                       <p className="mb-2 text-xs text-slate-500">
-                        Tick the values you want. Duplicates will be skipped automatically.
+                        Tick the values you want. Duplicates will be skipped
+                        automatically.
                       </p>
 
                       <div className="max-h-60 overflow-y-auto rounded-lg border border-slate-200 p-3">
@@ -2004,12 +2246,14 @@ export default function LeaveApplicabilityRulesPage() {
                           <p className="py-6 text-center text-xs text-slate-400">
                             Loading...
                           </p>
-                        ) : getBulkMasterItems().length === 0 ? (
+                        ) : filteredBulkItems.length === 0 ? (
                           <p className="py-6 text-center text-xs text-slate-400">
-                            No items available
+                            {bulkSearch
+                              ? "No items match search"
+                              : "No items available"}
                           </p>
                         ) : (
-                          getBulkMasterItems().map((item) => (
+                          filteredBulkItems.map((item) => (
                             <label
                               key={item.id}
                               className="flex cursor-pointer items-center gap-2 py-1.5 text-sm hover:bg-slate-50"
@@ -2020,13 +2264,14 @@ export default function LeaveApplicabilityRulesPage() {
                                 onChange={() => toggleBulkValue(item.id)}
                                 className="rounded border-slate-300 text-[#E42527]"
                               />
-                              <span className="text-slate-700">{item.label}</span>
+                              <span className="text-slate-700">
+                                {item.label}
+                              </span>
                             </label>
                           ))
                         )}
                       </div>
 
-                      {/* ⭐ Selected chips preview */}
                       {bulkChips.length > 0 && (
                         <div className="mt-3 rounded-lg border border-slate-100 bg-slate-50 p-2.5">
                           <div className="flex items-center justify-between">
@@ -2041,7 +2286,7 @@ export default function LeaveApplicabilityRulesPage() {
                               Clear all
                             </button>
                           </div>
-                          <div className="mt-2 flex max-h-20 flex-wrap gap-1 overflow-y-auto">
+                          <div className="mt-2 flex max-h-24 flex-wrap gap-1 overflow-y-auto">
                             {bulkChips.map((chip) => (
                               <button
                                 type="button"
@@ -2067,14 +2312,13 @@ export default function LeaveApplicabilityRulesPage() {
                           className="rounded border-slate-300 text-[#E42527]"
                         />
                         <span className="font-medium">
-                          Is Exception (Exclude these employees)
+                          Is Exception (Exclude these)
                         </span>
                       </label>
                     </div>
                   </>
                 ) : (
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    {/* Single: Policy */}
                     <div>
                       <label className="mb-1.5 block text-sm font-medium text-slate-700">
                         Leave Policy *
@@ -2084,7 +2328,10 @@ export default function LeaveApplicabilityRulesPage() {
                         disabled={!!editId}
                         value={formData.leave_policy_id}
                         onChange={(e) =>
-                          setFormData({ ...formData, leave_policy_id: e.target.value })
+                          setFormData({
+                            ...formData,
+                            leave_policy_id: e.target.value,
+                          })
                         }
                         className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#E42527] disabled:bg-slate-100 disabled:text-slate-500"
                       >
@@ -2105,7 +2352,6 @@ export default function LeaveApplicabilityRulesPage() {
                       )}
                     </div>
 
-                    {/* Single: Criteria Type */}
                     <div>
                       <label className="mb-1.5 block text-sm font-medium text-slate-700">
                         Criteria Type *
@@ -2129,7 +2375,6 @@ export default function LeaveApplicabilityRulesPage() {
                       </select>
                     </div>
 
-                    {/* Single: Criteria Value */}
                     <div className="sm:col-span-2">
                       <label className="mb-1.5 block text-sm font-medium text-slate-700">
                         Criteria Value *
@@ -2168,15 +2413,18 @@ export default function LeaveApplicabilityRulesPage() {
                           <option value="">
                             {mastersLoading ? "Loading..." : "Select..."}
                           </option>
-                          {(masters[
-                            criteriaValueConfig[formData.criteria_type].masterKey
-                          ] || []).map((item) => {
-                            const id = getMasterItemId(
+                          {(
+                            masters[
+                              criteriaValueConfig[formData.criteria_type]
+                                .masterKey
+                            ] || []
+                          ).map((item) => {
+                            const value = getMasterItemValue(
                               formData.criteria_type,
                               item
                             );
-                            return id ? (
-                              <option key={String(id)} value={String(id)}>
+                            return value ? (
+                              <option key={String(value)} value={String(value)}>
                                 {getMasterItemLabel(
                                   formData.criteria_type,
                                   item
@@ -2200,7 +2448,6 @@ export default function LeaveApplicabilityRulesPage() {
                       )}
                     </div>
 
-                    {/* Single: Is Exception */}
                     <div className="sm:col-span-2">
                       <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-700">
                         <input
@@ -2220,7 +2467,8 @@ export default function LeaveApplicabilityRulesPage() {
                       </label>
                       {formData.is_exception && (
                         <p className="mt-1.5 text-xs text-amber-700">
-                          ⚠️ This value will be <strong>excluded</strong> from the policy.
+                          ⚠️ This value will be <strong>excluded</strong> from
+                          the policy.
                         </p>
                       )}
                     </div>
@@ -2251,7 +2499,11 @@ export default function LeaveApplicabilityRulesPage() {
                   {saving
                     ? "Saving..."
                     : isBulkMode
-                    ? `Add Selected${bulkSelectedValues.length ? ` (${bulkSelectedValues.length})` : ""}`
+                    ? `Add Selected${
+                        bulkSelectedValues.length
+                          ? ` (${bulkSelectedValues.length})`
+                          : ""
+                      }`
                     : editId
                     ? "Update"
                     : "Submit"}
@@ -2262,7 +2514,7 @@ export default function LeaveApplicabilityRulesPage() {
         </div>
       )}
 
-      {/* ══════════ DETAILS MODAL ══════════ */}
+      {/* DETAILS MODAL */}
       {selectedRule && (
         <div
           className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-[2px]"
