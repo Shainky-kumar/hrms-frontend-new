@@ -141,6 +141,7 @@ const navItems = [
   { label: "Company Profile", href: "/dashboard/company_profile", icon: Building2 },
   { label: "Approval Config", href: "/dashboard/approval_config", icon: ListChecks },
   { label: "Announcements", href: "/dashboard/announcements", icon: Megaphone },
+  { label: "Reimbursement", href: "/dashboard/rembursment", icon: Wallet },
 ];
 
 export default function Sidebar() {
@@ -165,6 +166,7 @@ export default function Sidebar() {
   const isOnboardingModule = pathname?.startsWith("/dashboard/Onboarding");
   const isLocationsModule = pathname?.startsWith("/dashboard/locations");
   const isCompanyProfileModule = pathname?.startsWith("/dashboard/company_profile");
+  const isRembursementModule = pathname?.startsWith("/dashboard/rembursment");
 
   return (
     <aside className="fixed inset-y-0 left-0 z-50 hidden w-[220px] flex-col bg-[#0f172a] lg:flex">
@@ -196,6 +198,7 @@ export default function Sidebar() {
             : item.href === "/dashboard/company_profile" ? isCompanyProfileModule
             : item.href.startsWith("/dashboard/settings") ? isSettingsModule
             : item.href.startsWith("/dashboard/shift-management") ? isShiftModule
+            : item.href === "/dashboard/rembursment" ? isRembursementModule
             : pathname === item.href ||
               (item.href !== "/dashboard" && pathname?.startsWith(item.href));
 
