@@ -4,188 +4,245 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "@/app/lib/api";
 
 /* ============================================================
-   CONSTANTS
+   OFFER VARIANTS — maps to backend endpoints
 ============================================================ */
+const OFFER_VARIANTS = [
+  {
+    code: "OFF-CLASSIC",
+    endpoint: "classic",
+    name: "Classic Professional",
+    description: "Traditional corporate offer with detailed terms",
+    accent: "from-blue-500 to-blue-600",
+    ring: "ring-blue-500",
+  },
+  {
+    code: "OFF-MODERN",
+    endpoint: "modern",
+    name: "Modern Startup",
+    description: "Casual, culture-first tone for early-stage teams",
+    accent: "from-violet-500 to-violet-600",
+    ring: "ring-violet-500",
+  },
+  {
+    code: "OFF-EXECUTIVE",
+    endpoint: "executive",
+    name: "Executive Leadership",
+    description: "Senior role offer with ESOPs and additional perks",
+    accent: "from-amber-500 to-amber-600",
+    ring: "ring-amber-500",
+  },
+];
 
+/* ============================================================
+   STATUS CONFIG
+============================================================ */
 const STATUS_CONFIG = {
   draft: { bg: "bg-slate-100", text: "text-slate-700", dot: "bg-slate-400", border: "border-slate-200", label: "Draft" },
-  pending_approval: { bg: "bg-amber-50", text: "text-amber-700", dot: "bg-amber-500", border: "border-amber-200", label: "Pending" },
+  pending: { bg: "bg-amber-50", text: "text-amber-700", dot: "bg-amber-500", border: "border-amber-200", label: "Pending" },
+  pending_approval: { bg: "bg-amber-50", text: "text-amber-700", dot: "bg-amber-500", border: "border-amber-200", label: "Pending Approval" },
   approved: { bg: "bg-blue-50", text: "text-blue-700", dot: "bg-blue-500", border: "border-blue-200", label: "Approved" },
   sent: { bg: "bg-indigo-50", text: "text-indigo-700", dot: "bg-indigo-500", border: "border-indigo-200", label: "Sent" },
   published: { bg: "bg-emerald-50", text: "text-emerald-700", dot: "bg-emerald-500", border: "border-emerald-200", label: "Published" },
-  viewed: { bg: "bg-cyan-50", text: "text-cyan-700", dot: "bg-cyan-500", border: "border-cyan-200", label: "Viewed" },
-  accepted: { bg: "bg-green-50", text: "text-green-700", dot: "bg-green-500", border: "border-green-200", label: "Accepted" },
-  declined: { bg: "bg-red-50", text: "text-red-700", dot: "bg-red-500", border: "border-red-200", label: "Declined" },
-  signed: { bg: "bg-violet-50", text: "text-violet-700", dot: "bg-violet-500", border: "border-violet-200", label: "Signed" },
-  expired: { bg: "bg-orange-50", text: "text-orange-700", dot: "bg-orange-500", border: "border-orange-200", label: "Expired" },
-  cancelled: { bg: "bg-rose-50", text: "text-rose-700", dot: "bg-rose-500", border: "border-rose-200", label: "Cancelled" },
-  pending: { bg: "bg-amber-50", text: "text-amber-700", dot: "bg-amber-500", border: "border-amber-200", label: "Pending" },
   generated: { bg: "bg-emerald-50", text: "text-emerald-700", dot: "bg-emerald-500", border: "border-emerald-200", label: "Generated" },
+  cancelled: { bg: "bg-rose-50", text: "text-rose-700", dot: "bg-rose-500", border: "border-rose-200", label: "Cancelled" },
   rejected: { bg: "bg-red-50", text: "text-red-700", dot: "bg-red-500", border: "border-red-200", label: "Rejected" },
+  viewed: { bg: "bg-cyan-50", text: "text-cyan-700", dot: "bg-cyan-500", border: "border-cyan-200", label: "Viewed" },
 };
 
-const EMPTY_CATEGORY = {
-  code: "",
-  name: "",
-  description: "",
-  number_prefix: "",
-  display_order: 100,
-  is_active: true,
-};
+/* ============================================================
+   TEMPLATE LIBRARY — all 25 samples, client-side only
+============================================================ */
+const TEMPLATE_LIBRARY = [
+  {
+    family: "OFFER", label: "Offer Letters", category: "Hiring", description: "Employment offers for candidates",
+    samples: [
+      { key: "OFF-CLASSIC", name: "Classic Professional", code: "OFF-CLASSIC", description: "Traditional corporate offer with detailed terms",
+        content_html: `<p>Dear <strong>{{employee.full_name}}</strong>,</p>
+<p>We are delighted to extend an offer of employment to you for the position of <strong>{{custom.offer.designation}}</strong> at <strong>{{company.name}}</strong>.</p>
+<p>Your appointment will be effective from <strong>{{custom.offer.joining_date}}</strong>, and you will be based at our <strong>{{custom.offer.location}}</strong> office.</p>
+<h3>1. Compensation</h3><p>Your annual Cost to Company (CTC) will be <strong>₹ {{employee.annual_ctc}}</strong>.</p>
+<h3>2. Probation</h3><p>You will be on probation for six (6) months from the date of joining.</p>
+<h3>3. Notice Period</h3><p>Post-confirmation, the notice period will be sixty (60) days from either side.</p>
+<h3>4. Documents Required at Joining</h3><ul><li>Educational certificates</li><li>Relieving letter from previous employer</li><li>PAN, Aadhaar, photographs</li></ul>
+<p>Please confirm acceptance by signing and returning this letter by <strong>{{custom.offer.expiry_date}}</strong>.</p>` },
+      { key: "OFF-MODERN", name: "Modern Startup", code: "OFF-MODERN", description: "Casual, culture-first tone",
+        content_html: `<p>Hi <strong>{{employee.full_name}}</strong>,</p>
+<p>We're excited to have you join us as <strong>{{custom.offer.designation}}</strong> at <strong>{{company.name}}</strong>.</p>
+<p><strong>What you'll get:</strong></p>
+<ul><li>Role: {{custom.offer.designation}}</li><li>Team: {{employee.department}}</li><li>Location: {{custom.offer.location}}</li><li>Start date: {{custom.offer.joining_date}}</li><li>CTC: ₹ {{employee.annual_ctc}} per annum</li></ul>
+<p>To accept: reply with a signed copy before <strong>{{custom.offer.expiry_date}}</strong>.</p>` },
+      { key: "OFF-EXECUTIVE", name: "Executive Leadership", code: "OFF-EXECUTIVE", description: "Senior role offer with ESOPs",
+        content_html: `<p>Dear <strong>{{employee.full_name}}</strong>,</p>
+<p>Following our recent conversations, we are pleased to offer you the position of <strong>{{custom.offer.designation}}</strong> at <strong>{{company.name}}</strong>, reporting to <strong>{{custom.offer.reporting_to}}</strong>.</p>
+<p>Your appointment will commence on <strong>{{custom.offer.joining_date}}</strong>, based at our <strong>{{custom.offer.location}}</strong> office.</p>
+<h3>1. Compensation</h3><p>Your annual CTC will be <strong>₹ {{employee.annual_ctc}}</strong>. In addition:</p>
+<ul><li>Performance Bonus: up to {{custom.offer.bonus_percent}}% of CTC</li><li>ESOPs: {{custom.offer.esops}} stock options</li><li>Retention Bonus: ₹ {{custom.offer.retention_bonus}}</li></ul>
+<h3>2. Notice Period</h3><p>{{custom.offer.notice_period}} from either side.</p>
+<p>Please confirm acceptance by <strong>{{custom.offer.expiry_date}}</strong>.</p>` },
+    ],
+  },
+  { family: "APPOINTMENT", label: "Appointment Letters", category: "Hiring", description: "Formal appointment letters issued at joining",
+    samples: [
+      { key: "APT-STANDARD", name: "Standard Appointment", code: "APT-STANDARD", description: "The default appointment letter",
+        content_html: `<p>Dear <strong>{{employee.full_name}}</strong>,</p>
+<p>We are pleased to confirm your appointment as <strong>{{employee.designation}}</strong> in the <strong>{{employee.department}}</strong> department at <strong>{{company.name}}</strong>, effective from <strong>{{employee.joining_date}}</strong>.</p>
+<h3>1. Compensation</h3><p>Your annual CTC is <strong>₹ {{custom.offer.ctc}}</strong>.</p>
+<h3>2. Probation</h3><p>You will be on probation for six (6) months.</p>
+<h3>3. Working Hours</h3><p>Standard working hours are 9:30 AM to 6:30 PM, Monday to Friday.</p>
+<h3>4. Leave</h3><ul><li>Earned Leave: 1.5 days/month</li><li>Casual Leave: 12 days/year</li><li>Sick Leave: 6 days/year</li></ul>` },
+      { key: "APT-DETAILED", name: "Detailed with Annexure", code: "APT-DETAILED", description: "Full terms and policy reference",
+        content_html: `<p>Dear <strong>{{employee.full_name}}</strong>,</p>
+<p>Further to your acceptance of our offer, we are pleased to confirm your appointment as <strong>{{employee.designation}}</strong> with effect from <strong>{{employee.joining_date}}</strong>.</p>
+<h3>1. Place of Work</h3><p>Your initial place of posting will be <strong>{{custom.offer.location}}</strong>.</p>
+<h3>2. Compensation &amp; Benefits</h3><p>Annual CTC: <strong>₹ {{custom.offer.ctc}}</strong>.</p>
+<ul><li>Group Health Insurance — ₹5 lakh cover</li><li>Group Personal Accident Insurance — ₹25 lakh cover</li><li>Provident Fund and Gratuity as per statute</li></ul>` },
+      { key: "APT-SHORT", name: "Short Form", code: "APT-SHORT", description: "One-page quick confirmation",
+        content_html: `<p>Dear <strong>{{employee.full_name}}</strong>,</p>
+<p>We are pleased to confirm your appointment with <strong>{{company.name}}</strong> as <strong>{{employee.designation}}</strong>, effective <strong>{{employee.joining_date}}</strong>.</p>
+<p><strong>Key terms:</strong></p>
+<ul><li>Department: {{employee.department}}</li><li>Annual CTC: ₹ {{custom.offer.ctc}}</li><li>Probation: 6 months</li><li>Notice period: 60 days</li><li>Working hours: 9:30 AM – 6:30 PM, Mon–Fri</li></ul>` },
+    ],
+  },
+  { family: "INTERNSHIP", label: "Internship Letters", category: "Hiring", description: "Paid, unpaid, and academic internships",
+    samples: [
+      { key: "INT-PAID", name: "Paid Internship", code: "INT-PAID", description: "Monthly stipend + certificate",
+        content_html: `<p>Dear <strong>{{employee.full_name}}</strong>,</p>
+<p>We are pleased to offer you an internship at <strong>{{company.name}}</strong> as a <strong>{{employee.designation}}</strong> Intern.</p>
+<h3>1. Duration</h3><p>From <strong>{{custom.internship.start_date}}</strong> to <strong>{{custom.internship.end_date}}</strong> — <strong>{{custom.internship.duration}}</strong>.</p>
+<h3>2. Stipend</h3><p>You will receive a monthly stipend of <strong>₹ {{custom.internship.stipend}}</strong>.</p>
+<h3>3. Mentor</h3><p>You will report to <strong>{{custom.internship.mentor}}</strong>.</p>` },
+      { key: "INT-UNPAID", name: "Unpaid Internship", code: "INT-UNPAID", description: "Learning-focused, certificate only",
+        content_html: `<p>Dear <strong>{{employee.full_name}}</strong>,</p>
+<p>We are pleased to offer you an unpaid internship at <strong>{{company.name}}</strong> in the <strong>{{employee.department}}</strong> department.</p>
+<h3>1. Duration</h3><p><strong>{{custom.internship.duration}}</strong>, from <strong>{{custom.internship.start_date}}</strong> to <strong>{{custom.internship.end_date}}</strong>.</p>
+<h3>2. Nature</h3><p>This is an unpaid, learning-oriented internship. No stipend or benefits are provided.</p>
+<h3>3. Mentor</h3><p>You will be mentored by <strong>{{custom.internship.mentor}}</strong>.</p>` },
+      { key: "INT-ACADEMIC", name: "Academic / College", code: "INT-ACADEMIC", description: "Curriculum-based internship for college credit",
+        content_html: `<p>Dear <strong>{{employee.full_name}}</strong>,</p>
+<p>This letter confirms that <strong>{{company.name}}</strong> is offering you a curriculum-based internship in the <strong>{{employee.department}}</strong> department.</p>
+<h3>1. Duration</h3><p>From <strong>{{custom.internship.start_date}}</strong> to <strong>{{custom.internship.end_date}}</strong> — <strong>{{custom.internship.duration}}</strong>.</p>
+<h3>2. Remuneration</h3><p>Unpaid academic internship. Travel and accommodation are borne by you.</p>` },
+    ],
+  },
+  { family: "EXPERIENCE", label: "Experience Letters", category: "Exit", description: "Service certificates for exiting employees",
+    samples: [
+      { key: "EXP-SIMPLE", name: "Simple Factual", code: "EXP-SIMPLE", description: "Minimal certificate confirming employment",
+        content_html: `<p style="text-align:center"><strong>TO WHOMSOEVER IT MAY CONCERN</strong></p>
+<p>This is to certify that <strong>{{employee.full_name}}</strong> (Employee Code: <strong>{{employee.employee_code}}</strong>) was employed with <strong>{{company.name}}</strong> from <strong>{{employee.joining_date}}</strong> to <strong>{{employee.leaving_date}}</strong>.</p>
+<p>At the time of leaving, they were serving as <strong>{{employee.designation}}</strong> in the <strong>{{employee.department}}</strong> department.</p>
+<p>During their tenure, their conduct and performance were found to be satisfactory.</p>` },
+      { key: "EXP-DETAILED", name: "Detailed with Duties", code: "EXP-DETAILED", description: "With responsibilities and performance notes",
+        content_html: `<p style="text-align:center"><strong>TO WHOMSOEVER IT MAY CONCERN</strong></p>
+<p>This is to certify that <strong>{{employee.full_name}}</strong> was employed with <strong>{{company.name}}</strong> from <strong>{{employee.joining_date}}</strong> to <strong>{{employee.leaving_date}}</strong>, serving as <strong>{{employee.designation}}</strong>.</p>
+<h3>Key Responsibilities Held</h3><ul><li>Owned and delivered core deliverables</li><li>Collaborated with cross-functional teams</li><li>Mentored junior team members</li></ul>
+<h3>Conduct &amp; Performance</h3><p>Performance was consistently rated as meeting or exceeding expectations.</p>` },
+      { key: "EXP-REHIRE", name: "With Rehire Eligibility", code: "EXP-REHIRE", description: "Explicitly confirms rehire eligibility",
+        content_html: `<p style="text-align:center"><strong>TO WHOMSOEVER IT MAY CONCERN</strong></p>
+<p>This is to certify that <strong>{{employee.full_name}}</strong> worked with <strong>{{company.name}}</strong> from <strong>{{employee.joining_date}}</strong> to <strong>{{employee.leaving_date}}</strong>.</p>
+<p>They would be <strong>eligible for rehire</strong> at our organisation should an appropriate opportunity arise.</p>` },
+    ],
+  },
+  { family: "RELIEVING", label: "Relieving Letters", category: "Exit", description: "Relieving letters with FnF details",
+    samples: [
+      { key: "REL-SIMPLE", name: "Simple Relieving", code: "REL-SIMPLE", description: "Confirms relieving date",
+        content_html: `<p>Dear <strong>{{employee.full_name}}</strong>,</p>
+<p>This is to confirm that you have been relieved from your duties at <strong>{{company.name}}</strong>, effective close of business on <strong>{{employee.leaving_date}}</strong>.</p>
+<p>You were serving as <strong>{{employee.designation}}</strong> in the <strong>{{employee.department}}</strong> department.</p>
+<p>We thank you for your contributions.</p>` },
+      { key: "REL-FNF", name: "With FnF Settlement", code: "REL-FNF", description: "Includes full-and-final settlement details",
+        content_html: `<p>Dear <strong>{{employee.full_name}}</strong>,</p>
+<p>Your resignation has been accepted with effect from close of business on <strong>{{employee.leaving_date}}</strong>.</p>
+<h3>Full &amp; Final Settlement</h3>
+<p>Your settlement will be processed within 30 days from your last working day.</p>
+<ul><li>Salary for days worked</li><li>Encashment of unutilised earned leave</li><li>Less: Notice period recovery (if applicable)</li><li>Less: TDS and statutory deductions</li></ul>` },
+    ],
+  },
+  { family: "REVISION", label: "Salary Revision", category: "Compensation", description: "Salary revision and increment letters",
+    samples: [
+      { key: "REV-STANDARD", name: "Standard Revision", code: "REV-STANDARD", description: "Formal salary revision letter",
+        content_html: `<p>Dear <strong>{{employee.full_name}}</strong>,</p>
+<p>In recognition of your continued contribution to <strong>{{company.name}}</strong>, we are pleased to inform you that your compensation has been revised with effect from <strong>{{custom.revision.effective_date}}</strong>.</p>
+<h3>Revised Compensation</h3><table><tr><td>Previous Annual CTC</td><td>₹ {{custom.revision.old_ctc}}</td></tr><tr><td>Revised Annual CTC</td><td><strong>₹ {{custom.revision.new_ctc}}</strong></td></tr></table>` },
+    ],
+  },
+  { family: "PROMOTION", label: "Promotion Letter", category: "Compensation", description: "Promotion and role upgrade letters",
+    samples: [
+      { key: "PRM-STANDARD", name: "Standard Promotion", code: "PRM-STANDARD", description: "New role with new responsibilities",
+        content_html: `<p>Dear <strong>{{employee.full_name}}</strong>,</p>
+<p>You have been promoted from <strong>{{custom.promotion.old_designation}}</strong> to <strong>{{custom.promotion.new_designation}}</strong>, effective <strong>{{custom.promotion.effective_date}}</strong>.</p>
+<h3>Revised Details</h3><table><tr><td>New Designation</td><td><strong>{{custom.promotion.new_designation}}</strong></td></tr><tr><td>Effective Date</td><td>{{custom.promotion.effective_date}}</td></tr></table>` },
+    ],
+  },
+  { family: "CONFIRMATION", label: "Confirmation Letter", category: "General", description: "Probation confirmation letters",
+    samples: [
+      { key: "CNF-STANDARD", name: "Standard Confirmation", code: "CNF-STANDARD", description: "Confirms successful completion of probation",
+        content_html: `<p>Dear <strong>{{employee.full_name}}</strong>,</p>
+<p>We refer to your appointment letter and are pleased to inform you that your probation period has been successfully completed.</p>
+<p>You are hereby <strong>confirmed</strong> as a permanent employee of <strong>{{company.name}}</strong> in the position of <strong>{{employee.designation}}</strong>, effective <strong>{{letter.effective_date}}</strong>.</p>
+<h3>Terms Post-Confirmation</h3><ul><li>Notice period: 60 days from either side</li><li>Annual leave: As per company policy</li><li>Statutory benefits: PF, Gratuity, insurance as applicable</li></ul>` },
+    ],
+  },
+  { family: "WARNING", label: "Warning Letters", category: "Discipline", description: "First and final warnings",
+    samples: [
+      { key: "WRN-FIRST", name: "First Warning", code: "WRN-FIRST", description: "Formal first warning for conduct issues",
+        content_html: `<p>Dear <strong>{{employee.full_name}}</strong>,</p>
+<p>It has come to the attention of management that your conduct did not meet the expected standards of professional behaviour at <strong>{{company.name}}</strong>.</p>
+<p style="padding:12px 16px;border-left:3px solid #E42527;background:#fef2f2;"><strong>{{custom.warning.reason}}</strong></p>
+<p>This letter serves as a <strong>formal warning</strong>.</p>` },
+      { key: "WRN-FINAL", name: "Final Warning", code: "WRN-FINAL", description: "Final warning before termination",
+        content_html: `<p>Dear <strong>{{employee.full_name}}</strong>,</p>
+<p>Despite earlier warnings, your conduct continues to fall below the standards expected at <strong>{{company.name}}</strong>.</p>
+<p style="padding:12px 16px;border-left:3px solid #E42527;background:#fef2f2;"><strong>{{custom.warning.reason}}</strong></p>
+<p>This is a <strong>final written warning</strong>.</p>` },
+    ],
+  },
+  { family: "TRANSFER", label: "Transfer Letter", category: "General", description: "Inter-office or inter-department transfers",
+    samples: [
+      { key: "TRF-STANDARD", name: "Standard Transfer", code: "TRF-STANDARD", description: "Location or department transfer",
+        content_html: `<p>Dear <strong>{{employee.full_name}}</strong>,</p>
+<p>Due to business requirements, you are hereby transferred from your current assignment, effective <strong>{{letter.effective_date}}</strong>.</p>
+<h3>Transfer Details</h3><table><tr><td>Current Department</td><td>{{employee.department}}</td></tr><tr><td>New Department</td><td><strong>{{custom.transfer.new_department}}</strong></td></tr><tr><td>New Location</td><td><strong>{{custom.transfer.new_location}}</strong></td></tr><tr><td>Reporting To</td><td>{{custom.transfer.new_manager}}</td></tr></table>` },
+    ],
+  },
+  { family: "SALARY_CERT", label: "Salary Certificate", category: "General", description: "For visa, loan, or bank purposes",
+    samples: [
+      { key: "SC-STANDARD", name: "Standard Salary Certificate", code: "SC-STANDARD", description: "Annual, monthly gross, and monthly net",
+        content_html: `<p style="text-align:center"><strong>TO WHOMSOEVER IT MAY CONCERN</strong></p>
+<p>This is to certify that <strong>{{employee.full_name}}</strong> is currently employed with <strong>{{company.name}}</strong> as <strong>{{employee.designation}}</strong> since <strong>{{employee.joining_date}}</strong>.</p>
+<h3>Compensation Details</h3><table><tr><td>Annual CTC</td><td>₹ {{custom.offer.ctc}}</td></tr><tr><td>Monthly Gross Salary</td><td>₹ {{custom.salary.monthly_gross}}</td></tr><tr><td>Monthly Net Salary</td><td>₹ {{custom.salary.monthly_net}}</td></tr></table>` },
+    ],
+  },
+  { family: "NOC", label: "NOC Letter", category: "General", description: "No Objection Certificates",
+    samples: [
+      { key: "NOC-STANDARD", name: "Standard NOC", code: "NOC-STANDARD", description: "For higher studies, part-time work, etc.",
+        content_html: `<p style="text-align:center"><strong>NO OBJECTION CERTIFICATE</strong></p>
+<p>This is to certify that <strong>{{employee.full_name}}</strong> is currently employed with <strong>{{company.name}}</strong> as <strong>{{employee.designation}}</strong> since <strong>{{employee.joining_date}}</strong>.</p>
+<p><strong>{{company.name}}</strong> has no objection to <strong>{{employee.full_name}}</strong> pursuing <strong>{{custom.noc.purpose}}</strong>.</p>
+<p>This NOC is valid for <strong>{{custom.noc.validity}}</strong> from the date of issue.</p>` },
+    ],
+  },
+  { family: "BONAFIDE", label: "Bonafide / Address Proof", category: "General", description: "Bonafide certificates and address proofs",
+    samples: [
+      { key: "BON-STANDARD", name: "Standard Bonafide", code: "BON-STANDARD", description: "Address or employment proof",
+        content_html: `<p style="text-align:center"><strong>TO WHOMSOEVER IT MAY CONCERN</strong></p>
+<p>This is to certify that <strong>{{employee.full_name}}</strong> is a bona fide employee of <strong>{{company.name}}</strong>, currently holding the position of <strong>{{employee.designation}}</strong>.</p>
+<p>They have been associated with the organisation since <strong>{{employee.joining_date}}</strong>.</p>
+<p>This certificate is issued for <strong>{{custom.bonafide.purpose}}</strong>.</p>` },
+    ],
+  },
+];
 
-const EMPTY_GENERATE = {
-  template_id: "",
-  issue_date: "",
-  effective_date: "",
-  signatory_id: "",
-  publish_to_ess: true,
-  send_email: false,
-};
-
-const EMPTY_SIGNATORY = {
-  name: "",
-  designation: "",
-  department: "",
-  email: "",
-  is_default: false,
-  is_active: true,
-};
-
-/* ============ PROFESSIONAL TEMPLATES ============ */
-const PROFESSIONAL_TEMPLATES = {
-  EXPERIENCE: {
-    name: "Experience Certificate",
-    code: "EXPERIENCE",
-    description: "Service certificate for past employee",
-    category: "Experience",
-    content_html: `<p style="text-align:center; font-size:15px; letter-spacing:1px; margin-bottom:22px;"><strong>TO WHOMSOEVER IT MAY CONCERN</strong></p>
-<p style="text-align:justify; margin-bottom:14px;">This is to certify that <strong>{{employee.full_name}}</strong> bearing Employee Code <strong>{{employee.employee_code}}</strong> was employed with <strong>{{company.name}}</strong> from <strong>{{employee.joining_date}}</strong> to <strong>{{employee.leaving_date}}</strong>.</p>
-<table style="width:100%; border-collapse:collapse; margin:16px 0 20px; font-size:13px;">
-<tr><td style="padding:6px 8px 6px 0; width:180px; color:#4a5568;">Employee Name</td><td style="padding:6px 0;"><strong>{{employee.full_name}}</strong></td></tr>
-<tr><td style="padding:6px 8px 6px 0; color:#4a5568;">Employee Code</td><td style="padding:6px 0;"><strong>{{employee.employee_code}}</strong></td></tr>
-<tr><td style="padding:6px 8px 6px 0; color:#4a5568;">Designation</td><td style="padding:6px 0;"><strong>{{employee.designation}}</strong></td></tr>
-<tr><td style="padding:6px 8px 6px 0; color:#4a5568;">Department</td><td style="padding:6px 0;"><strong>{{employee.department}}</strong></td></tr>
-<tr><td style="padding:6px 8px 6px 0; color:#4a5568;">Date of Joining</td><td style="padding:6px 0;"><strong>{{employee.joining_date}}</strong></td></tr>
-<tr><td style="padding:6px 8px 6px 0; color:#4a5568;">Date of Leaving</td><td style="padding:6px 0;"><strong>{{employee.leaving_date}}</strong></td></tr>
-</table>
-<p style="text-align:justify; margin-bottom:14px;">During the period of employment, {{employee.full_name}} performed the assigned duties with sincerity, dedication and a high degree of professionalism.</p>
-<p style="text-align:justify; margin-bottom:14px;">We appreciate the contribution made by {{employee.full_name}} and wish every success in all future endeavours.</p>
-<p style="text-align:justify; margin-bottom:8px;">This certificate is issued upon request for official purposes.</p>`,
-  },
-  RELIEVING: {
-    name: "Relieving Letter",
-    code: "RELIEVING",
-    description: "Formal relieving letter on exit",
-    category: "Exit",
-    content_html: `<p style="margin-bottom:8px;">Dear <strong>{{employee.full_name}}</strong>,</p>
-<p style="margin-bottom:18px;"><strong>Subject: Relieving Letter</strong></p>
-<p style="text-align:justify; margin-bottom:14px;">This is with reference to your resignation. We hereby confirm that you have been relieved from your duties as <strong>{{employee.designation}}</strong> with effect from <strong>{{employee.leaving_date}}</strong>.</p>
-<p style="text-align:justify; margin-bottom:14px;">You joined on <strong>{{employee.joining_date}}</strong> and have completed all exit formalities. Your Full &amp; Final settlement will be processed as per company policy.</p>
-<p style="text-align:justify; margin-bottom:14px;">We wish you success in your future career.</p>`,
-  },
-  BONAFIDE: {
-    name: "Bonafide Certificate",
-    code: "BONAFIDE",
-    description: "Bonafide certificate for current employees",
-    category: "General",
-    content_html: `<p style="text-align:center; font-size:15px; letter-spacing:1px; margin-bottom:22px;"><strong>TO WHOMSOEVER IT MAY CONCERN</strong></p>
-<p style="text-align:justify; margin-bottom:14px;">This is to certify that <strong>{{employee.full_name}}</strong> (Employee Code: <strong>{{employee.employee_code}}</strong>) is a bona fide employee of <strong>{{company.name}}</strong> and is currently working as <strong>{{employee.designation}}</strong> since <strong>{{employee.joining_date}}</strong>.</p>
-<p style="text-align:justify; margin-bottom:8px;">This certificate is issued upon the request of the employee for official purposes.</p>`,
-  },
-  OFFER: {
-    name: "Offer Letter",
-    code: "OFFER",
-    description: "Offer of employment",
-    category: "Hiring",
-    content_html: `<p style="margin-bottom:8px;">Dear <strong>{{employee.full_name}}</strong>,</p>
-<p style="margin-bottom:18px;"><strong>Subject: Offer of Employment</strong></p>
-<p style="text-align:justify; margin-bottom:14px;">We are pleased to offer you the position of <strong>{{employee.designation}}</strong> at <strong>{{company.name}}</strong>.</p>
-<p style="text-align:justify; margin-bottom:14px;">Your date of joining will be <strong>{{letter.effective_date}}</strong>. Detailed terms will be shared separately.</p>
-<p style="text-align:justify; margin-bottom:14px;">Please confirm your acceptance by signing and returning a copy of this letter.</p>
-<p style="text-align:justify; margin-bottom:8px;">We look forward to welcoming you to the team.</p>`,
-  },
-  APPOINTMENT: {
-    name: "Appointment Letter",
-    code: "APPOINTMENT",
-    description: "Formal appointment letter",
-    category: "Hiring",
-    content_html: `<p style="margin-bottom:8px;">Dear <strong>{{employee.full_name}}</strong>,</p>
-<p style="margin-bottom:18px;"><strong>Subject: Appointment Letter</strong></p>
-<p style="text-align:justify; margin-bottom:14px;">With reference to your interview, we are pleased to appoint you as <strong>{{employee.designation}}</strong> at <strong>{{company.name}}</strong> with effect from <strong>{{letter.effective_date}}</strong>.</p>
-<p style="text-align:justify; margin-bottom:14px;">Your Employee Code is <strong>{{employee.employee_code}}</strong>. You will be governed by the company policies.</p>
-<p style="text-align:justify; margin-bottom:14px;">Please report to the HR Department on the date of joining with required documents.</p>`,
-  },
-  INCREMENT: {
-    name: "Increment Letter",
-    code: "INCREMENT",
-    description: "Salary revision letter",
-    category: "Compensation",
-    content_html: `<p style="margin-bottom:8px;">Dear <strong>{{employee.full_name}}</strong>,</p>
-<p style="margin-bottom:18px;"><strong>Subject: Salary Revision</strong></p>
-<p style="text-align:justify; margin-bottom:14px;">Based on your performance and contribution to <strong>{{company.name}}</strong>, your compensation has been revised with effect from <strong>{{letter.effective_date}}</strong>.</p>
-<p style="text-align:justify; margin-bottom:14px;">Revised details will be reflected in subsequent salary slips.</p>
-<p style="text-align:justify; margin-bottom:8px;">We appreciate your continued commitment.</p>`,
-  },
-  PROMOTION: {
-    name: "Promotion Letter",
-    code: "PROMOTION",
-    description: "Promotion announcement",
-    category: "Compensation",
-    content_html: `<p style="margin-bottom:8px;">Dear <strong>{{employee.full_name}}</strong>,</p>
-<p style="margin-bottom:18px;"><strong>Subject: Promotion Letter</strong></p>
-<p style="text-align:justify; margin-bottom:14px;">In recognition of your consistent performance, we are pleased to promote you to the position of <strong>{{employee.designation}}</strong> effective <strong>{{letter.effective_date}}</strong>.</p>
-<p style="text-align:justify; margin-bottom:8px;">Congratulations on your well-deserved promotion.</p>`,
-  },
-  WARNING: {
-    name: "Warning Letter",
-    code: "WARNING",
-    description: "Employee warning letter",
-    category: "Discipline",
-    content_html: `<p style="margin-bottom:8px;">Dear <strong>{{employee.full_name}}</strong>,</p>
-<p style="margin-bottom:18px;"><strong>Subject: Warning Letter</strong></p>
-<p style="text-align:justify; margin-bottom:14px;">This letter serves as a formal warning regarding your recent conduct at <strong>{{company.name}}</strong>.</p>
-<p style="text-align:justify; margin-bottom:14px;">It has been observed that you have failed to meet the expected standards. This is in violation of the terms of your employment.</p>
-<p style="text-align:justify; margin-bottom:14px;">You are advised to immediately correct your conduct. Failure to do so may result in further disciplinary action.</p>`,
-  },
-  TERMINATION: {
-    name: "Termination Letter",
-    code: "TERMINATION",
-    description: "Termination of employment",
-    category: "Exit",
-    content_html: `<p style="margin-bottom:8px;">Dear <strong>{{employee.full_name}}</strong>,</p>
-<p style="margin-bottom:18px;"><strong>Subject: Termination of Employment</strong></p>
-<p style="text-align:justify; margin-bottom:14px;">Your employment with <strong>{{company.name}}</strong> is being terminated with effect from <strong>{{letter.effective_date}}</strong> as per the terms of your contract.</p>
-<p style="text-align:justify; margin-bottom:14px;">Final settlement will be processed as per company policy. Please complete all exit formalities before your last working day.</p>
-<p style="text-align:justify; margin-bottom:8px;">We wish you the best in your future endeavours.</p>`,
-  },
-  NOC: {
-    name: "NOC Letter",
-    code: "NOC",
-    description: "No Objection Certificate",
-    category: "General",
-    content_html: `<p style="text-align:center; font-size:15px; letter-spacing:1px; margin-bottom:22px;"><strong>NO OBJECTION CERTIFICATE</strong></p>
-<p style="text-align:justify; margin-bottom:14px;">This is to certify that <strong>{{employee.full_name}}</strong> (Employee Code: <strong>{{employee.employee_code}}</strong>) is currently employed with <strong>{{company.name}}</strong> as <strong>{{employee.designation}}</strong> since <strong>{{employee.joining_date}}</strong>.</p>
-<p style="text-align:justify; margin-bottom:14px;">We have no objection if the employee pursues higher education or applies for a loan, subject to company policies.</p>
-<p style="text-align:justify; margin-bottom:8px;">This certificate is issued upon request of the employee.</p>`,
-  },
-  ADDRESS_PROOF: {
-    name: "Address Proof",
-    code: "ADDRPROOF",
-    description: "Address verification letter",
-    category: "General",
-    content_html: `<p style="text-align:center; font-size:15px; letter-spacing:1px; margin-bottom:22px;"><strong>ADDRESS VERIFICATION LETTER</strong></p>
-<p style="text-align:justify; margin-bottom:14px;">This is to certify that <strong>{{employee.full_name}}</strong> is employed with <strong>{{company.name}}</strong> since <strong>{{employee.joining_date}}</strong>.</p>
-<p style="text-align:justify; margin-bottom:14px;">The residential address as per our records:</p>
-<p style="margin:12px 0 18px 24px; padding:12px 16px; border-left:3px solid #2b6cb0; background:#f7fafc;"><strong>{{employee.address}}</strong></p>
-<p style="text-align:justify; margin-bottom:8px;">This letter is issued upon request for official purposes.</p>`,
-  },
-};
-
-/* ============ HELPERS ============ */
+/* ============================================================
+   HELPERS
+============================================================ */
 function getErrorMessage(err) {
   const detail = err?.response?.data?.detail;
   if (Array.isArray(detail)) return detail.map((i) => i?.msg || "Error").join(", ");
   if (typeof detail === "string") return detail;
+  if (err?.code === "ERR_NETWORK") return "Network error. Check your connection.";
+  if (err?.response?.status === 401) return "Session expired.";
+  if (err?.response?.status === 403) return "You don't have permission.";
+  if (err?.response?.status === 404) return "Not found.";
   return err?.message || "Something went wrong";
 }
 
@@ -194,25 +251,239 @@ function pickList(res) {
   const list =
     body?.data ?? body?.items ?? body?.results ?? body?.employees ??
     body?.departments ?? body?.designations ?? body?.templates ??
-    body?.categories ?? body?.letters ?? body?.requests ?? body?.signatories ?? [];
+    body?.categories ?? body?.letters ?? body?.signatories ?? [];
   return Array.isArray(list) ? list : Array.isArray(body) ? body : [];
-}
-
-function formatDate(value) {
-  if (!value) return "—";
-  try {
-    return new Date(value).toLocaleDateString("en-IN", {
-      day: "2-digit", month: "short", year: "numeric",
-    });
-  } catch { return String(value); }
 }
 
 function empName(emp) {
   if (!emp) return "—";
   if (emp.full_name) return emp.full_name;
   const n = `${emp.first_name || ""} ${emp.last_name || ""}`.trim();
-  return n || emp.employee_code || "—";
+  return n || emp.employee_code || emp.employee_id || "—";
 }
+
+function formatDate(value) {
+  if (!value) return "—";
+  try {
+    return new Date(value).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+  } catch { return String(value); }
+}
+
+/* ============================================================
+   SAMPLE HTML BUILDER — client-side A4 letter
+============================================================ */
+function buildSampleHtml(sample) {
+  if (!sample?.content_html) return "";
+
+  const company = {
+    name: "EZLIFE HRMS PVT LTD",
+    address: "Level 5, Prestige Tech Park, Bengaluru, Karnataka — 560103",
+    phone: "+91 80 4000 4000",
+    email: "hr@ezlife.example",
+    website: "www.ezlife.example",
+    gstin: "29ABCDE1234F1Z5",
+    cin: "U72900KA2015PTC080111",
+  };
+  const employee = {
+    full_name: "Swati Yadav",
+    employee_code: "EMP000123",
+    designation: "Senior Software Engineer",
+    department: "Engineering",
+    joining_date: "01 Sep 2024",
+    leaving_date: "30 Nov 2026",
+  };
+  const custom = {
+    "custom.offer.designation": "Senior Software Engineer",
+    "custom.offer.department": "Engineering",
+    "custom.offer.location": "Bengaluru",
+    "custom.offer.ctc": "12,00,000",
+    "custom.offer.joining_date": "15 Nov 2026",
+    "custom.offer.expiry_date": "30 Oct 2026",
+    "custom.offer.reporting_to": "Chief Technology Officer",
+    "custom.offer.bonus_percent": "20",
+    "custom.offer.esops": "50,000",
+    "custom.offer.retention_bonus": "5,00,000",
+    "custom.offer.notice_period": "Ninety (90) days",
+    "custom.internship.start_date": "01 Nov 2026",
+    "custom.internship.end_date": "31 Jan 2027",
+    "custom.internship.duration": "3 months",
+    "custom.internship.stipend": "15,000",
+    "custom.internship.mentor": "Ravi Kumar",
+    "custom.revision.old_ctc": "8,00,000",
+    "custom.revision.new_ctc": "12,00,000",
+    "custom.revision.effective_date": "01 Nov 2026",
+    "custom.promotion.old_designation": "Software Engineer",
+    "custom.promotion.new_designation": "Senior Software Engineer",
+    "custom.promotion.effective_date": "01 Nov 2026",
+    "custom.warning.reason": "Repeated late arrival and unapproved absence.",
+    "custom.transfer.new_department": "Platform",
+    "custom.transfer.new_location": "Hyderabad",
+    "custom.transfer.new_manager": "Ravi Kumar",
+    "custom.salary.monthly_gross": "94,000.00",
+    "custom.salary.monthly_net": "89,200.00",
+    "custom.noc.purpose": "higher studies",
+    "custom.noc.validity": "6 months",
+    "custom.bonafide.purpose": "address proof",
+  };
+
+  const tokens = {
+    "{{employee.full_name}}": employee.full_name,
+    "{{employee.employee_code}}": employee.employee_code,
+    "{{employee.designation}}": employee.designation,
+    "{{employee.department}}": employee.department,
+    "{{employee.joining_date}}": employee.joining_date,
+    "{{employee.leaving_date}}": employee.leaving_date,
+    "{{company.name}}": company.name,
+    "{{company.address}}": company.address,
+    "{{company.phone}}": company.phone,
+    "{{company.email}}": company.email,
+    "{{company.website}}": company.website,
+    "{{company.gstin}}": company.gstin,
+    "{{company.cin}}": company.cin,
+    "{{letter.number}}": "SAMPLE/2026/00001",
+    "{{letter.issue_date}}": "01 Oct 2026",
+    "{{letter.effective_date}}": "01 Oct 2026",
+    "{{signatory.name}}": "Aloo Bukhara",
+    "{{signatory.designation}}": "Head of Human Resources",
+    "{{signatory.department}}": "Human Resources",
+    "{{employee.annual_ctc}}": "12,00,000.00",
+  };
+  Object.entries(custom).forEach(([k, v]) => { tokens[`{{${k}}}`] = v; });
+
+  let body = sample.content_html;
+  Object.entries(tokens).forEach(([t, v]) => { body = body.split(t).join(v); });
+
+  return `<!DOCTYPE html>
+<html><head><meta charset="utf-8"/><title>${sample.code}</title>
+<style>
+  @page { size: A4; margin: 15mm 18mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Georgia, Cambria, 'Times New Roman', serif; font-size: 13.5px; line-height: 1.7; color: #1a202c; background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .wrap { max-width: 780px; margin: 0 auto; padding: 4px 2px 20px; }
+  .head { display: flex; align-items: center; gap: 20px; padding-bottom: 14px; }
+  .logo { width: 68px; height: 68px; background: linear-gradient(135deg,#1a365d,#2b6cb0); color: #fff; font-family: Helvetica, Arial, sans-serif; font-size: 22px; font-weight: 700; display: flex; align-items: center; justify-content: center; border-radius: 10px; letter-spacing: 1px; flex-shrink: 0; }
+  .cname { font-family: Helvetica, Arial, sans-serif; font-size: 22px; font-weight: 700; color: #0f2540; text-transform: uppercase; margin-bottom: 4px; }
+  .caddr { font-family: Helvetica, Arial, sans-serif; font-size: 10.5px; color: #4a5568; line-height: 1.6; }
+  .sep { height: 3px; background: linear-gradient(90deg,#0f2540,#2b6cb0,#0f2540); margin-bottom: 3px; }
+  .sep2 { height: 1px; background: #0f2540; opacity: .5; margin-bottom: 20px; }
+  .meta { display: flex; justify-content: space-between; margin-bottom: 24px; font-family: Helvetica, Arial, sans-serif; font-size: 12.5px; gap: 20px; }
+  .meta .lbl { color: #718096; font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; display: block; margin-bottom: 2px; }
+  .meta .val { color: #0f2540; font-weight: 600; font-size: 13px; }
+  .body p { margin-bottom: 14px; text-align: justify; line-height: 1.75; }
+  .body strong { color: #0f2540; font-weight: 700; }
+  .body h1, .body h2, .body h3 { color: #0f2540; margin: 16px 0 10px; font-weight: 700; }
+  .body ul, .body ol { margin: 12px 0 16px 24px; }
+  .body li { margin-bottom: 6px; }
+  .body table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; }
+  .body td { padding: 6px 10px 6px 0; vertical-align: top; }
+  .body td:first-child { color: #4a5568; width: 180px; }
+  .body td:last-child { color: #0f2540; font-weight: 600; }
+  .sig { margin-top: 42px; font-family: Helvetica, Arial, sans-serif; page-break-inside: avoid; }
+  .sig .closing { margin-bottom: 4px; font-family: Georgia, serif; font-size: 13.5px; }
+  .sig .forco { margin-bottom: 36px; font-size: 13px; }
+  .sig .name { font-weight: 700; font-size: 14px; color: #0f2540; }
+  .sig .desig { font-size: 12.5px; color: #2d3748; }
+  .foot { margin-top: 54px; padding-top: 12px; border-top: 1px solid #cbd5e0; font-family: Helvetica, Arial, sans-serif; font-size: 9.5px; color: #718096; text-align: center; line-height: 1.6; }
+  .page-break { page-break-after: always; }
+</style></head>
+<body><div class="wrap">
+  <div class="head"><div class="logo">EZ</div>
+    <div><div class="cname">${company.name}</div>
+      <div class="caddr">${company.address}<br/>Tel: ${company.phone} &nbsp;·&nbsp; ${company.email} &nbsp;·&nbsp; ${company.website}<br/>CIN: ${company.cin} &nbsp;·&nbsp; GSTIN: ${company.gstin}</div>
+    </div></div>
+  <div class="sep"></div><div class="sep2"></div>
+  <div class="meta">
+    <div><span class="lbl">Reference No.</span><span class="val">SAMPLE/2026/00001</span></div>
+    <div style="text-align:right"><span class="lbl">Date</span><span class="val">01 Oct 2026</span></div>
+  </div>
+  <div class="body">${body}</div>
+  <div class="sig">
+    <div class="closing">Yours sincerely,</div>
+    <div class="forco">For <strong>${company.name}</strong></div>
+    <div class="name">Aloo Bukhara</div>
+    <div class="desig">Head of Human Resources</div>
+  </div>
+  <div class="foot">${company.name} &nbsp;·&nbsp; Confidential — For official use only<br/>Sample preview · Generated by EZLife HRMS</div>
+</div></body></html>`;
+}
+
+function printHtml(html) {
+  const w = window.open("", "_blank");
+  if (!w) { alert("Popup blocked. Please allow popups for this site."); return; }
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+  setTimeout(() => { try { w.focus(); w.print(); } catch {} }, 600);
+}
+
+function downloadSample(sample) {
+  printHtml(buildSampleHtml(sample));
+}
+
+function downloadAllSamples() {
+  const allSamples = TEMPLATE_LIBRARY.flatMap((f) => f.samples);
+  const pages = allSamples.map((s, idx) => {
+    const html = buildSampleHtml(s);
+    const m = html.match(/<body>([\s\S]*)<\/body>/);
+    const body = m ? m[1] : "";
+    return `<div class="${idx < allSamples.length - 1 ? "page-break" : ""}">${body}</div>`;
+  }).join("");
+
+  const combined = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"/><title>All Sample Letters — EZLife HRMS</title>
+<style>
+  @page { size: A4; margin: 15mm 18mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Georgia, Cambria, serif; font-size: 13.5px; line-height: 1.7; color: #1a202c; background: #fff; }
+  .page-break { page-break-after: always; }
+  .wrap { max-width: 780px; margin: 0 auto; padding: 4px 2px 20px; }
+  .head { display: flex; align-items: center; gap: 20px; padding-bottom: 14px; }
+  .logo { width: 68px; height: 68px; background: linear-gradient(135deg,#1a365d,#2b6cb0); color: #fff; font-family: Helvetica, Arial, sans-serif; font-size: 22px; font-weight: 700; display: flex; align-items: center; justify-content: center; border-radius: 10px; letter-spacing: 1px; flex-shrink: 0; }
+  .cname { font-family: Helvetica, Arial, sans-serif; font-size: 22px; font-weight: 700; color: #0f2540; text-transform: uppercase; margin-bottom: 4px; }
+  .caddr { font-family: Helvetica, Arial, sans-serif; font-size: 10.5px; color: #4a5568; line-height: 1.6; }
+  .sep { height: 3px; background: linear-gradient(90deg,#0f2540,#2b6cb0,#0f2540); margin-bottom: 3px; }
+  .sep2 { height: 1px; background: #0f2540; opacity: .5; margin-bottom: 20px; }
+  .meta { display: flex; justify-content: space-between; margin-bottom: 24px; font-family: Helvetica, Arial, sans-serif; font-size: 12.5px; }
+  .meta .lbl { color: #718096; font-weight: 500; font-size: 11px; text-transform: uppercase; display: block; margin-bottom: 2px; }
+  .meta .val { color: #0f2540; font-weight: 600; font-size: 13px; }
+  .body p { margin-bottom: 14px; text-align: justify; line-height: 1.75; }
+  .body strong { color: #0f2540; font-weight: 700; }
+  .body h1, .body h2, .body h3 { color: #0f2540; margin: 16px 0 10px; font-weight: 700; }
+  .body ul, .body ol { margin: 12px 0 16px 24px; }
+  .body li { margin-bottom: 6px; }
+  .body table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; }
+  .body td { padding: 6px 10px 6px 0; vertical-align: top; }
+  .body td:first-child { color: #4a5568; width: 180px; }
+  .body td:last-child { color: #0f2540; font-weight: 600; }
+  .sig { margin-top: 42px; font-family: Helvetica, Arial, sans-serif; }
+  .sig .closing { margin-bottom: 4px; font-family: Georgia, serif; font-size: 13.5px; }
+  .sig .forco { margin-bottom: 36px; font-size: 13px; }
+  .sig .name { font-weight: 700; font-size: 14px; color: #0f2540; }
+  .sig .desig { font-size: 12.5px; color: #2d3748; }
+  .foot { margin-top: 54px; padding-top: 12px; border-top: 1px solid #cbd5e0; font-family: Helvetica, Arial, sans-serif; font-size: 9.5px; color: #718096; text-align: center; }
+</style></head>
+<body>${pages}</body></html>`;
+
+  printHtml(combined);
+}
+
+/* ============================================================
+   ICONS
+============================================================ */
+const Icons = {
+  File: (p) => <svg {...p} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
+  Sparkle: (p) => <svg {...p} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>,
+  Download: (p) => <svg {...p} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>,
+  Eye: (p) => <svg {...p} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>,
+  Search: (p) => <svg {...p} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z" /></svg>,
+  X: (p) => <svg {...p} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>,
+  CheckCircle: (p) => <svg {...p} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+  Database: (p) => <svg {...p} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" /></svg>,
+  Refresh: (p) => <svg {...p} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
+  Send: (p) => <svg {...p} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>,
+  Publish: (p) => <svg {...p} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>,
+  Clock: (p) => <svg {...p} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+};
 
 function StatusBadge({ status }) {
   const key = String(status || "").toLowerCase();
@@ -225,69 +496,60 @@ function StatusBadge({ status }) {
   );
 }
 
-/* ============ ICON COMPONENTS ============ */
-const Icons = {
-  File: (p) => <svg {...p} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
-  Template: (p) => <svg {...p} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" /></svg>,
-  Category: (p) => <svg {...p} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>,
-  Sign: (p) => <svg {...p} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>,
-  Bell: (p) => <svg {...p} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>,
-  Plus: (p) => <svg {...p} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>,
-  Search: (p) => <svg {...p} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z" /></svg>,
-  Refresh: (p) => <svg {...p} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
-  Eye: (p) => <svg {...p} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>,
-  Download: (p) => <svg {...p} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>,
-  Send: (p) => <svg {...p} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>,
-  Publish: (p) => <svg {...p} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>,
-  Check: (p) => <svg {...p} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>,
-  X: (p) => <svg {...p} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>,
-  Sparkle: (p) => <svg {...p} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>,
-  CheckCircle: (p) => <svg {...p} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
-  Clock: (p) => <svg {...p} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
-  Users: (p) => <svg {...p} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>,
-  Arrow: (p) => <svg {...p} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>,
-};
-
 /* ============================================================
    MAIN PAGE
 ============================================================ */
 export default function HRLettersPage() {
-  const [activeTab, setActiveTab] = useState("letters");
+  const [activeTab, setActiveTab] = useState("letters"); // "letters" | "samples" | "generate"
+  const [familyFilter, setFamilyFilter] = useState("");
+  const [previewSample, setPreviewSample] = useState(null);
 
-  const [employees, setEmployees] = useState([]);
-  const [departments, setDepartments] = useState([]);
-  const [designations, setDesignations] = useState([]);
+  // Letters list
   const [letters, setLetters] = useState([]);
-  const [templates, setTemplates] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [requests, setRequests] = useState([]);
-  const [signatories, setSignatories] = useState([]);
+  const [lettersLoading, setLettersLoading] = useState(false);
+  const [letterSearch, setLetterSearch] = useState("");
+  const [previewLetter, setPreviewLetter] = useState(null);
+  const [busyLetterId, setBusyLetterId] = useState(null);
 
-  const [listLoading, setListLoading] = useState(true);
+  // Generate
+  const [employees, setEmployees] = useState([]);
+  const [signatories, setSignatories] = useState([]);
+  const [empSearch, setEmpSearch] = useState("");
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const [selectedLetter, setSelectedLetter] = useState(null);
-  const [selectedTemplate, setSelectedTemplate] = useState(null);
-  const [previewLetter, setPreviewLetter] = useState(null);
-
-  const [categoryForm, setCategoryForm] = useState(EMPTY_CATEGORY);
-  const [generateForm, setGenerateForm] = useState(EMPTY_GENERATE);
-  const [signatoryForm, setSignatoryForm] = useState(EMPTY_SIGNATORY);
-
-  const [selectedEmployees, setSelectedEmployees] = useState([]);
-  const [filterDept, setFilterDept] = useState("");
-  const [filterDesig, setFilterDesig] = useState("");
-  const [empSearch, setEmpSearch] = useState("");
-  const [letterSearch, setLetterSearch] = useState("");
-
-  const [selectedSampleKey, setSelectedSampleKey] = useState("");
-  const [templateCategoryId, setTemplateCategoryId] = useState("");
-  const [templateRequiresApproval, setTemplateRequiresApproval] = useState(false);
-  const [templateAllowRequest, setTemplateAllowRequest] = useState(false);
+  const [form, setForm] = useState({
+    variant: "classic",
+    employee_id: "",
+    signatory_id: "",
+    issue_date: "",
+    effective_date: "",
+    expiry_date: "",
+    publish_to_ess: true,
+    send_email: false,
+    "offer.designation": "",
+    "offer.location": "",
+    "offer.joining_date": "",
+    "offer.expiry_date": "",
+    "offer.reporting_to": "",
+    "offer.bonus_percent": "",
+    "offer.esops": "",
+    "offer.retention_bonus": "",
+    "offer.notice_period": "",
+  });
 
   /* ============ FETCH ============ */
+  const fetchLetters = useCallback(async () => {
+    setLettersLoading(true);
+    try {
+      const res = await api.get("/api/v1/letters/generated", { params: { page: 1, page_size: 100 } });
+      setLetters(pickList(res));
+    } catch { setLetters([]); }
+    finally { setLettersLoading(false); }
+  }, []);
+
   const fetchEmployees = useCallback(async () => {
     try {
       const res = await api.get("/api/v1/get/employees", { params: { page: 1, page_size: 500 } });
@@ -295,329 +557,305 @@ export default function HRLettersPage() {
     } catch { setEmployees([]); }
   }, []);
 
-  const fetchDepartments = useCallback(async () => {
-    try {
-      const res = await api.get("/api/v1/get/departments", { params: { page: 1, page_size: 200 } });
-      setDepartments(pickList(res));
-    } catch { setDepartments([]); }
-  }, []);
-
-  const fetchDesignations = useCallback(async () => {
-    try {
-      const res = await api.get("/api/v1/get/designations", { params: { page: 1, page_size: 200 } });
-      setDesignations(pickList(res));
-    } catch { setDesignations([]); }
-  }, []);
-
-  const fetchLetters = useCallback(async () => {
-    setListLoading(true);
-    setError("");
-    try {
-      const res = await api.get("/api/v1/get/generated/letters", { params: { page: 1, page_size: 100 } });
-      setLetters(pickList(res));
-    } catch (err) {
-      setError(getErrorMessage(err));
-      setLetters([]);
-    } finally { setListLoading(false); }
-  }, []);
-
-  const fetchTemplates = useCallback(async () => {
-    try {
-      const res = await api.get("/api/v1/get/letter/templates", { params: { is_active: true, page: 1, page_size: 100 } });
-      setTemplates(pickList(res));
-    } catch { setTemplates([]); }
-  }, []);
-
-  const fetchCategories = useCallback(async () => {
-    try {
-      const res = await api.get("/api/v1/get/letter/categories", { params: { is_active: true, page: 1, page_size: 100 } });
-      setCategories(pickList(res));
-    } catch { setCategories([]); }
-  }, []);
-
-  const fetchRequests = useCallback(async () => {
-    try {
-      const res = await api.get("/api/v1/get/letter/requests", { params: { page: 1, page_size: 50 } });
-      setRequests(pickList(res));
-    } catch { setRequests([]); }
-  }, []);
-
   const fetchSignatories = useCallback(async () => {
     try {
-      const res = await api.get("/api/v1/get/letter/signatories", { params: { is_active: true, page: 1, page_size: 100 } });
+      const res = await api.get("/api/v1/letters/signatories", { params: { is_active: true, page: 1, page_size: 100 } });
       setSignatories(pickList(res));
     } catch { setSignatories([]); }
   }, []);
 
   useEffect(() => {
-    fetchEmployees();
-    fetchDepartments();
-    fetchDesignations();
     fetchLetters();
-    fetchTemplates();
-    fetchCategories();
-    fetchRequests();
+    fetchEmployees();
     fetchSignatories();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [fetchLetters, fetchEmployees, fetchSignatories]);
 
   /* ============ DERIVED ============ */
   const filteredEmployees = useMemo(() => {
+    if (!empSearch.trim()) return employees;
+    const q = empSearch.toLowerCase();
     return employees.filter((emp) => {
-      const deptId = emp.department_id || emp.department?.department_id || "";
-      const desigId = emp.designation_id || emp.designation?.designation_id || "";
       const name = empName(emp).toLowerCase();
-      const code = String(emp.employee_code || "").toLowerCase();
-      const deptOk = !filterDept || deptId === filterDept;
-      const desigOk = !filterDesig || desigId === filterDesig;
-      const searchOk = !empSearch || name.includes(empSearch.toLowerCase()) || code.includes(empSearch.toLowerCase());
-      return deptOk && desigOk && searchOk;
+      const code = String(emp.employee_code || emp.employee_id || "").toLowerCase();
+      return name.includes(q) || code.includes(q);
     });
-  }, [employees, filterDept, filterDesig, empSearch]);
+  }, [employees, empSearch]);
+
+  const selectedEmployee = useMemo(
+    () => employees.find((e) => (e.employee_id || e.id) === form.employee_id) || null,
+    [employees, form.employee_id]
+  );
+
+  const selectedVariant = OFFER_VARIANTS.find((v) => v.endpoint === form.variant) || OFFER_VARIANTS[0];
+
+  const totalSamples = useMemo(
+    () => TEMPLATE_LIBRARY.reduce((a, f) => a + f.samples.length, 0),
+    []
+  );
 
   const filteredLetters = useMemo(() => {
     if (!letterSearch.trim()) return letters;
     const q = letterSearch.toLowerCase();
-    return letters.filter(
-      (l) =>
-        String(l.letter_number || "").toLowerCase().includes(q) ||
-        String(l.employee_name || l.data_snapshot?.employee_name || "").toLowerCase().includes(q) ||
-        String(l.status || "").toLowerCase().includes(q)
+    return letters.filter((l) =>
+      String(l.letter_number || "").toLowerCase().includes(q) ||
+      String(l.data_snapshot?.employee_name || l.employee_name || "").toLowerCase().includes(q) ||
+      String(l.data_snapshot?.template_name || l.template_name || "").toLowerCase().includes(q) ||
+      String(l.status || "").toLowerCase().includes(q)
     );
   }, [letters, letterSearch]);
 
   const stats = useMemo(() => ({
     letters: letters.length,
-    templates: templates.length,
-    categories: categories.length,
-    pending: requests.filter((r) => String(r.status).toLowerCase() === "pending").length,
-    signatories: signatories.length,
-  }), [letters, templates, categories, requests, signatories]);
+    published: letters.filter((l) => String(l.status).toLowerCase() === "published").length,
+    drafts: letters.filter((l) => ["draft", "approved", "generated"].includes(String(l.status).toLowerCase())).length,
+  }), [letters]);
 
   /* ============ HANDLERS ============ */
-  async function handleCreateCategory(e) {
-    e.preventDefault();
-    setLoading(true); setError(""); setSuccess("");
-    try {
-      await api.post("/api/v1/create/letter/category", {
-        ...categoryForm,
-        code: categoryForm.code.toUpperCase(),
-        number_prefix: categoryForm.number_prefix || categoryForm.code.toUpperCase().slice(0, 3),
-      });
-      setSuccess("Category created successfully");
-      setCategoryForm(EMPTY_CATEGORY);
-      await fetchCategories();
-      setActiveTab("categories");
-    } catch (err) { setError(getErrorMessage(err)); }
-    finally { setLoading(false); }
-  }
-
-  async function handleCreateTemplateFromSample(e) {
-    e.preventDefault();
-    if (!selectedSampleKey || !PROFESSIONAL_TEMPLATES[selectedSampleKey]) {
-      setError("Please select a letter type"); return;
-    }
-    if (!templateCategoryId) { setError("Please select a category"); return; }
-
-    const sample = PROFESSIONAL_TEMPLATES[selectedSampleKey];
-    setLoading(true); setError(""); setSuccess("");
-    try {
-      await api.post("/api/v1/create/letter/template", {
-        category_id: templateCategoryId,
-        name: sample.name,
-        code: sample.code,
-        description: sample.description,
-        content_html: sample.content_html,
-        requires_approval: templateRequiresApproval,
-        requires_esign: false,
-        allow_employee_request: templateAllowRequest,
-        password_protect_pdf: false,
-        is_active: true,
-      });
-      setSuccess(`${sample.name} created successfully`);
-      setSelectedSampleKey("");
-      setTemplateCategoryId("");
-      setTemplateRequiresApproval(false);
-      setTemplateAllowRequest(false);
-      await fetchTemplates();
-      setActiveTab("templates");
-    } catch (err) { setError(getErrorMessage(err)); }
-    finally { setLoading(false); }
-  }
-
-  async function handleCreateSignatory(e) {
-    e.preventDefault();
-    setLoading(true); setError(""); setSuccess("");
-    try {
-      await api.post("/api/v1/create/letter/signatory", signatoryForm);
-      setSuccess("Signatory added successfully");
-      setSignatoryForm(EMPTY_SIGNATORY);
-      await fetchSignatories();
-      setActiveTab("signatories");
-    } catch (err) { setError(getErrorMessage(err)); }
-    finally { setLoading(false); }
-  }
+  function updateField(key, value) { setForm((p) => ({ ...p, [key]: value })); }
+  function resetMessages() { setError(""); setSuccess(""); }
 
   async function handleGenerate(e) {
     e.preventDefault();
-    setLoading(true); setError(""); setSuccess("");
+    resetMessages();
+    if (!form.employee_id) { setError("Please select an employee"); return; }
+    if (!form["offer.designation"]) { setError("Please enter offered designation"); return; }
+
+    setLoading(true);
     try {
-      if (!generateForm.template_id) { setError("Please select a template"); setLoading(false); return; }
-      if (selectedEmployees.length === 0) { setError("Please select at least one employee"); setLoading(false); return; }
-      const res = await api.post("/api/v1/generate/letter", {
-        template_id: generateForm.template_id,
-        employee_ids: selectedEmployees,
-        issue_date: generateForm.issue_date || null,
-        effective_date: generateForm.effective_date || null,
-        signatory_id: generateForm.signatory_id || null,
-        publish_to_ess: generateForm.publish_to_ess,
-        send_email: generateForm.send_email,
+      const custom_fields = {};
+      [
+        "offer.designation", "offer.location", "offer.joining_date", "offer.expiry_date",
+        "offer.reporting_to", "offer.bonus_percent", "offer.esops",
+        "offer.retention_bonus", "offer.notice_period",
+      ].forEach((k) => {
+        if (form[k] && String(form[k]).trim() !== "") custom_fields[k] = form[k];
       });
-      setSuccess(res?.data?.message || "Letter(s) generated successfully");
-      setGenerateForm(EMPTY_GENERATE);
-      setSelectedEmployees([]);
-      setFilterDept(""); setFilterDesig(""); setEmpSearch("");
+
+      const payload = {
+        employee_id: form.employee_id,
+        issue_date: form.issue_date || null,
+        effective_date: form.effective_date || null,
+        expiry_date: form.expiry_date || null,
+        signatory_id: form.signatory_id || null,
+        publish_to_ess: form.publish_to_ess,
+        send_email: form.send_email,
+        custom_fields,
+      };
+
+      const res = await api.post(`/api/v1/letters/offer/${selectedVariant.endpoint}`, payload);
+      const data = res?.data ?? {};
+      setSuccess(
+        `${selectedVariant.name} generated — ${data.letter_number || "success"}` +
+        (data.letter_id ? ` (ID: ${data.letter_id})` : "")
+      );
       await fetchLetters();
       setActiveTab("letters");
-    } catch (err) { setError(getErrorMessage(err)); }
-    finally { setLoading(false); }
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setLoading(false);
+    }
   }
 
-  async function handlePublish(letterId) {
-    try {
-      await api.post(`/api/v1/publish/letter/${letterId}`);
-      setSuccess("Published to ESS");
-      await fetchLetters();
-    } catch (err) { setError(getErrorMessage(err)); }
+  /* ⭐ Fetch letter content from backend */
+  async function fetchLetterContent(letterId) {
+    const res = await api.get(
+      `/api/v1/letters/generated/${letterId}/download`,
+      { params: { format: "html" } }
+    );
+    const data = res?.data ?? {};
+    return {
+      html: data.content_html || "",
+      download_url: data.download_url || "",
+      letter_number: data.letter_number || "",
+      message: data.message || "",
+    };
   }
 
-  async function handleSend(letterId) {
+  /* ⭐ Preview generated letter in modal */
+  async function handlePreviewLetter(letter) {
+    resetMessages();
+    setBusyLetterId(letter.letter_id);
     try {
-      await api.post(`/api/v1/send/letter/${letterId}`);
-      setSuccess("Letter sent successfully");
-      await fetchLetters();
-    } catch (err) { setError(getErrorMessage(err)); }
+      const { html } = await fetchLetterContent(letter.letter_id);
+      if (!html) { setError("Letter content not available"); return; }
+      setPreviewLetter({ html, letter });
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setBusyLetterId(null);
+    }
   }
 
-  async function handleDownload(letterId) {
+  /* ⭐ Download generated letter — opens new tab + print dialog → Save as PDF */
+  async function handleDownloadLetter(letter) {
+    resetMessages();
+    setBusyLetterId(letter.letter_id);
     try {
-      setError("");
-      const res = await api.get(`/api/v1/download/letter/${letterId}`, { params: { format: "pdf" } });
-      const data = res?.data || {};
-      if (data.download_url) { window.open(data.download_url, "_blank"); return; }
-      if (data.content_html) {
-        const w = window.open("", "_blank");
-        if (!w) { setError("Popup blocked."); return; }
-        w.document.write(data.content_html);
-        w.document.close();
-        w.onload = function () { setTimeout(() => { w.focus(); w.print(); }, 400); };
-        setTimeout(() => { try { w.focus(); w.print(); } catch (e) {} }, 900);
+      const { html, download_url, message } = await fetchLetterContent(letter.letter_id);
+
+      // If backend returns a hosted URL (S3), just open it
+      if (download_url) {
+        window.open(download_url, "_blank", "noopener,noreferrer");
+        setSuccess("Download started");
         return;
       }
-      setError(data.message || "Download not available");
-    } catch (err) { setError(getErrorMessage(err)); }
+
+      if (!html) {
+        setError(message || "Letter content unavailable");
+        return;
+      }
+
+      printHtml(html);
+      setSuccess(`Opened ${letter.letter_number || "letter"} — use "Save as PDF" in the print dialog`);
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setBusyLetterId(null);
+    }
   }
 
-  async function handlePreviewLetter(letterId) {
+  /* ⭐ Download-all in a batch — opens one combined doc with page breaks */
+  async function handleDownloadAllLetters() {
+    resetMessages();
+    const list = filteredLetters.slice(0, 30);
+    if (list.length === 0) { setError("No letters to download"); return; }
+
+    setLettersLoading(true);
     try {
-      setError("");
-      const res = await api.get(`/api/v1/download/letter/${letterId}`, { params: { format: "pdf" } });
-      const data = res?.data || {};
-      if (data.content_html) setPreviewLetter(data.content_html);
-      else setError("Preview not available");
-    } catch (err) { setError(getErrorMessage(err)); }
+      const results = await Promise.all(
+        list.map(async (l) => {
+          try {
+            const { html } = await fetchLetterContent(l.letter_id);
+            return { letter: l, html };
+          } catch { return { letter: l, html: "" }; }
+        })
+      );
+
+      const valid = results.filter((r) => r.html);
+      if (valid.length === 0) { setError("No letters could be downloaded"); return; }
+
+      const pages = valid.map((r, idx) => {
+        const m = r.html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+        const body = m ? m[1] : r.html;
+        const last = idx === valid.length - 1;
+        return `<div class="${last ? "" : "page-break"}">${body}</div>`;
+      }).join("");
+
+      const combined = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"/><title>Generated Letters — EZLife HRMS</title>
+<style>
+  @page { size: A4; margin: 15mm 18mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Georgia, Cambria, serif; font-size: 13.5px; line-height: 1.7; color: #1a202c; background: #fff; }
+  .page-break { page-break-after: always; }
+</style></head>
+<body>${pages}</body></html>`;
+
+      printHtml(combined);
+      setSuccess(`Prepared ${valid.length} letter(s) for print`);
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setLettersLoading(false);
+    }
   }
 
-  async function handleProcessRequest(requestId, action) {
+  async function handlePublishLetter(letter) {
+    resetMessages();
+    setBusyLetterId(letter.letter_id);
     try {
-      await api.post(`/api/v1/process/letter/request/${requestId}`, { action });
-      setSuccess(`Request ${action}d successfully`);
-      await fetchRequests();
-    } catch (err) { setError(getErrorMessage(err)); }
+      await api.post(`/api/v1/letters/generated/${letter.letter_id}/publish`);
+      setSuccess("Published to ESS");
+      await fetchLetters();
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setBusyLetterId(null);
+    }
   }
 
+  async function handleSendLetter(letter) {
+    resetMessages();
+    setBusyLetterId(letter.letter_id);
+    try {
+      await api.post(`/api/v1/letters/generated/${letter.letter_id}/send`);
+      setSuccess("Letter sent successfully");
+      await fetchLetters();
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setBusyLetterId(null);
+    }
+  }
+
+  /* ============ RENDER ============ */
   const tabs = [
-    { id: "letters", label: "Letters", icon: Icons.File, count: stats.letters },
-    { id: "generate", label: "Generate", icon: Icons.Sparkle },
-    { id: "templates", label: "Templates", icon: Icons.Template, count: stats.templates },
-    { id: "categories", label: "Categories", icon: Icons.Category, count: stats.categories },
-    { id: "signatories", label: "Signatories", icon: Icons.Sign, count: stats.signatories },
-    { id: "requests", label: "Requests", icon: Icons.Bell, count: stats.pending },
+    { id: "letters", label: "Generated", icon: Icons.File, count: stats.letters },
+    { id: "samples", label: "Sample Library", icon: Icons.Database, count: totalSamples },
+    { id: "generate", label: "Generate Offer", icon: Icons.Sparkle },
   ];
 
-  /* ===================== RENDER ===================== */
   return (
     <div className="min-h-[calc(100vh-3.5rem)] bg-gradient-to-br from-slate-50 via-slate-50 to-slate-100">
-      {/* ============ HEADER ============ */}
+      {/* HEADER */}
       <div className="border-b border-slate-200 bg-white/80 backdrop-blur-xl">
         <div className="mx-auto max-w-7xl px-5 py-6 sm:px-6">
-          {/* Top bar */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3.5">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#E42527] to-[#a81b1d] shadow-lg shadow-red-500/20">
                 <Icons.File className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-[24px] font-bold tracking-tight text-slate-900">
-                  HR Letters
-                </h1>
-                <p className="text-[13px] text-slate-500">
-                  Generate, sign, publish — professional employee letters
-                </p>
+                <h1 className="text-[24px] font-bold tracking-tight text-slate-900">HR Letters</h1>
+                <p className="text-[13px] text-slate-500">Generate, download, and manage letters</p>
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
-                onClick={() => { setActiveTab("generate"); setError(""); setSuccess(""); }}
-                className="group inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-[13px] font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 hover:shadow"
+                onClick={handleDownloadAllLetters}
+                disabled={lettersLoading || filteredLetters.length === 0}
+                className="inline-flex h-10 items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-4 text-[13px] font-semibold text-white shadow-md shadow-emerald-500/20 transition hover:shadow-lg disabled:opacity-60"
+              >
+                <Icons.Download className="h-4 w-4" />
+                Download All Generated
+              </button>
+              <button
+                type="button"
+                onClick={() => { setActiveTab("generate"); resetMessages(); }}
+                className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-[13px] font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
               >
                 <Icons.Sparkle className="h-4 w-4 text-[#E42527]" />
                 Generate
               </button>
-              <button
-                type="button"
-                onClick={() => { setActiveTab("create-template"); setError(""); setSuccess(""); }}
-                className="group inline-flex h-10 items-center gap-2 rounded-xl bg-gradient-to-r from-[#E42527] to-[#c91f21] px-4 text-[13px] font-semibold text-white shadow-md shadow-red-500/20 transition hover:shadow-lg hover:shadow-red-500/30"
-              >
-                <Icons.Plus className="h-4 w-4" />
-                New Template
-              </button>
             </div>
           </div>
 
-          {/* Stats */}
-          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          {/* STATS */}
+          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
             {[
-              { label: "Letters", value: stats.letters, icon: Icons.File, color: "from-red-500 to-red-600", bg: "bg-red-50", text: "text-red-600" },
-              { label: "Templates", value: stats.templates, icon: Icons.Template, color: "from-blue-500 to-blue-600", bg: "bg-blue-50", text: "text-blue-600" },
-              { label: "Categories", value: stats.categories, icon: Icons.Category, color: "from-violet-500 to-violet-600", bg: "bg-violet-50", text: "text-violet-600" },
-              { label: "Pending", value: stats.pending, icon: Icons.Clock, color: "from-amber-500 to-amber-600", bg: "bg-amber-50", text: "text-amber-600" },
-              { label: "Signatories", value: stats.signatories, icon: Icons.Sign, color: "from-emerald-500 to-emerald-600", bg: "bg-emerald-50", text: "text-emerald-600" },
+              { label: "Generated", value: stats.letters, icon: Icons.File, bg: "bg-red-50", text: "text-red-600" },
+              { label: "Published", value: stats.published, icon: Icons.CheckCircle, bg: "bg-emerald-50", text: "text-emerald-600" },
+              { label: "Drafts", value: stats.drafts, icon: Icons.Clock, bg: "bg-amber-50", text: "text-amber-600" },
             ].map((s) => {
               const Icon = s.icon;
               return (
-                <div
-                  key={s.label}
-                  className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
-                >
-                  <div className={`absolute -right-4 -top-4 h-16 w-16 rounded-full ${s.bg} opacity-60 transition group-hover:scale-125`} />
-                  <div className="relative">
-                    <div className="flex items-center justify-between">
-                      <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">{s.label}</p>
-                      <div className={`flex h-7 w-7 items-center justify-center rounded-lg ${s.bg}`}>
-                        <Icon className={`h-4 w-4 ${s.text}`} />
-                      </div>
+                <div key={s.label} className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">{s.label}</p>
+                    <div className={`flex h-7 w-7 items-center justify-center rounded-lg ${s.bg}`}>
+                      <Icon className={`h-4 w-4 ${s.text}`} />
                     </div>
-                    <p className="mt-2 text-[28px] font-bold leading-none tracking-tight text-slate-900">{s.value}</p>
                   </div>
+                  <p className="mt-2 text-[28px] font-bold leading-none tracking-tight text-slate-900">{s.value}</p>
                 </div>
               );
             })}
           </div>
 
-          {/* Tabs */}
-          <div className="mt-6 flex flex-wrap gap-1 border-b border-slate-200">
+          {/* TABS */}
+          <div className="mt-6 flex gap-1 border-b border-slate-200">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -625,23 +863,19 @@ export default function HRLettersPage() {
                 <button
                   key={tab.id}
                   type="button"
-                  onClick={() => { setActiveTab(tab.id); setError(""); setSuccess(""); }}
-                  className={`group relative flex items-center gap-2 px-4 py-3 text-[13px] font-semibold transition ${
+                  onClick={() => { setActiveTab(tab.id); resetMessages(); }}
+                  className={`relative flex items-center gap-2 whitespace-nowrap px-4 py-3 text-[13px] font-semibold transition ${
                     isActive ? "text-[#E42527]" : "text-slate-500 hover:text-slate-900"
                   }`}
                 >
                   <Icon className="h-4 w-4" />
                   {tab.label}
-                  {typeof tab.count === "number" && tab.count > 0 && (
+                  {typeof tab.count === "number" && (
                     <span className={`inline-flex h-5 min-w-[22px] items-center justify-center rounded-full px-1.5 text-[10px] font-bold ${
                       isActive ? "bg-[#E42527] text-white" : "bg-slate-100 text-slate-600"
-                    }`}>
-                      {tab.count}
-                    </span>
+                    }`}>{tab.count}</span>
                   )}
-                  {isActive && (
-                    <span className="absolute inset-x-3 -bottom-px h-[2.5px] rounded-full bg-[#E42527]" />
-                  )}
+                  {isActive && <span className="absolute inset-x-3 -bottom-px h-[2.5px] rounded-full bg-[#E42527]" />}
                 </button>
               );
             })}
@@ -649,9 +883,8 @@ export default function HRLettersPage() {
         </div>
       </div>
 
-      {/* ============ CONTENT ============ */}
+      {/* CONTENT */}
       <div className="mx-auto max-w-7xl px-5 py-6 sm:px-6">
-        {/* Notifications */}
         {error && (
           <div className="mb-4 flex items-start gap-3 rounded-xl border border-red-200 bg-gradient-to-r from-red-50 to-white px-4 py-3.5 shadow-sm">
             <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-red-100">
@@ -661,9 +894,7 @@ export default function HRLettersPage() {
               <p className="text-[13px] font-semibold text-red-800">Error</p>
               <p className="mt-0.5 text-[12px] text-red-700">{error}</p>
             </div>
-            <button onClick={() => setError("")} className="text-red-400 hover:text-red-600">
-              <Icons.X className="h-4 w-4" />
-            </button>
+            <button onClick={() => setError("")} className="text-red-400 hover:text-red-600"><Icons.X className="h-4 w-4" /></button>
           </div>
         )}
         {success && (
@@ -675,22 +906,17 @@ export default function HRLettersPage() {
               <p className="text-[13px] font-semibold text-emerald-800">Success</p>
               <p className="mt-0.5 text-[12px] text-emerald-700">{success}</p>
             </div>
-            <button onClick={() => setSuccess("")} className="text-emerald-400 hover:text-emerald-600">
-              <Icons.X className="h-4 w-4" />
-            </button>
+            <button onClick={() => setSuccess("")} className="text-emerald-400 hover:text-emerald-600"><Icons.X className="h-4 w-4" /></button>
           </div>
         )}
 
-        {/* ========== LETTERS ========== */}
+        {/* ==================== GENERATED LETTERS ==================== */}
         {activeTab === "letters" && (
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            {/* Toolbar */}
             <div className="flex flex-col gap-3 border-b border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-[15px] font-bold text-slate-900">Generated Letters</h2>
-                <p className="mt-0.5 text-[12px] text-slate-500">
-                  {filteredLetters.length} letter{filteredLetters.length !== 1 ? "s" : ""} found
-                </p>
+                <p className="mt-0.5 text-[12px] text-slate-500">{filteredLetters.length} letter(s)</p>
               </div>
               <div className="flex items-center gap-2">
                 <div className="relative">
@@ -699,40 +925,34 @@ export default function HRLettersPage() {
                     value={letterSearch}
                     onChange={(e) => setLetterSearch(e.target.value)}
                     placeholder="Search letters..."
-                    className="h-9 w-56 rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-3 text-[13px] text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-[#E42527] focus:bg-white focus:ring-2 focus:ring-[#E42527]/10"
+                    className="h-9 w-56 rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-3 text-[13px] outline-none focus:border-[#E42527] focus:bg-white"
                   />
                 </div>
                 <button
                   type="button"
                   onClick={fetchLetters}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50"
                 >
                   <Icons.Refresh className="h-4 w-4" />
                 </button>
               </div>
             </div>
 
-            {/* Table */}
-            {listLoading ? (
+            {lettersLoading ? (
               <div className="space-y-2 p-5">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="flex gap-3">
-                    <div className="h-12 flex-1 animate-pulse rounded-lg bg-slate-100" />
-                    <div className="h-12 w-24 animate-pulse rounded-lg bg-slate-100" />
-                  </div>
-                ))}
+                {[1, 2, 3, 4].map((i) => <div key={i} className="h-12 animate-pulse rounded-lg bg-slate-100" />)}
               </div>
             ) : filteredLetters.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-24 text-center">
                 <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-red-50 to-red-100">
                   <Icons.File className="h-8 w-8 text-[#E42527]" />
                 </div>
-                <p className="mt-4 text-[15px] font-semibold text-slate-800">No letters yet</p>
-                <p className="mt-1 text-[13px] text-slate-500">Generate your first professional letter</p>
+                <p className="mt-4 text-[15px] font-semibold text-slate-800">No letters generated yet</p>
+                <p className="mt-1 text-[13px] text-slate-500">Generate your first letter from the "Generate Offer" tab</p>
                 <button
                   type="button"
                   onClick={() => setActiveTab("generate")}
-                  className="mt-5 inline-flex h-9 items-center gap-2 rounded-lg bg-gradient-to-r from-[#E42527] to-[#c91f21] px-4 text-[13px] font-semibold text-white shadow-md shadow-red-500/20 transition hover:shadow-lg"
+                  className="mt-5 inline-flex h-9 items-center gap-2 rounded-lg bg-gradient-to-r from-[#E42527] to-[#c91f21] px-4 text-[13px] font-semibold text-white"
                 >
                   <Icons.Sparkle className="h-4 w-4" />
                   Generate Letter
@@ -751,72 +971,72 @@ export default function HRLettersPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
-                    {filteredLetters.map((letter, idx) => (
-                      <tr key={letter.letter_id || idx} className="group transition hover:bg-slate-50/70">
-                        <td className="px-5 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-red-50 to-red-100">
-                              <Icons.File className="h-4 w-4 text-[#E42527]" />
+                    {filteredLetters.map((letter, idx) => {
+                      const isBusy = busyLetterId === letter.letter_id;
+                      const statusKey = String(letter.status || "").toLowerCase();
+                      const canPublish = statusKey !== "published" && statusKey !== "cancelled";
+                      return (
+                        <tr key={letter.letter_id || idx} className="hover:bg-slate-50/70">
+                          <td className="px-5 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-50">
+                                <Icons.File className="h-4 w-4 text-[#E42527]" />
+                              </div>
+                              <div>
+                                <p className="text-[13px] font-bold text-slate-900">{letter.letter_number || "—"}</p>
+                                <p className="text-[11px] text-slate-500">
+                                  {letter.data_snapshot?.template_name || letter.template_name || "Letter"}
+                                </p>
+                              </div>
                             </div>
-                            <div className="min-w-0">
-                              <p className="text-[13px] font-bold text-slate-900">{letter.letter_number || "—"}</p>
-                              <p className="mt-0.5 text-[11px] text-slate-500">
-                                {letter.template_name || letter.data_snapshot?.template_name || "Letter"}
-                              </p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-5 py-4">
-                          <div className="flex items-center gap-2">
-                            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-[10px] font-bold text-slate-600">
-                              {(letter.employee_name || letter.data_snapshot?.employee_name || "?").slice(0, 2).toUpperCase()}
-                            </div>
+                          </td>
+                          <td className="px-5 py-4">
                             <span className="text-[13px] text-slate-700">
-                              {letter.employee_name || letter.data_snapshot?.employee_name || "—"}
+                              {letter.data_snapshot?.employee_name || letter.employee_name || letter.employee_id || "—"}
                             </span>
-                          </div>
-                        </td>
-                        <td className="px-5 py-4"><StatusBadge status={letter.status} /></td>
-                        <td className="px-5 py-4">
-                          <span className="text-[12px] text-slate-600">{formatDate(letter.issue_date)}</span>
-                        </td>
-                        <td className="px-5 py-4">
-                          <div className="flex items-center justify-end gap-1">
-                            <button
-                              onClick={() => handlePreviewLetter(letter.letter_id)}
-                              className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[12px] font-semibold text-slate-600 transition hover:bg-blue-50 hover:text-blue-700"
-                              title="Preview"
-                            >
-                              <Icons.Eye className="h-3.5 w-3.5" />
-                              Preview
-                            </button>
-                            <button
-                              onClick={() => handleDownload(letter.letter_id)}
-                              className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[12px] font-semibold text-slate-600 transition hover:bg-slate-100"
-                              title="Download"
-                            >
-                              <Icons.Download className="h-3.5 w-3.5" />
-                            </button>
-                            {String(letter.status).toLowerCase() !== "published" && (
+                          </td>
+                          <td className="px-5 py-4"><StatusBadge status={letter.status} /></td>
+                          <td className="px-5 py-4 text-[12px] text-slate-600">{formatDate(letter.issue_date)}</td>
+                          <td className="px-5 py-4">
+                            <div className="flex items-center justify-end gap-1">
                               <button
-                                onClick={() => handlePublish(letter.letter_id)}
-                                className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[12px] font-semibold text-emerald-600 transition hover:bg-emerald-50"
-                                title="Publish to ESS"
+                                onClick={() => handlePreviewLetter(letter)}
+                                disabled={isBusy}
+                                className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[12px] font-semibold text-slate-600 hover:bg-blue-50 hover:text-blue-700 disabled:opacity-50"
                               >
-                                <Icons.Publish className="h-3.5 w-3.5" />
+                                <Icons.Eye className="h-3.5 w-3.5" /> Preview
                               </button>
-                            )}
-                            <button
-                              onClick={() => handleSend(letter.letter_id)}
-                              className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[12px] font-semibold text-indigo-600 transition hover:bg-indigo-50"
-                              title="Send Email"
-                            >
-                              <Icons.Send className="h-3.5 w-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                              <button
+                                onClick={() => handleDownloadLetter(letter)}
+                                disabled={isBusy}
+                                className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#E42527] px-2.5 text-[12px] font-semibold text-white hover:bg-[#c91f21] disabled:opacity-50"
+                              >
+                                <Icons.Download className="h-3.5 w-3.5" />
+                                {isBusy ? "…" : "Download"}
+                              </button>
+                              {canPublish && (
+                                <button
+                                  onClick={() => handlePublishLetter(letter)}
+                                  disabled={isBusy}
+                                  className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[12px] font-semibold text-emerald-600 hover:bg-emerald-50 disabled:opacity-50"
+                                  title="Publish to ESS"
+                                >
+                                  <Icons.Publish className="h-3.5 w-3.5" />
+                                </button>
+                              )}
+                              <button
+                                onClick={() => handleSendLetter(letter)}
+                                disabled={isBusy}
+                                className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[12px] font-semibold text-indigo-600 hover:bg-indigo-50 disabled:opacity-50"
+                                title="Send to employee"
+                              >
+                                <Icons.Send className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -824,353 +1044,151 @@ export default function HRLettersPage() {
           </div>
         )}
 
-        {/* ========== TEMPLATES ========== */}
-        {activeTab === "templates" && (
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-              <div>
-                <h2 className="text-[15px] font-bold text-slate-900">Letter Templates</h2>
-                <p className="mt-0.5 text-[12px] text-slate-500">Ready-to-use professional templates</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setActiveTab("create-template")}
-                className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-gradient-to-r from-[#E42527] to-[#c91f21] px-3.5 text-[13px] font-semibold text-white shadow-sm transition hover:shadow-md"
-              >
-                <Icons.Plus className="h-4 w-4" />
-                New
-              </button>
-            </div>
-            {templates.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-24 text-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100">
-                  <Icons.Template className="h-8 w-8 text-blue-600" />
+        {/* ==================== SAMPLES ==================== */}
+        {activeTab === "samples" && (
+          <div className="space-y-6">
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-[#E42527] to-[#a81b1d]">
+                  <Icons.Database className="h-5 w-5 text-white" />
                 </div>
-                <p className="mt-4 text-[15px] font-semibold text-slate-800">No templates yet</p>
-                <p className="mt-1 text-[13px] text-slate-500">Add professional letter templates from library</p>
+                <div className="flex-1">
+                  <h2 className="text-[17px] font-bold text-slate-900">Sample Library</h2>
+                  <p className="text-[12.5px] text-slate-500">
+                    {totalSamples} professional samples across {TEMPLATE_LIBRARY.length} families
+                  </p>
+                </div>
                 <button
                   type="button"
-                  onClick={() => setActiveTab("create-template")}
-                  className="mt-5 inline-flex h-9 items-center gap-2 rounded-lg bg-gradient-to-r from-[#E42527] to-[#c91f21] px-4 text-[13px] font-semibold text-white shadow-md shadow-red-500/20"
+                  onClick={downloadAllSamples}
+                  className="inline-flex h-10 items-center gap-2 rounded-lg bg-gradient-to-r from-emerald-500 to-emerald-600 px-5 text-[13px] font-bold text-white shadow-md"
                 >
-                  <Icons.Plus className="h-4 w-4" />
-                  Browse Templates
+                  <Icons.Download className="h-4 w-4" />
+                  Download All Samples
                 </button>
               </div>
-            ) : (
-              <div className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-3">
-                {templates.map((t) => (
-                  <button
-                    key={t.template_id}
-                    type="button"
-                    onClick={() => setSelectedTemplate(t)}
-                    className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 text-left transition hover:-translate-y-1 hover:border-[#E42527]/30 hover:shadow-lg hover:shadow-red-500/5"
-                  >
-                    <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-gradient-to-br from-red-50 to-transparent opacity-0 transition group-hover:opacity-100" />
-                    <div className="relative">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-red-50 to-red-100 transition group-hover:scale-110">
-                          <Icons.File className="h-5 w-5 text-[#E42527]" />
-                        </div>
-                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600">
-                          v{t.version || 1}
-                        </span>
-                      </div>
-                      <h3 className="mt-3 text-[14px] font-bold text-slate-900">{t.name}</h3>
-                      <p className="mt-0.5 text-[11px] font-mono text-slate-500">{t.code}</p>
-                      <div className="mt-3 flex flex-wrap gap-1.5">
-                        {t.requires_approval && (
-                          <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
-                            Approval
-                          </span>
-                        )}
-                        {t.allow_employee_request && (
-                          <span className="rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
-                            Self-Service
-                          </span>
-                        )}
-                        {!t.requires_approval && !t.allow_employee_request && (
-                          <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
-                            Ready
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
 
-        {/* ========== CATEGORIES ========== */}
-        {activeTab === "categories" && (
-          <div className="grid gap-5 lg:grid-cols-5">
-            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:col-span-3">
-              <div className="border-b border-slate-100 px-5 py-4">
-                <h2 className="text-[15px] font-bold text-slate-900">Letter Categories</h2>
-                <p className="mt-0.5 text-[12px] text-slate-500">Groups for organizing letter templates</p>
-              </div>
-              <div className="divide-y divide-slate-50">
-                {categories.length === 0 ? (
-                  <div className="px-5 py-16 text-center text-[13px] text-slate-500">
-                    No categories yet
-                  </div>
-                ) : (
-                  categories.map((c) => (
-                    <div key={c.category_id} className="flex items-center justify-between px-5 py-4 transition hover:bg-slate-50/70">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-violet-50 to-violet-100">
-                          <Icons.Category className="h-4 w-4 text-violet-600" />
-                        </div>
-                        <div>
-                          <p className="text-[13px] font-bold text-slate-900">{c.name}</p>
-                          <p className="mt-0.5 text-[11px] text-slate-500">
-                            <span className="font-mono">{c.code}</span> · Prefix {c.number_prefix || "—"}
-                          </p>
-                        </div>
-                      </div>
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                        Active
-                      </span>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-2">
-              <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#E42527]/10">
-                  <Icons.Plus className="h-4 w-4 text-[#E42527]" />
-                </div>
-                <h3 className="text-[14px] font-bold text-slate-900">Add Category</h3>
-              </div>
-              <form onSubmit={handleCreateCategory} className="mt-5 space-y-3">
-                <div>
-                  <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-slate-500">Code</label>
-                  <input
-                    required
-                    value={categoryForm.code}
-                    onChange={(e) => setCategoryForm((p) => ({ ...p, code: e.target.value.toUpperCase() }))}
-                    placeholder="EXPERIENCE"
-                    className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-[13px] font-mono outline-none transition focus:border-[#E42527] focus:bg-white focus:ring-2 focus:ring-[#E42527]/10"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-slate-500">Display Name</label>
-                  <input
-                    required
-                    value={categoryForm.name}
-                    onChange={(e) => setCategoryForm((p) => ({ ...p, name: e.target.value }))}
-                    placeholder="Experience Letters"
-                    className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-[13px] outline-none transition focus:border-[#E42527] focus:bg-white focus:ring-2 focus:ring-[#E42527]/10"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-slate-500">Number Prefix</label>
-                  <input
-                    value={categoryForm.number_prefix}
-                    onChange={(e) => setCategoryForm((p) => ({ ...p, number_prefix: e.target.value.toUpperCase() }))}
-                    placeholder="EXP"
-                    className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-[13px] font-mono outline-none transition focus:border-[#E42527] focus:bg-white focus:ring-2 focus:ring-[#E42527]/10"
-                  />
-                </div>
+              <div className="mt-5 flex flex-wrap gap-2">
                 <button
-                  type="submit"
-                  disabled={loading}
-                  className="mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#E42527] to-[#c91f21] text-[13px] font-bold text-white shadow-md shadow-red-500/20 transition hover:shadow-lg disabled:opacity-60"
-                >
-                  {loading ? "Saving..." : "Create Category"}
-                </button>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* ========== SIGNATORIES ========== */}
-        {activeTab === "signatories" && (
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-              <div>
-                <h2 className="text-[15px] font-bold text-slate-900">Authorized Signatories</h2>
-                <p className="mt-0.5 text-[12px] text-slate-500">People who sign the letters</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setActiveTab("create-signatory")}
-                className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-gradient-to-r from-[#E42527] to-[#c91f21] px-3.5 text-[13px] font-semibold text-white shadow-sm transition hover:shadow-md"
-              >
-                <Icons.Plus className="h-4 w-4" />
-                Add
-              </button>
-            </div>
-            {signatories.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-24 text-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100">
-                  <Icons.Sign className="h-8 w-8 text-emerald-600" />
-                </div>
-                <p className="mt-4 text-[15px] font-semibold text-slate-800">No signatories yet</p>
-                <p className="mt-1 text-[13px] text-slate-500">Add authorized signatories for letters</p>
-              </div>
-            ) : (
-              <div className="grid gap-3 p-5 sm:grid-cols-2 lg:grid-cols-3">
-                {signatories.map((s) => (
-                  <div key={s.signatory_id} className="relative overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-4">
-                    {s.is_default && (
-                      <div className="absolute right-3 top-3 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-700">
-                        DEFAULT
-                      </div>
-                    )}
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 text-[14px] font-bold text-white">
-                        {(s.name || "?").slice(0, 2).toUpperCase()}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="truncate text-[13px] font-bold text-slate-900">{s.name}</p>
-                        <p className="truncate text-[11px] text-slate-500">{s.designation}</p>
-                      </div>
-                    </div>
-                    {s.department && (
-                      <p className="mt-3 truncate text-[11px] text-slate-400">{s.department}</p>
-                    )}
-                  </div>
+                  type="button"
+                  onClick={() => setFamilyFilter("")}
+                  className={`rounded-lg px-3 py-1.5 text-[12px] font-semibold ${
+                    familyFilter === "" ? "bg-[#E42527] text-white" : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                  }`}
+                >All ({totalSamples})</button>
+                {TEMPLATE_LIBRARY.map((f) => (
+                  <button
+                    key={f.family}
+                    type="button"
+                    onClick={() => setFamilyFilter(f.family)}
+                    className={`rounded-lg px-3 py-1.5 text-[12px] font-semibold ${
+                      familyFilter === f.family ? "bg-[#E42527] text-white" : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                    }`}
+                  >{f.label} ({f.samples.length})</button>
                 ))}
               </div>
-            )}
-          </div>
-        )}
-
-        {/* ========== REQUESTS ========== */}
-        {activeTab === "requests" && (
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div className="border-b border-slate-100 px-5 py-4">
-              <h2 className="text-[15px] font-bold text-slate-900">Employee Requests</h2>
-              <p className="mt-0.5 text-[12px] text-slate-500">Self-service letter requests from employees</p>
             </div>
-            {requests.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-24 text-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-50 to-amber-100">
-                  <Icons.Bell className="h-8 w-8 text-amber-600" />
+
+            {TEMPLATE_LIBRARY.filter((f) => !familyFilter || f.family === familyFilter).map((fam) => (
+              <div key={fam.family} className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-[15px] font-bold text-slate-900">{fam.label}</h3>
+                    <p className="text-[12px] text-slate-500">{fam.description}</p>
+                  </div>
+                  <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-600">
+                    {fam.samples.length} sample{fam.samples.length > 1 ? "s" : ""}
+                  </span>
                 </div>
-                <p className="mt-4 text-[15px] font-semibold text-slate-800">No requests</p>
-                <p className="mt-1 text-[13px] text-slate-500">When employees request letters, they'll appear here</p>
-              </div>
-            ) : (
-              <div className="divide-y divide-slate-50">
-                {requests.map((r, idx) => (
-                  <div key={r.request_id || idx} className="flex items-center justify-between gap-4 px-5 py-4 transition hover:bg-slate-50/70">
-                    <div className="flex min-w-0 flex-1 items-center gap-3">
-                      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-slate-100 to-slate-200 text-[12px] font-bold text-slate-700">
-                        {(r.employee_name || "?").slice(0, 2).toUpperCase()}
+
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {fam.samples.map((s) => (
+                    <div key={s.key} className="flex flex-col rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+                      <div className="p-5">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50">
+                            <Icons.File className="h-5 w-5 text-[#E42527]" />
+                          </div>
+                          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600">{fam.category}</span>
+                        </div>
+                        <h4 className="mt-3 text-[14px] font-bold text-slate-900">{s.name}</h4>
+                        <p className="mt-0.5 text-[11px] font-mono text-slate-500">{s.code}</p>
+                        <p className="mt-2 text-[12px] text-slate-600">{s.description}</p>
                       </div>
-                      <div className="min-w-0">
-                        <p className="truncate text-[13px] font-bold text-slate-900">{r.employee_name || "—"}</p>
-                        <p className="truncate text-[12px] text-slate-500">{r.purpose || r.reason || "—"}</p>
-                      </div>
-                    </div>
-                    <StatusBadge status={r.status} />
-                    {String(r.status).toLowerCase() === "pending" && (
-                      <div className="flex gap-2">
+                      <div className="mt-auto flex items-center gap-2 border-t border-slate-100 bg-slate-50/60 px-4 py-3">
                         <button
                           type="button"
-                          onClick={() => handleProcessRequest(r.request_id, "approve")}
-                          className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-emerald-50 px-3 text-[12px] font-bold text-emerald-700 transition hover:bg-emerald-100"
+                          onClick={() => setPreviewSample(s)}
+                          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold text-slate-700 transition hover:bg-slate-100"
                         >
-                          <Icons.Check className="h-3.5 w-3.5" />
-                          Approve
+                          <Icons.Eye className="h-3.5 w-3.5" /> Preview
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleProcessRequest(r.request_id, "reject")}
-                          className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-red-50 px-3 text-[12px] font-bold text-red-700 transition hover:bg-red-100"
+                          onClick={() => downloadSample(s)}
+                          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-[#E42527] to-[#c91f21] px-3 py-2 text-[12px] font-bold text-white shadow-sm transition hover:shadow-md"
                         >
-                          <Icons.X className="h-3.5 w-3.5" />
-                          Reject
+                          <Icons.Download className="h-3.5 w-3.5" /> Download
                         </button>
                       </div>
-                    )}
-                  </div>
-                ))}
+                    </div>
+                  ))}
+                </div>
               </div>
-            )}
+            ))}
           </div>
         )}
 
-        {/* ========== GENERATE ========== */}
+        {/* ==================== GENERATE ==================== */}
         {activeTab === "generate" && (
-          <div className="mx-auto max-w-3xl">
+          <div className="mx-auto max-w-4xl">
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
               <div className="border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white px-6 py-5">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#E42527] to-[#a81b1d] shadow-md shadow-red-500/20">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#E42527] to-[#a81b1d]">
                     <Icons.Sparkle className="h-5 w-5 text-white" />
                   </div>
                   <div>
-                    <h2 className="text-[16px] font-bold text-slate-900">Generate Letter</h2>
-                    <p className="text-[12px] text-slate-500">Select template, employees, and generate</p>
+                    <h2 className="text-[16px] font-bold text-slate-900">Generate Offer Letter</h2>
+                    <p className="text-[12px] text-slate-500">Pick a variant, select an employee, fill offer details</p>
                   </div>
                 </div>
               </div>
 
-              <form onSubmit={handleGenerate} className="space-y-5 p-6">
+              <form onSubmit={handleGenerate} className="space-y-6 p-6">
+                {/* VARIANT */}
                 <div>
-                  <label className="mb-1.5 block text-[12px] font-bold uppercase tracking-wider text-slate-600">
-                    Template <span className="text-[#E42527]">*</span>
+                  <label className="mb-2 block text-[12px] font-bold uppercase tracking-wider text-slate-600">
+                    Offer Letter Type <span className="text-[#E42527]">*</span>
                   </label>
-                  <select
-                    required
-                    value={generateForm.template_id}
-                    onChange={(e) => setGenerateForm((p) => ({ ...p, template_id: e.target.value }))}
-                    className="h-11 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-[13px] outline-none transition focus:border-[#E42527] focus:bg-white focus:ring-2 focus:ring-[#E42527]/10"
-                  >
-                    <option value="">— Select a letter template —</option>
-                    {templates.map((t) => (
-                      <option key={t.template_id} value={t.template_id}>{t.name} ({t.code})</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="mb-1.5 block text-[12px] font-bold uppercase tracking-wider text-slate-600">Department</label>
-                    <select
-                      value={filterDept}
-                      onChange={(e) => setFilterDept(e.target.value)}
-                      className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-[13px] outline-none transition focus:border-[#E42527] focus:bg-white focus:ring-2 focus:ring-[#E42527]/10"
-                    >
-                      <option value="">All Departments</option>
-                      {departments.map((d) => (
-                        <option key={d.department_id || d.id} value={d.department_id || d.id}>
-                          {d.department_name || d.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-[12px] font-bold uppercase tracking-wider text-slate-600">Designation</label>
-                    <select
-                      value={filterDesig}
-                      onChange={(e) => setFilterDesig(e.target.value)}
-                      className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-[13px] outline-none transition focus:border-[#E42527] focus:bg-white focus:ring-2 focus:ring-[#E42527]/10"
-                    >
-                      <option value="">All Designations</option>
-                      {designations.map((d) => (
-                        <option key={d.designation_id || d.id} value={d.designation_id || d.id}>
-                          {d.job_title || d.designation_name || d.name}
-                        </option>
-                      ))}
-                    </select>
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    {OFFER_VARIANTS.map((v) => {
+                      const active = form.variant === v.endpoint;
+                      return (
+                        <button
+                          key={v.endpoint}
+                          type="button"
+                          onClick={() => updateField("variant", v.endpoint)}
+                          className={`rounded-2xl border-2 p-4 text-left transition ${
+                            active ? `border-transparent ring-2 ${v.ring} shadow-md` : "border-slate-200 hover:border-slate-300"
+                          }`}
+                        >
+                          <div className={`mb-2 flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br ${v.accent}`}>
+                            <Icons.File className="h-4 w-4 text-white" />
+                          </div>
+                          <p className="text-[13px] font-bold text-slate-900">{v.name}</p>
+                          <p className="mt-0.5 text-[11px] text-slate-500">{v.description}</p>
+                          <p className="mt-2 text-[10px] font-mono text-slate-400">{v.code}</p>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
+                {/* EMPLOYEE */}
                 <div>
                   <label className="mb-1.5 block text-[12px] font-bold uppercase tracking-wider text-slate-600">
-                    Employees <span className="text-[#E42527]">*</span>
-                    <span className="ml-2 rounded-full bg-[#E42527] px-2 py-0.5 text-[10px] font-bold text-white">
-                      {selectedEmployees.length} selected
-                    </span>
+                    Employee <span className="text-[#E42527]">*</span>
                   </label>
                   <div className="relative mb-2">
                     <Icons.Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -1178,7 +1196,7 @@ export default function HRLettersPage() {
                       value={empSearch}
                       onChange={(e) => setEmpSearch(e.target.value)}
                       placeholder="Search employee..."
-                      className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 pl-10 pr-3 text-[13px] outline-none transition focus:border-[#E42527] focus:bg-white focus:ring-2 focus:ring-[#E42527]/10"
+                      className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 pl-10 pr-3 text-[13px] outline-none focus:border-[#E42527] focus:bg-white"
                     />
                   </div>
                   <div className="max-h-56 overflow-y-auto rounded-xl border border-slate-200 bg-slate-50/50">
@@ -1187,351 +1205,286 @@ export default function HRLettersPage() {
                     ) : (
                       filteredEmployees.map((emp) => {
                         const id = emp.employee_id || emp.id;
-                        const checked = selectedEmployees.includes(id);
+                        const checked = form.employee_id === id;
                         return (
                           <label
                             key={id}
-                            className={`flex cursor-pointer items-center gap-3 border-b border-slate-100 px-4 py-3 transition last:border-0 ${
+                            className={`flex cursor-pointer items-center gap-3 border-b border-slate-100 px-4 py-3 last:border-0 ${
                               checked ? "bg-red-50/60" : "hover:bg-white"
                             }`}
                           >
                             <input
-                              type="checkbox"
+                              type="radio"
+                              name="employee"
                               checked={checked}
-                              onChange={() =>
-                                setSelectedEmployees((prev) =>
-                                  checked ? prev.filter((x) => x !== id) : [...prev, id]
-                                )
-                              }
-                              className="h-4 w-4 rounded border-slate-300 accent-[#E42527]"
+                              onChange={() => updateField("employee_id", id)}
+                              className="h-4 w-4 accent-[#E42527]"
                             />
                             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 text-[11px] font-bold text-slate-700">
                               {empName(emp).slice(0, 2).toUpperCase()}
                             </div>
                             <div className="min-w-0 flex-1">
                               <p className="truncate text-[13px] font-semibold text-slate-800">{empName(emp)}</p>
-                              <p className="truncate text-[11px] text-slate-500">{emp.employee_code || ""}</p>
+                              <p className="truncate text-[11px] text-slate-500">{emp.employee_id || emp.employee_code || ""}</p>
                             </div>
                           </label>
                         );
                       })
                     )}
                   </div>
-                  {selectedEmployees.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => setSelectedEmployees([])}
-                      className="mt-2 text-[12px] font-semibold text-[#E42527] hover:underline"
-                    >
-                      Clear all selected
-                    </button>
+                  {selectedEmployee && (
+                    <p className="mt-2 text-[11px] text-slate-500">
+                      Selected: <strong className="text-slate-700">{empName(selectedEmployee)}</strong>
+                    </p>
                   )}
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-2">
+                {/* OFFER DETAILS */}
+                <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-5">
+                  <p className="mb-4 text-[12px] font-bold uppercase tracking-wider text-slate-600">Offer Details</p>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label className="mb-1.5 block text-[11px] font-semibold text-slate-600">
+                        Offered Designation <span className="text-[#E42527]">*</span>
+                      </label>
+                      <input
+                        value={form["offer.designation"]}
+                        onChange={(e) => updateField("offer.designation", e.target.value)}
+                        placeholder="e.g. Senior Software Engineer"
+                        className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-[13px] outline-none focus:border-[#E42527]"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1.5 block text-[11px] font-semibold text-slate-600">Location</label>
+                      <input
+                        value={form["offer.location"]}
+                        onChange={(e) => updateField("offer.location", e.target.value)}
+                        placeholder="e.g. Bengaluru"
+                        className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-[13px] outline-none focus:border-[#E42527]"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1.5 block text-[11px] font-semibold text-slate-600">Joining Date</label>
+                      <input
+                        type="date"
+                        value={form["offer.joining_date"]}
+                        onChange={(e) => updateField("offer.joining_date", e.target.value)}
+                        className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-[13px] outline-none focus:border-[#E42527]"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1.5 block text-[11px] font-semibold text-slate-600">Offer Expiry Date</label>
+                      <input
+                        type="date"
+                        value={form["offer.expiry_date"]}
+                        onChange={(e) => updateField("offer.expiry_date", e.target.value)}
+                        className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-[13px] outline-none focus:border-[#E42527]"
+                      />
+                    </div>
+                  </div>
+
+                  {form.variant === "executive" && (
+                    <div className="mt-4 grid gap-4 border-t border-slate-200 pt-4 sm:grid-cols-2">
+                      <div className="sm:col-span-2">
+                        <p className="text-[11px] font-bold uppercase tracking-wider text-amber-600">Executive-only fields</p>
+                      </div>
+                      <div>
+                        <label className="mb-1.5 block text-[11px] font-semibold text-slate-600">Reporting To</label>
+                        <input
+                          value={form["offer.reporting_to"]}
+                          onChange={(e) => updateField("offer.reporting_to", e.target.value)}
+                          placeholder="e.g. Chief Technology Officer"
+                          className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-[13px] outline-none focus:border-[#E42527]"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1.5 block text-[11px] font-semibold text-slate-600">Bonus %</label>
+                        <input
+                          value={form["offer.bonus_percent"]}
+                          onChange={(e) => updateField("offer.bonus_percent", e.target.value)}
+                          placeholder="e.g. 20"
+                          className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-[13px] outline-none focus:border-[#E42527]"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1.5 block text-[11px] font-semibold text-slate-600">ESOPs (options)</label>
+                        <input
+                          value={form["offer.esops"]}
+                          onChange={(e) => updateField("offer.esops", e.target.value)}
+                          placeholder="e.g. 50,000"
+                          className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-[13px] outline-none focus:border-[#E42527]"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1.5 block text-[11px] font-semibold text-slate-600">Retention Bonus (₹)</label>
+                        <input
+                          value={form["offer.retention_bonus"]}
+                          onChange={(e) => updateField("offer.retention_bonus", e.target.value)}
+                          placeholder="e.g. 5,00,000"
+                          className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-[13px] outline-none focus:border-[#E42527]"
+                        />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <label className="mb-1.5 block text-[11px] font-semibold text-slate-600">Notice Period</label>
+                        <input
+                          value={form["offer.notice_period"]}
+                          onChange={(e) => updateField("offer.notice_period", e.target.value)}
+                          placeholder="e.g. Ninety (90) days"
+                          className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-[13px] outline-none focus:border-[#E42527]"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* META */}
+                <div className="grid gap-4 sm:grid-cols-3">
                   <div>
                     <label className="mb-1.5 block text-[12px] font-bold uppercase tracking-wider text-slate-600">Issue Date</label>
-                    <input
-                      type="date"
-                      value={generateForm.issue_date}
-                      onChange={(e) => setGenerateForm((p) => ({ ...p, issue_date: e.target.value }))}
-                      className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-[13px] outline-none transition focus:border-[#E42527] focus:bg-white focus:ring-2 focus:ring-[#E42527]/10"
-                    />
+                    <input type="date" value={form.issue_date} onChange={(e) => updateField("issue_date", e.target.value)}
+                      className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-[13px] outline-none focus:border-[#E42527] focus:bg-white" />
                   </div>
                   <div>
                     <label className="mb-1.5 block text-[12px] font-bold uppercase tracking-wider text-slate-600">Effective Date</label>
-                    <input
-                      type="date"
-                      value={generateForm.effective_date}
-                      onChange={(e) => setGenerateForm((p) => ({ ...p, effective_date: e.target.value }))}
-                      className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-[13px] outline-none transition focus:border-[#E42527] focus:bg-white focus:ring-2 focus:ring-[#E42527]/10"
-                    />
+                    <input type="date" value={form.effective_date} onChange={(e) => updateField("effective_date", e.target.value)}
+                      className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-[13px] outline-none focus:border-[#E42527] focus:bg-white" />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-[12px] font-bold uppercase tracking-wider text-slate-600">Letter Expiry</label>
+                    <input type="date" value={form.expiry_date} onChange={(e) => updateField("expiry_date", e.target.value)}
+                      className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-[13px] outline-none focus:border-[#E42527] focus:bg-white" />
                   </div>
                 </div>
 
+                {/* SIGNATORY */}
                 <div>
                   <label className="mb-1.5 block text-[12px] font-bold uppercase tracking-wider text-slate-600">Signatory</label>
-                  <select
-                    value={generateForm.signatory_id}
-                    onChange={(e) => setGenerateForm((p) => ({ ...p, signatory_id: e.target.value }))}
-                    className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-[13px] outline-none transition focus:border-[#E42527] focus:bg-white focus:ring-2 focus:ring-[#E42527]/10"
-                  >
+                  <select value={form.signatory_id} onChange={(e) => updateField("signatory_id", e.target.value)}
+                    className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-[13px] outline-none focus:border-[#E42527] focus:bg-white">
                     <option value="">Optional — no signatory</option>
                     {signatories.map((s) => (
-                      <option key={s.signatory_id} value={s.signatory_id}>
-                        {s.name} — {s.designation}
-                      </option>
+                      <option key={s.signatory_id} value={s.signatory_id}>{s.name} — {s.designation}</option>
                     ))}
                   </select>
                 </div>
 
+                {/* OPTIONS */}
                 <div className="flex flex-wrap gap-5 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
                   <label className="flex items-center gap-2 text-[13px] font-medium text-slate-700">
-                    <input
-                      type="checkbox"
-                      checked={generateForm.publish_to_ess}
-                      onChange={(e) => setGenerateForm((p) => ({ ...p, publish_to_ess: e.target.checked }))}
-                      className="h-4 w-4 rounded border-slate-300 accent-[#E42527]"
-                    />
+                    <input type="checkbox" checked={form.publish_to_ess} onChange={(e) => updateField("publish_to_ess", e.target.checked)}
+                      className="h-4 w-4 rounded border-slate-300 accent-[#E42527]" />
                     Publish to ESS
                   </label>
                   <label className="flex items-center gap-2 text-[13px] font-medium text-slate-700">
-                    <input
-                      type="checkbox"
-                      checked={generateForm.send_email}
-                      onChange={(e) => setGenerateForm((p) => ({ ...p, send_email: e.target.checked }))}
-                      className="h-4 w-4 rounded border-slate-300 accent-[#E42527]"
-                    />
+                    <input type="checkbox" checked={form.send_email} onChange={(e) => updateField("send_email", e.target.checked)}
+                      className="h-4 w-4 rounded border-slate-300 accent-[#E42527]" />
                     Send Email
                   </label>
                 </div>
 
+                {/* SUBMIT */}
                 <div className="flex justify-end gap-3 border-t border-slate-100 pt-5">
                   <button
                     type="button"
                     onClick={() => {
-                      setGenerateForm(EMPTY_GENERATE);
-                      setSelectedEmployees([]);
-                      setFilterDept(""); setFilterDesig(""); setEmpSearch("");
+                      setForm({
+                        variant: "classic", employee_id: "", signatory_id: "",
+                        issue_date: "", effective_date: "", expiry_date: "",
+                        publish_to_ess: true, send_email: false,
+                        "offer.designation": "", "offer.location": "",
+                        "offer.joining_date": "", "offer.expiry_date": "",
+                        "offer.reporting_to": "", "offer.bonus_percent": "",
+                        "offer.esops": "", "offer.retention_bonus": "",
+                        "offer.notice_period": "",
+                      });
+                      setEmpSearch(""); resetMessages();
                     }}
-                    className="h-10 rounded-lg border border-slate-200 px-4 text-[13px] font-semibold text-slate-600 transition hover:bg-slate-50"
+                    className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-5 text-[13px] font-semibold text-slate-700 hover:bg-slate-50"
                   >
                     Reset
                   </button>
                   <button
                     type="submit"
-                    disabled={loading || selectedEmployees.length === 0}
-                    className="inline-flex h-10 items-center gap-2 rounded-lg bg-gradient-to-r from-[#E42527] to-[#c91f21] px-6 text-[13px] font-bold text-white shadow-md shadow-red-500/20 transition hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60"
+                    disabled={loading || !form.employee_id || !form["offer.designation"]}
+                    className="inline-flex h-10 items-center gap-2 rounded-lg bg-gradient-to-r from-[#E42527] to-[#c91f21] px-6 text-[13px] font-bold text-white disabled:opacity-60"
                   >
-                    {loading ? (
-                      <>
-                        <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                        </svg>
-                        Generating...
-                      </>
-                    ) : (
-                      <>
-                        <Icons.Sparkle className="h-4 w-4" />
-                        Generate {selectedEmployees.length} Letter{selectedEmployees.length !== 1 ? "s" : ""}
-                      </>
-                    )}
+                    {loading ? "Generating..." : <><Icons.Send className="h-4 w-4" /> Generate {selectedVariant.name}</>}
                   </button>
                 </div>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* ========== CREATE TEMPLATE ========== */}
-        {activeTab === "create-template" && (
-          <div className="mx-auto max-w-4xl">
-            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-              <div className="border-b border-slate-100 bg-gradient-to-r from-blue-50 to-white px-6 py-5">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-md shadow-blue-500/20">
-                    <Icons.Template className="h-5 w-5 text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-[16px] font-bold text-slate-900">Add Letter Template</h2>
-                    <p className="text-[12px] text-slate-500">
-                      Choose from professional library — letterhead & signature added automatically
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <form onSubmit={handleCreateTemplateFromSample} className="space-y-6 p-6">
-                <div>
-                  <label className="mb-3 block text-[12px] font-bold uppercase tracking-wider text-slate-600">
-                    Letter Type <span className="text-[#E42527]">*</span>
-                  </label>
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    {Object.entries(PROFESSIONAL_TEMPLATES).map(([key, t]) => {
-                      const selected = selectedSampleKey === key;
-                      return (
-                        <button
-                          key={key}
-                          type="button"
-                          onClick={() => setSelectedSampleKey(key)}
-                          className={`group relative overflow-hidden rounded-xl border-2 p-4 text-left transition ${
-                            selected
-                              ? "border-[#E42527] bg-gradient-to-br from-red-50 to-white shadow-md shadow-red-500/10"
-                              : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm"
-                          }`}
-                        >
-                          {selected && (
-                            <div className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-[#E42527]">
-                              <Icons.Check className="h-3 w-3 text-white" />
-                            </div>
-                          )}
-                          <div className="flex items-center gap-2">
-                            <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-600">
-                              {t.category}
-                            </span>
-                          </div>
-                          <p className="mt-2 text-[13px] font-bold text-slate-900">{t.name}</p>
-                          <p className="mt-0.5 text-[11px] text-slate-500">{t.description}</p>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="mb-1.5 block text-[12px] font-bold uppercase tracking-wider text-slate-600">
-                    Category <span className="text-[#E42527]">*</span>
-                  </label>
-                  <select
-                    required
-                    value={templateCategoryId}
-                    onChange={(e) => setTemplateCategoryId(e.target.value)}
-                    className="h-11 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-[13px] outline-none transition focus:border-[#E42527] focus:bg-white focus:ring-2 focus:ring-[#E42527]/10"
-                  >
-                    <option value="">Select category</option>
-                    {categories.map((c) => (
-                      <option key={c.category_id} value={c.category_id}>{c.name}</option>
-                    ))}
-                  </select>
-                  {categories.length === 0 && (
-                    <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-[12px] text-amber-700">
-                      ⚠ First create a category from Categories tab
-                    </p>
-                  )}
-                </div>
-
-                <div className="flex flex-wrap gap-5 rounded-xl border border-slate-200 bg-slate-50 px-4 py-4">
-                  <label className="flex items-center gap-2 text-[13px] font-medium text-slate-700">
-                    <input
-                      type="checkbox"
-                      checked={templateRequiresApproval}
-                      onChange={(e) => setTemplateRequiresApproval(e.target.checked)}
-                      className="h-4 w-4 rounded border-slate-300 accent-[#E42527]"
-                    />
-                    Requires Approval
-                  </label>
-                  <label className="flex items-center gap-2 text-[13px] font-medium text-slate-700">
-                    <input
-                      type="checkbox"
-                      checked={templateAllowRequest}
-                      onChange={(e) => setTemplateAllowRequest(e.target.checked)}
-                      className="h-4 w-4 rounded border-slate-300 accent-[#E42527]"
-                    />
-                    Allow Employee Self Request
-                  </label>
-                </div>
-
-                <div className="flex justify-end border-t border-slate-100 pt-5">
-                  <button
-                    type="submit"
-                    disabled={loading || !selectedSampleKey || !templateCategoryId}
-                    className="inline-flex h-10 items-center gap-2 rounded-lg bg-gradient-to-r from-[#E42527] to-[#c91f21] px-6 text-[13px] font-bold text-white shadow-md shadow-red-500/20 transition hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {loading ? "Creating..." : "Create Template"}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* ========== CREATE SIGNATORY ========== */}
-        {activeTab === "create-signatory" && (
-          <div className="mx-auto max-w-lg">
-            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-              <div className="border-b border-slate-100 bg-gradient-to-r from-emerald-50 to-white px-6 py-5">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 shadow-md shadow-emerald-500/20">
-                    <Icons.Sign className="h-5 w-5 text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-[16px] font-bold text-slate-900">Add Signatory</h2>
-                    <p className="text-[12px] text-slate-500">Who signs the letters on behalf of company</p>
-                  </div>
-                </div>
-              </div>
-              <form onSubmit={handleCreateSignatory} className="space-y-4 p-6">
-                <input
-                  required
-                  value={signatoryForm.name}
-                  onChange={(e) => setSignatoryForm((p) => ({ ...p, name: e.target.value }))}
-                  placeholder="Full Name *"
-                  className="h-11 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-[13px] outline-none transition focus:border-[#E42527] focus:bg-white focus:ring-2 focus:ring-[#E42527]/10"
-                />
-                <input
-                  required
-                  value={signatoryForm.designation}
-                  onChange={(e) => setSignatoryForm((p) => ({ ...p, designation: e.target.value }))}
-                  placeholder="Designation *"
-                  className="h-11 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-[13px] outline-none transition focus:border-[#E42527] focus:bg-white focus:ring-2 focus:ring-[#E42527]/10"
-                />
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <input
-                    value={signatoryForm.department}
-                    onChange={(e) => setSignatoryForm((p) => ({ ...p, department: e.target.value }))}
-                    placeholder="Department"
-                    className="h-11 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-[13px] outline-none transition focus:border-[#E42527] focus:bg-white focus:ring-2 focus:ring-[#E42527]/10"
-                  />
-                  <input
-                    type="email"
-                    value={signatoryForm.email}
-                    onChange={(e) => setSignatoryForm((p) => ({ ...p, email: e.target.value }))}
-                    placeholder="Email"
-                    className="h-11 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-[13px] outline-none transition focus:border-[#E42527] focus:bg-white focus:ring-2 focus:ring-[#E42527]/10"
-                  />
-                </div>
-                <label className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-[13px] font-medium text-slate-700">
-                  <input
-                    type="checkbox"
-                    checked={signatoryForm.is_default}
-                    onChange={(e) => setSignatoryForm((p) => ({ ...p, is_default: e.target.checked }))}
-                    className="h-4 w-4 rounded border-slate-300 accent-[#E42527]"
-                  />
-                  Set as default signatory
-                </label>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#E42527] to-[#c91f21] text-[13px] font-bold text-white shadow-md shadow-red-500/20 transition hover:shadow-lg disabled:opacity-60"
-                >
-                  {loading ? "Saving..." : "Add Signatory"}
-                </button>
               </form>
             </div>
           </div>
         )}
       </div>
 
-      {/* ============ PREVIEW MODAL ============ */}
-      {previewLetter && (
+      {/* SAMPLE PREVIEW MODAL */}
+      {previewSample && (
         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-900/70 p-4 pt-8 backdrop-blur-sm">
           <div className="mb-10 w-full max-w-4xl overflow-hidden rounded-2xl bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white px-5 py-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-blue-600">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-[#E42527] to-[#a81b1d]">
                   <Icons.Eye className="h-4 w-4 text-white" />
                 </div>
                 <div>
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Letter Preview</p>
-                  <p className="text-[14px] font-bold text-slate-900">A4 Print Preview</p>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Sample Preview</p>
+                  <p className="text-[14px] font-bold text-slate-900">
+                    {previewSample.name} · <span className="font-mono text-slate-500">{previewSample.code}</span>
+                  </p>
                 </div>
               </div>
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={() => {
-                    const w = window.open("", "_blank");
-                    if (w) {
-                      w.document.write(previewLetter);
-                      w.document.close();
-                      w.onload = () => setTimeout(() => w.print(), 400);
-                    }
-                  }}
+                  onClick={() => downloadSample(previewSample)}
                   className="inline-flex h-9 items-center gap-2 rounded-lg bg-gradient-to-r from-[#E42527] to-[#c91f21] px-4 text-[13px] font-semibold text-white shadow-sm"
                 >
-                  <Icons.Download className="h-4 w-4" />
-                  Print / Save PDF
+                  <Icons.Download className="h-4 w-4" /> Download / Print
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewSample(null)}
+                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50"
+                >
+                  <Icons.X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+            <div className="max-h-[80vh] overflow-y-auto bg-slate-100 p-5">
+              <div className="mx-auto bg-white shadow-lg" style={{ maxWidth: 794 }}>
+                <iframe title="Sample Preview" srcDoc={buildSampleHtml(previewSample)} className="h-[1050px] w-full border-0" />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* GENERATED LETTER PREVIEW MODAL */}
+      {previewLetter && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-900/70 p-4 pt-8 backdrop-blur-sm">
+          <div className="mb-10 w-full max-w-4xl overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white px-5 py-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-500">
+                  <Icons.Eye className="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Letter Preview</p>
+                  <p className="text-[14px] font-bold text-slate-900">
+                    {previewLetter.letter.letter_number || "Letter"} ·{" "}
+                    <span className="text-slate-500">
+                      {previewLetter.letter.data_snapshot?.employee_name || previewLetter.letter.employee_name || ""}
+                    </span>
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => printHtml(previewLetter.html)}
+                  className="inline-flex h-9 items-center gap-2 rounded-lg bg-gradient-to-r from-[#E42527] to-[#c91f21] px-4 text-[13px] font-semibold text-white shadow-sm"
+                >
+                  <Icons.Download className="h-4 w-4" /> Download / Print
                 </button>
                 <button
                   type="button"
@@ -1544,60 +1497,8 @@ export default function HRLettersPage() {
             </div>
             <div className="max-h-[80vh] overflow-y-auto bg-slate-100 p-5">
               <div className="mx-auto bg-white shadow-lg" style={{ maxWidth: 794 }}>
-                <iframe
-                  title="Letter Preview"
-                  srcDoc={previewLetter}
-                  className="h-[1050px] w-full border-0"
-                />
+                <iframe title="Letter Preview" srcDoc={previewLetter.html} className="h-[1050px] w-full border-0" />
               </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ============ TEMPLATE MODAL ============ */}
-      {selectedTemplate && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm" onClick={() => setSelectedTemplate(null)}>
-          <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white px-5 py-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-red-500 to-red-600">
-                  <Icons.File className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <p className="text-[15px] font-bold text-slate-900">{selectedTemplate.name}</p>
-                  <p className="text-[11px] font-mono text-slate-500">{selectedTemplate.code}</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSelectedTemplate(null)}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100"
-              >
-                <Icons.X className="h-4 w-4" />
-              </button>
-            </div>
-            <div className="grid gap-3 p-5 sm:grid-cols-2">
-              {[
-                ["Version", `v${selectedTemplate.version || 1}`],
-                ["Approval", selectedTemplate.requires_approval ? "Required" : "Not Required"],
-                ["Self Request", selectedTemplate.allow_employee_request ? "Enabled" : "Disabled"],
-                ["Status", selectedTemplate.is_active ? "Active" : "Inactive"],
-              ].map(([l, v]) => (
-                <div key={l} className="rounded-lg border border-slate-100 bg-slate-50 px-3.5 py-2.5">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{l}</p>
-                  <p className="mt-0.5 text-[13px] font-semibold text-slate-800">{v}</p>
-                </div>
-              ))}
-            </div>
-            <div className="flex justify-end border-t border-slate-100 px-5 py-4">
-              <button
-                type="button"
-                onClick={() => setSelectedTemplate(null)}
-                className="h-9 rounded-lg border border-slate-200 px-4 text-[13px] font-semibold text-slate-600 transition hover:bg-slate-50"
-              >
-                Close
-              </button>
             </div>
           </div>
         </div>
